@@ -4,25 +4,16 @@ A comparative SIMD and low-level optimization laboratory for **Rust**, **Zig 0.1
 
 The goal is not to crown a language from toy examples. It is to implement the **same kernels** in each language, inspect the generated machine code, measure them under the same conditions, and document where each language and toolchain makes high-performance SIMD pleasant, awkward, portable, or fragile.
 
-## Core research question
-
-> How well do Rust, Zig 0.16, and C++23 express and lower common integer and floating-point SIMD idioms across realistic CPU targets?
-
-The lab now explicitly investigates integer and floating-point types including `u8`, `i8`, `u16`, `i16`, `u32`, `i32`, `f16`, `f32`, and `f64`, plus widening and narrowing paths such as `u8 -> u16` and `f16 -> f32 -> f16`.
-
-A major motivating case is [ziglang/zig#19550](https://github.com/ziglang/zig/issues/19550), where vector `f16` clamp code generated dramatically worse machine code than `u8`, `u16`, and `f32` on targets without native FP16 arithmetic. [adworacz/zsmooth#29](https://github.com/adworacz/zsmooth/issues/29) provides a practical video-processing motivation for investigating when native FP16 is viable and when explicit promotion to `f32` is preferable.
-
-See [`docs/type-operation-matrix.md`](docs/type-operation-matrix.md) for the investigation matrix.
+A major investigation track is now **common integer and floating-point lowering**, motivated in part by the severe `f16` codegen pathology documented in `ziglang/zig#19550` and its practical impact on video-processing code such as `zsmooth`.
 
 ## What this repo studies
 
 - scalar baselines and compiler autovectorization
 - portable/vector-language abstractions
-- common integer and floating-point SIMD idioms
-- widening, narrowing, packing, saturation, and conversion
-- FP16 native arithmetic versus promotion to FP32
+- common integer types: `u8/i8`, `u16/i16`, `u32/i32`, selected 64-bit cases
+- common floating types: `f16`, `f32`, `f64`
+- widening, narrowing, packing, and mixed-width arithmetic
 - x86-64 AVX2/FMA/F16C specializations
-- AVX-512 and AVX-512 FP16 where available
 - runtime ISA dispatch patterns
 - inline assembly where intrinsics or vector IR are insufficient
 - generated assembly and missed-vectorization diagnostics
@@ -33,22 +24,9 @@ See [`docs/type-operation-matrix.md`](docs/type-operation-matrix.md) for the inv
 
 1. **AXPY**: `dst[i] = a * x[i] + y[i]`
 2. **Squared error**: `sum((a[i] - b[i])^2)` — representative of MSE/PSNR workloads
+3. **Min/max/clamp family** — chosen to expose integer vs floating-point lowering and FP16 conversion behavior
 
-These are intentionally simple enough to understand completely while still exposing FMA, reductions, load/store behavior, vector width, and compiler decisions.
-
-The next common-kernel set covers:
-
-- min / max / clamp
-- comparisons and select/blend
-- saturating integer arithmetic
-- absolute difference and SAD
-- horizontal reductions
-- integer and floating-point dot products
-- widening multiply / accumulate
-- narrowing and saturating pack
-- `f16 <-> f32` conversion
-- short convolution kernels
-- weighted pixel blending
+The clamp probes include a Zig `f16` reproduction-shaped path and an explicit **promote once to f32, compute, narrow once** alternative for measuring conversion-hoisting behavior.
 
 ## Layout
 
@@ -57,8 +35,12 @@ The next common-kernel set covers:
 ├── cpp/                 # C++23 implementations
 ├── rust/                # Rust implementations
 ├── zig/                 # Zig 0.16 implementations
+├── probes/              # tiny standalone codegen experiments
+│   ├── cpp/
+│   ├── rust/
+│   └── zig/
 ├── docs/                # methodology, experiment matrix, codegen notes
-├── scripts/             # helper scripts for repeatable runs
+├── scripts/             # helper scripts for repeatable runs and asm analysis
 └── .github/workflows/   # compile/test CI
 ```
 
@@ -72,27 +54,7 @@ The next common-kernel set covers:
 - Inspect machine code before attributing a result to a language.
 - Architecture-specific code is allowed, but must be clearly labeled.
 - A faster implementation that changes numerical semantics must say so explicitly.
-- Strict FP16 arithmetic and FP16-promoted-to-FP32 arithmetic are separate result classes.
-- Never collapse results from materially different ISA feature sets into a single language score.
-
-## FP16 investigation
-
-FP16 is treated as a first-class code-generation experiment rather than just another benchmark type.
-
-We want to compare:
-
-```text
-native f16 source arithmetic
-optimized / relaxed float mode
-f16 -> f32 once -> compute -> f16 once
-conversion-heavy f16 <-> f32 negative control
-explicit F16C conversion + f32 arithmetic
-native AVX-512 FP16
-```
-
-A key metric is **conversion hoisting**. For targets without native FP16 arithmetic, good generated code should avoid repeatedly converting every intermediate between `f16` and `f32` when the selected numerical semantics permit the computation to stay widened.
-
-Along with runtime measurements, codegen analysis should count conversion instructions such as `vcvtph2ps` and `vcvtps2ph`, total instructions, spills, vector-width changes, and code size.
+- Language-standard facilities and compiler/ISA extensions must be reported separately.
 
 ## Build
 
@@ -121,6 +83,30 @@ ctest --test-dir build/cpp --output-on-failure
 ./build/cpp/simd_lab_cpp
 ```
 
+## Codegen probes
+
+The files under `probes/` are intentionally minimal exported functions for assembly inspection.
+
+```bash
+zig build-obj probes/zig/clamp.zig -O ReleaseFast -femit-asm=zig-clamp.s
+rustc -O --crate-type=lib --emit=asm probes/rust/clamp.rs -o rust-clamp.s
+clang++ -std=c++23 -O3 -S -masm=intel probes/cpp/clamp.cpp -o cpp-clang-clamp.s
+```
+
+Extract simple machine-readable metrics with:
+
+```bash
+python scripts/analyze_asm.py --pretty zig-clamp.s rust-clamp.s cpp-clang-clamp.s
+```
+
+For the FP16 investigation, conversion counts such as `vcvtph2ps` and `vcvtps2ph` are treated as first-class regression signals.
+
+See:
+
+- `docs/type-operation-matrix.md`
+- `docs/codegen-probes.md`
+- `docs/benchmarking.md`
+
 ## Benchmarking direction
 
 The starter executables are correctness/smoke programs, not a finished benchmarking framework. The next layer should add:
@@ -133,8 +119,7 @@ The starter executables are correctness/smoke programs, not a finished benchmark
 - code-size reporting
 - optional Linux `perf stat`
 - generated-assembly snapshots
-- compiler vectorization diagnostics
-- target matrices for AVX2, FMA, F16C, AVX-512, AVX-512 FP16, NEON, and wasm SIMD
+- F16C and AVX-512 FP16 target-specific runs
 
 ## SIMD philosophy
 
