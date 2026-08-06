@@ -1,7 +1,10 @@
 #include "kernels.hpp"
 
+#include <algorithm>
+#include <array>
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <iomanip>
 #include <iostream>
 #include <string_view>
@@ -11,6 +14,8 @@ namespace {
 constexpr std::size_t n = 1u << 20;
 constexpr int warmup = 8;
 constexpr int iterations = 64;
+constexpr std::array<std::uint16_t, 8> half_values{
+    0x0000, 0x3400, 0x3800, 0x3c00, 0x3e00, 0x4000, 0x4200, 0x4400};
 volatile float sink = 0.0f;
 
 template <class F>
@@ -49,6 +54,26 @@ int main() {
 
     t = measure([&] { sink = simd_lab::squared_error_best(x, y); });
     report("sqerr/best-dispatch", t, n * 8);
+
+    std::vector<std::uint16_t> c(n), lo(n, 0x3800), hi(n, 0x4000), half_dst(n);
+    for (std::size_t i = 0; i < n; ++i) c[i] = half_values[i & 7];
+
+    if (simd_lab::clamp_f16c(half_dst.data(), c.data(), lo.data(), hi.data(), n)) {
+        for (std::size_t i = 0; i < n; ++i) {
+            if (half_dst[i] != std::clamp(c[i], std::uint16_t{0x3800}, std::uint16_t{0x4000})) {
+                std::cerr << "F16C clamp validation failed at " << i << '\n';
+                return 1;
+            }
+        }
+        t = measure([&] {
+            if (!simd_lab::clamp_f16c(half_dst.data(), c.data(), lo.data(), hi.data(), n)) {
+                std::abort();
+            }
+        });
+        report("clamp-f16/f16c-f32", t, n * 8);
+    } else {
+        std::cout << "clamp-f16/f16c-f32         skipped (AVX+F16C unavailable)\n";
+    }
 
     std::cout << "N=" << n << " warmup=" << warmup
               << " iterations=" << iterations << '\n';
