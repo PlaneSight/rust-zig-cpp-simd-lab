@@ -31,13 +31,18 @@ def version(exe: str) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--target", default="x86-64-v3", choices=["x86-64", "x86-64-v3", "native"])
+    ap.add_argument(
+        "--target",
+        default="x86-64-v3",
+        choices=["x86-64", "x86-64-v3", "sapphirerapids", "native"],
+    )
     args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
 
     target_flags = {
         "x86-64": {"clang": ["-march=x86-64"], "gcc": ["-march=x86-64"], "rust": ["-C", "target-cpu=x86-64"], "zig": ["-mcpu=x86_64"]},
         "x86-64-v3": {"clang": ["-march=x86-64-v3"], "gcc": ["-march=x86-64-v3"], "rust": ["-C", "target-cpu=x86-64-v3"], "zig": ["-mcpu=x86_64_v3"]},
+        "sapphirerapids": {"clang": ["-march=sapphirerapids"], "gcc": ["-march=sapphirerapids"], "rust": ["-C", "target-cpu=sapphirerapids"], "zig": ["-mcpu=sapphirerapids"]},
         "native": {"clang": ["-march=native"], "gcc": ["-march=native"], "rust": ["-C", "target-cpu=native"], "zig": ["-mcpu=native"]},
     }[args.target]
 
