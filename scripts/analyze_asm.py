@@ -15,6 +15,7 @@ from collections import Counter
 from pathlib import Path
 
 TRACKED_PREFIXES = (
+    # x86 SIMD / FP16
     "vcvtph2ps",
     "vcvtps2ph",
     "vmin",
@@ -37,12 +38,41 @@ TRACKED_PREFIXES = (
     "psadbw",
     "vpmovzx",
     "vpmovsx",
+    # AArch64 AdvSIMD / FP16 / widening-reduction idioms
+    "fmin",
+    "fmax",
+    "fcvt",
+    "uabd",
+    "uabal",
+    "uadalp",
+    "uaddlp",
+    "uaddlv",
+    "sadalp",
+    "saddlp",
+    "saddlv",
+    "ushll",
+    "sshll",
+    "xtn",
+    # WebAssembly SIMD opcode families (normalized before the first '.')
+    "v128",
+    "i8x16",
+    "i16x8",
+    "i32x4",
+    "i64x2",
+    "f32x4",
+    "f64x2",
 )
 
 LABEL_RE = re.compile(r"^[.$A-Za-z_][\w.$@]*:\s*(?:[#;].*)?$")
 DIRECTIVE_RE = re.compile(r"^\s*\.")
 COMMENT_RE = re.compile(r"^\s*(?:[#;]|//)")
 INSTRUCTION_RE = re.compile(r"^\s*([A-Za-z][A-Za-z0-9_.]*)\b")
+
+WASM_VECTOR_PREFIXES = ("v128", "i8x16", "i16x8", "i32x4", "i64x2", "f32x4", "f64x2")
+ARM_VECTOR_HINTS = {
+    "fmin", "fmax", "fcvt", "uabd", "uabal", "uadalp", "uaddlp", "uaddlv",
+    "sadalp", "saddlp", "saddlv", "ushll", "sshll", "xtn",
+}
 
 
 def normalize_mnemonic(mnemonic: str) -> str:
@@ -69,7 +99,14 @@ def analyze(text: str) -> dict[str, object]:
                 tracked[prefix] += 1
                 break
 
-    vectorish = sum(count for name, count in instructions.items() if name.startswith("v"))
+    vectorish = 0
+    for name, count in instructions.items():
+        if (
+            name.startswith("v")
+            or name.startswith(WASM_VECTOR_PREFIXES)
+            or name in ARM_VECTOR_HINTS
+        ):
+            vectorish += count
 
     return {
         "instruction_count": sum(instructions.values()),
