@@ -118,6 +118,7 @@ See:
 - `docs/type-operation-matrix.md`
 - `docs/codegen-probes.md`
 - `docs/benchmarking.md`
+- `docs/fp16-semantics.md`
 
 ## SIMD philosophy
 
