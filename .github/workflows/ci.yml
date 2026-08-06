@@ -15,6 +15,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --release
+      - run: cargo build --release --bin bench
       - run: cargo run --release
 
   cpp:
@@ -34,5 +35,7 @@ jobs:
           version: 0.16.0-dev.1484+95fceed76
       - working-directory: zig
         run: zig build test -Doptimize=ReleaseFast
+      - working-directory: zig
+        run: zig build -Doptimize=ReleaseFast
       - working-directory: zig
         run: zig build run -Doptimize=ReleaseFast
