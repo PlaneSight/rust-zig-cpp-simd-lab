@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://planesight.github.io/rust-zig-cpp-simd-lab/schema/result-bundle-v1.schema.json",
+  "title": "SIMD Lab Result Bundle v1",
+  "type": "object",
+  "required": ["schema", "id", "created_at", "provenance", "environment", "experiment", "observations"],
+  "properties": {
+    "schema": {"const": "simd-lab-result-v1"},
+    "id": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "provenance": {
+      "type": "object",
+      "required": ["repository", "commit"],
+      "properties": {
+        "repository": {"type": "string"},
+        "commit": {"type": "string"},
+        "branch": {"type": ["string", "null"]},
+        "workflow_run": {"type": ["string", "null"]},
+        "source_files": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "environment": {
+      "type": "object",
+      "required": ["os", "arch", "target"],
+      "properties": {
+        "os": {"type": "string"},
+        "arch": {"type": "string"},
+        "cpu": {"type": ["string", "null"]},
+        "cpu_features": {"type": "array", "items": {"type": "string"}},
+        "target": {"type": "string"},
+        "runner": {"type": ["string", "null"]},
+        "virtualized": {"type": ["boolean", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "toolchain": {
+      "type": "object",
+      "properties": {
+        "language": {"enum": ["rust", "zig", "cpp", "other"]},
+        "compiler": {"type": "string"},
+        "version": {"type": "string"},
+        "optimization": {"type": ["string", "null"]},
+        "flags": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "experiment": {
+      "type": "object",
+      "required": ["family", "kernel", "implementation"],
+      "properties": {
+        "family": {"type": "string"},
+        "kernel": {"type": "string"},
+        "implementation": {"type": "string"},
+        "variant": {"type": ["string", "null"]},
+        "data_type": {"type": ["string", "null"]},
+        "lanes": {"type": ["integer", "null"], "minimum": 1},
+        "isa": {"type": ["string", "null"]},
+        "semantics": {"type": ["string", "null"]},
+        "dataset": {"type": ["string", "null"]},
+        "parameters": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "observations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {"$ref": "#/$defs/runtimeObservation"},
+          {"$ref": "#/$defs/codegenObservation"},
+          {"$ref": "#/$defs/semanticObservation"},
+          {"$ref": "#/$defs/counterObservation"},
+          {"$ref": "#/$defs/analysisObservation"}
+        ]
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "path"],
+        "properties": {
+          "kind": {"type": "string"},
+          "path": {"type": "string"},
+          "sha256": {"type": ["string", "null"]},
+          "description": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "tags": {"type": "array", "items": {"type": "string"}},
+    "notes": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "metric": {
+      "type": "object",
+      "required": ["name", "value"],
+      "properties": {
+        "name": {"type": "string"},
+        "value": {"type": "number"},
+        "unit": {"type": ["string", "null"]},
+        "aggregation": {"type": ["string", "null"]},
+        "lower": {"type": ["number", "null"]},
+        "upper": {"type": ["number", "null"]},
+        "samples": {"type": ["integer", "null"], "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "runtimeObservation": {
+      "type": "object",
+      "required": ["kind", "metrics"],
+      "properties": {
+        "kind": {"const": "runtime"},
+        "metrics": {"type": "array", "items": {"$ref": "#/$defs/metric"}},
+        "warmup_iterations": {"type": ["integer", "null"]},
+        "measured_iterations": {"type": ["integer", "null"]},
+        "elements": {"type": ["integer", "null"]},
+        "bytes_per_iteration": {"type": ["integer", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "codegenObservation": {
+      "type": "object",
+      "required": ["kind", "instruction_count"],
+      "properties": {
+        "kind": {"const": "codegen"},
+        "instruction_count": {"type": "integer", "minimum": 0},
+        "vector_instruction_count": {"type": ["integer", "null"], "minimum": 0},
+        "unique_mnemonics": {"type": ["integer", "null"], "minimum": 0},
+        "tracked_mnemonics": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "top_mnemonics": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "assembly_path": {"type": ["string", "null"]},
+        "ir_path": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "semanticObservation": {
+      "type": "object",
+      "required": ["kind", "status"],
+      "properties": {
+        "kind": {"const": "semantics"},
+        "status": {"enum": ["match", "diverge", "skipped", "unknown"]},
+        "reference": {"type": ["string", "null"]},
+        "cases": {"type": ["integer", "null"], "minimum": 0},
+        "mismatches": {"type": ["integer", "null"], "minimum": 0},
+        "details_path": {"type": ["string", "null"]},
+        "summary": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "counterObservation": {
+      "type": "object",
+      "required": ["kind", "metrics"],
+      "properties": {
+        "kind": {"const": "counters"},
+        "metrics": {"type": "array", "items": {"$ref": "#/$defs/metric"}},
+        "tool": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "analysisObservation": {
+      "type": "object",
+      "required": ["kind", "summary"],
+      "properties": {
+        "kind": {"const": "analysis"},
+        "summary": {"type": "string"},
+        "severity": {"enum": ["info", "interesting", "warning", "regression"]},
+        "evidence": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,51 @@
+name: Results Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'schema/**'
+      - 'results/**'
+      - 'scripts/build_results_catalog.py'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build result catalog
+        run: python3 scripts/build_results_catalog.py
+      - name: Assemble static site
+        run: |
+          mkdir -p _site/schema _site/results
+          cp -R site/. _site/
+          cp schema/*.json _site/schema/
+          if [ -d results/runs ]; then cp -R results/runs _site/results/; fi
+          if [ -d results/artifacts ]; then cp -R results/artifacts _site/results/; fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
