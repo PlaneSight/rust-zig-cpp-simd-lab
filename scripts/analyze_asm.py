@@ -15,7 +15,7 @@ from collections import Counter
 from pathlib import Path
 
 TRACKED_PREFIXES = (
-    # x86 SIMD / FP16
+    # x86 SIMD / FP16 / saturation
     "vcvtph2ps",
     "vcvtps2ph",
     "vmin",
@@ -26,6 +26,7 @@ TRACKED_PREFIXES = (
     "vsub",
     "vmul",
     "vfmadd",
+    "vpaddusb",
     "vpadd",
     "vpsub",
     "vpmul",
@@ -38,7 +39,7 @@ TRACKED_PREFIXES = (
     "psadbw",
     "vpmovzx",
     "vpmovsx",
-    # AArch64 AdvSIMD / FP16 / widening-reduction idioms
+    # AArch64 AdvSIMD / FP16 / widening-reduction / saturation
     "fmin",
     "fmax",
     "fcvt",
@@ -52,8 +53,12 @@ TRACKED_PREFIXES = (
     "saddlv",
     "ushll",
     "sshll",
+    "uqadd",
+    "sqadd",
     "xtn",
-    # WebAssembly SIMD opcode families (normalized before the first '.')
+    # WebAssembly SIMD exact/high-signal operations then broad families
+    "i8x16.add_sat_u",
+    "i8x16.add_sat_s",
     "v128",
     "i8x16",
     "i16x8",
@@ -71,7 +76,7 @@ INSTRUCTION_RE = re.compile(r"^\s*([A-Za-z][A-Za-z0-9_.]*)\b")
 WASM_VECTOR_PREFIXES = ("v128", "i8x16", "i16x8", "i32x4", "i64x2", "f32x4", "f64x2")
 ARM_VECTOR_HINTS = {
     "fmin", "fmax", "fcvt", "uabd", "uabal", "uadalp", "uaddlp", "uaddlv",
-    "sadalp", "saddlp", "saddlv", "ushll", "sshll", "xtn",
+    "sadalp", "saddlp", "saddlv", "ushll", "sshll", "uqadd", "sqadd", "xtn",
 }
 
 
@@ -92,10 +97,11 @@ def analyze(text: str) -> dict[str, object]:
         if not match:
             continue
 
-        mnemonic = normalize_mnemonic(match.group(1))
+        raw_mnemonic = match.group(1).lower()
+        mnemonic = normalize_mnemonic(raw_mnemonic)
         instructions[mnemonic] += 1
         for prefix in TRACKED_PREFIXES:
-            if mnemonic.startswith(prefix):
+            if raw_mnemonic.startswith(prefix) or mnemonic.startswith(prefix):
                 tracked[prefix] += 1
                 break
 
