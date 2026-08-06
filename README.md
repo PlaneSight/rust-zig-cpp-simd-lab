@@ -6,6 +6,8 @@ The goal is not to crown a language from toy examples. It is to implement the **
 
 A major investigation track is **common integer and floating-point lowering**, motivated in part by the severe `f16` codegen pathology documented in `ziglang/zig#19550` and its practical impact on video-processing code such as `zsmooth`.
 
+> **Project roadmap:** [`docs/roadmap.md`](docs/roadmap.md) is the authoritative backlog for planned types, kernels, ISAs, benchmarks, compiler analysis, numerical validation, image/video case studies, and future inline-assembly work.
+
 ## What this repo studies
 
 - scalar baselines and compiler autovectorization
@@ -115,6 +117,7 @@ The first runtime matrix uses the same exact binary16 values in all three langua
 
 See:
 
+- `docs/roadmap.md`
 - `docs/type-operation-matrix.md`
 - `docs/codegen-probes.md`
 - `docs/benchmarking.md`
