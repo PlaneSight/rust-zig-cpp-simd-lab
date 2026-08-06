@@ -1,0 +1,33 @@
+{
+  "schema": "simd-lab-fp16-edge-corpus-v1",
+  "cases": [
+    {"name": "positive-zero", "bits": "0000"},
+    {"name": "negative-zero", "bits": "8000"},
+    {"name": "smallest-positive-subnormal", "bits": "0001"},
+    {"name": "largest-positive-subnormal", "bits": "03ff"},
+    {"name": "smallest-positive-normal", "bits": "0400"},
+    {"name": "one-below-0.5", "bits": "37ff"},
+    {"name": "positive-0.5", "bits": "3800"},
+    {"name": "one-above-0.5", "bits": "3801"},
+    {"name": "one-below-1.0", "bits": "3bff"},
+    {"name": "positive-1.0", "bits": "3c00"},
+    {"name": "one-above-1.0", "bits": "3c01"},
+    {"name": "positive-2.0", "bits": "4000"},
+    {"name": "largest-positive-finite", "bits": "7bff"},
+    {"name": "positive-infinity", "bits": "7c00"},
+    {"name": "quiet-nan-payload-1", "bits": "7e01"},
+    {"name": "quiet-nan-payload-max", "bits": "7fff"},
+    {"name": "negative-smallest-subnormal", "bits": "8001"},
+    {"name": "negative-0.5", "bits": "b800"},
+    {"name": "negative-1.0", "bits": "bc00"},
+    {"name": "negative-2.0", "bits": "c000"},
+    {"name": "largest-negative-finite", "bits": "fbff"},
+    {"name": "negative-infinity", "bits": "fc00"},
+    {"name": "negative-quiet-nan", "bits": "fe01"}
+  ],
+  "clamp_bounds": {
+    "lo_bits": "b800",
+    "hi_bits": "4000",
+    "description": "-0.5 .. +2.0"
+  }
+}
