@@ -39,6 +39,38 @@ pub fn squaredErrorVector(a: []const f32, b: []const f32) f32 {
     return sum;
 }
 
+pub fn sadU8Scalar(a: []const u8, b: []const u8) u64 {
+    std.debug.assert(a.len == b.len);
+    var sum: u64 = 0;
+    for (a, b) |x, y| {
+        sum += if (x > y) x - y else y - x;
+    }
+    return sum;
+}
+
+pub fn sadU8Vector(a: []const u8, b: []const u8) u64 {
+    std.debug.assert(a.len == b.len);
+    const Bytes = @Vector(32, u8);
+    const Wide = @Vector(32, u16);
+    var sum: u64 = 0;
+    var i: usize = 0;
+
+    while (i + 32 <= a.len) : (i += 32) {
+        const va: Bytes = a[i..][0..32].*;
+        const vb: Bytes = b[i..][0..32].*;
+        const diff: Bytes = @max(va, vb) - @min(va, vb);
+        const wide: Wide = @intCast(diff);
+        sum += @as(u64, @intCast(@reduce(.Add, wide)));
+    }
+
+    while (i < a.len) : (i += 1) {
+        const x = a[i];
+        const y = b[i];
+        sum += if (x > y) x - y else y - x;
+    }
+    return sum;
+}
+
 pub fn clampF16Native(dst: []f16, c: []const f16, lo: []const f16, hi: []const f16) void {
     std.debug.assert(dst.len == c.len and c.len == lo.len and lo.len == hi.len);
     const Vec = @Vector(16, f16);
@@ -97,6 +129,16 @@ test "vector squared error matches scalar" {
     const vector = squaredErrorVector(&a, &b);
     const tolerance = @max(@abs(scalar), 1.0) * 1e-5;
     try std.testing.expect(@abs(scalar - vector) <= tolerance);
+}
+
+test "vector u8 SAD matches scalar" {
+    var a: [1025]u8 = undefined;
+    var b: [1025]u8 = undefined;
+    for (&a, &b, 0..) |*av, *bv, i| {
+        av.* = @intCast((i * 17 + 3) & 255);
+        bv.* = @intCast((i * 29 + 11) & 255);
+    }
+    try std.testing.expectEqual(sadU8Scalar(&a, &b), sadU8Vector(&a, &b));
 }
 
 test "promoted f16 clamp matches native for finite exact inputs" {
