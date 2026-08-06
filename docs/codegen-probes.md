@@ -15,7 +15,7 @@ The first comparison set is:
 | scalar `f32` | yes | vector `f32x8` | yes |
 | scalar `f64` | yes | planned | yes |
 | vector `f16` native | N/A in stable portable SIMD baseline | `f16x16` | non-standard compiler extensions intentionally excluded from C++23 baseline |
-| vector `f16 -> f32 -> f16` | planned with an explicit half representation | `f16x16` promote-once | planned ISA-specific F16C probe |
+| vector `f16 -> f32 -> f16` | F16C runtime kernel | `f16x16` promote-once | F16C runtime kernel |
 
 This table intentionally separates language-standard baselines from architecture/compiler extensions. Adding an extension is useful, but it must be labeled so it is not mistaken for a portable language feature.
 
@@ -30,30 +30,36 @@ The second form is an application-level numerical tradeoff and must not be prese
 
 The primary codegen question on x86 systems without native FP16 arithmetic is whether the native path repeatedly emits `vcvtph2ps` / `vcvtps2ph`, and whether explicit boundary promotion collapses those conversions to a small fixed number.
 
+## SAD / widening family
+
+The second probe family targets a very common image/video primitive: sum of absolute differences over `u8` samples.
+
+- Rust: scalar iterator source plus explicit AVX2 `_mm256_sad_epu8`.
+- C++23: scalar loop plus explicit AVX2 `_mm256_sad_epu8`.
+- Zig: `@Vector(32, u8)` absdiff, explicit widen to `@Vector(32, u16)`, then `@reduce(.Add, ...)`.
+
+The key codegen question is whether generic vector IR recognizes the SAD idiom and selects `VPSADBW` (or an equally efficient sequence), versus lowering it as separate min/max/subtract, zero-extension, and horizontal reduction operations.
+
+`probes/zig/sad.zig` also contains standalone absdiff and widening probes so missed idiom recognition can be separated from widening/reduction cost.
+
 ## Generate assembly
 
-Zig:
+Clamp probes:
 
 ```bash
 zig build-obj probes/zig/clamp.zig -O ReleaseFast -femit-asm=zig-clamp.s
-```
-
-Rust:
-
-```bash
 rustc -O --crate-type=lib --emit=asm probes/rust/clamp.rs -o rust-clamp.s
-```
-
-Clang C++23:
-
-```bash
 clang++ -std=c++23 -O3 -S -masm=intel probes/cpp/clamp.cpp -o cpp-clang-clamp.s
+g++ -std=c++23 -O3 -S -masm=intel probes/cpp/clamp.cpp -o cpp-gcc-clamp.s
 ```
 
-GCC C++23:
+SAD probes:
 
 ```bash
-g++ -std=c++23 -O3 -S -masm=intel probes/cpp/clamp.cpp -o cpp-gcc-clamp.s
+zig build-obj probes/zig/sad.zig -O ReleaseFast -femit-asm=zig-sad.s
+rustc -O --crate-type=lib --emit=asm probes/rust/sad.rs -o rust-sad.s
+clang++ -std=c++23 -O3 -S -masm=intel probes/cpp/sad.cpp -o cpp-clang-sad.s
+g++ -std=c++23 -O3 -S -masm=intel probes/cpp/sad.cpp -o cpp-gcc-sad.s
 ```
 
 For target-specific experiments, record the complete target flags next to the result. Important x86 cases include baseline x86-64, AVX2, AVX2+F16C+FMA, AVX-512, and AVX-512 FP16.
@@ -62,11 +68,14 @@ For target-specific experiments, record the complete target flags next to the re
 
 ```bash
 python scripts/analyze_asm.py --pretty zig-clamp.s rust-clamp.s cpp-clang-clamp.s
+python scripts/analyze_asm.py --pretty zig-sad.s rust-sad.s cpp-clang-sad.s
 ```
 
 The analyzer records total instruction-looking lines, vector-looking instructions, top mnemonics, and selected SIMD families including FP16 conversions. These are regression signals, not a performance model.
 
-For deeper analysis, pair them with:
+For SAD, also inspect specifically for `vpsadbw` / `psadbw`, widening instructions, lane-crossing shuffles, and scalar extraction around reductions.
+
+For deeper analysis, pair codegen metrics with:
 
 - runtime ns/element and cycles/element;
 - `perf stat` retired instructions and hardware counters;
