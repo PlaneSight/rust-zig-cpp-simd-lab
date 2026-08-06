@@ -1,4 +1,7 @@
-use simd_lab_rust::{axpy_scalar, f16c::clamp_f16c, squared_error_best, squared_error_scalar};
+use simd_lab_rust::{
+    axpy_scalar, f16c::clamp_f16c, sad_u8_best, sad_u8_scalar, squared_error_best,
+    squared_error_scalar,
+};
 use std::hint::black_box;
 use std::time::{Duration, Instant};
 
@@ -34,6 +37,16 @@ fn main() {
 
     let t = measure(|| { black_box(squared_error_best(black_box(&x), black_box(&y))); });
     report("sqerr/best-dispatch", t, N * 8);
+
+    let bytes_a: Vec<u8> = (0..N).map(|i| ((i * 17 + 3) & 255) as u8).collect();
+    let bytes_b: Vec<u8> = (0..N).map(|i| ((i * 29 + 11) & 255) as u8).collect();
+    assert_eq!(sad_u8_scalar(&bytes_a, &bytes_b), sad_u8_best(&bytes_a, &bytes_b));
+
+    let t = measure(|| { black_box(sad_u8_scalar(black_box(&bytes_a), black_box(&bytes_b))); });
+    report("sad-u8/scalar-autovec", t, N * 2);
+
+    let t = measure(|| { black_box(sad_u8_best(black_box(&bytes_a), black_box(&bytes_b))); });
+    report("sad-u8/best-dispatch", t, N * 2);
 
     let c: Vec<u16> = (0..N).map(|i| HALF_VALUES[i & 7]).collect();
     let lo = vec![0x3800_u16; N]; // 0.5
