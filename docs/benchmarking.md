@@ -43,13 +43,15 @@ binary16 storage
     -> binary16 storage
 ```
 
+Both harnesses validate the resulting half bit patterns against the expected clamp output before timing.
+
 ### Zig native f16
 
-The same values are materialized as `f16` and processed directly with `@Vector(16, f16)`.
+The same binary16 bit patterns are materialized as `f16` and processed directly with `@Vector(16, f16)`.
 
 ### Zig promote-once
 
-Each vector input is widened once to `@Vector(16, f32)`, the complete clamp is performed in f32, and the result is narrowed once to f16.
+Each vector input is widened once to `@Vector(16, f32)`, the complete clamp is performed in f32, and the result is narrowed once to f16. The harness verifies native and promoted results are bit-identical on the finite exact dataset before timing either path.
 
 ## Interpretation
 
@@ -87,5 +89,7 @@ Zig 0.16:
 cd zig
 zig build bench -Doptimize=ReleaseFast
 ```
+
+CI compiles all benchmark targets but does not use shared-hosted runner timings as performance evidence.
 
 The next step is machine-readable JSON/CSV output so results from multiple compiler/ISA configurations can be aggregated without scraping terminal text.
