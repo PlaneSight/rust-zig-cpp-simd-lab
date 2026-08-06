@@ -2,40 +2,42 @@
 
 The repository treats generated assembly as versioned experiment evidence.
 
-## Target profiles
-
-CI currently generates snapshots for **x86-64-v3**. This gives Rust, Zig, Clang, and GCC a common AVX2-class target without depending on the GitHub runner's exact host CPU.
+## x86 target profiles
 
 ```bash
 python3 scripts/generate_codegen_snapshots.py --target x86-64-v3
 ```
 
-Supported profiles:
+Supported x86 profiles:
 
 - `x86-64`: conservative baseline.
 - `x86-64-v3`: AVX2-class comparison baseline used in CI.
-- `sapphirerapids`: AVX-512/AVX-512-FP16-class investigation target; useful for checking whether native half arithmetic removes F16C conversion traffic.
+- `sapphirerapids`: AVX-512/AVX-512-FP16-class compile-only investigation target.
 - `native`: local host specialization; do not compare across machines without CPU metadata.
 
-The Sapphire Rapids profile is intentionally not a required CI job yet. Run it to probe compiler support and lowering independently of whether the runner CPU can execute the resulting code; these are compile-only snapshots.
+The Sapphire Rapids profile is intentionally not an execution requirement on shared CI. Its purpose is to inspect whether native FP16-class targeting removes conversion-heavy F16C-style lowering.
+
+## Cross-target profiles
+
+Architecture-neutral and Zig-native-vector probes can also be cross-compiled:
+
+```bash
+python3 scripts/generate_cross_codegen.py --target aarch64-neon
+python3 scripts/generate_cross_codegen.py --target aarch64-fp16
+python3 scripts/generate_cross_codegen.py --target wasm-simd128
+```
+
+Profiles:
+
+- `aarch64-neon`: baseline AArch64 AdvSIMD lowering.
+- `aarch64-fp16`: Armv8.2-A FP16/AdvSIMD investigation profile.
+- `wasm-simd128`: WebAssembly SIMD128 lowering.
+
+The C++ cross-target SAD source deliberately avoids standard-library and ISA headers so Clang can compile it without a target sysroot. The `_Float16` C++ probe is explicitly a **Clang extension experiment**, not a C++23 portable facility. Stable Rust is currently omitted from the portable cross-target vector comparison because `std::simd` remains outside the stable language surface used by this repository; architecture-specific Rust probes can be added separately when useful.
 
 ## Output
 
-Snapshots are written under `results/codegen/`:
-
-```text
-manifest-x86-64-v3.json
-rust-clamp-x86-64-v3.s
-rust-sad-x86-64-v3.s
-zig-clamp-x86-64-v3.s
-zig-sad-x86-64-v3.s
-clang-clamp-x86-64-v3.s
-clang-sad-x86-64-v3.s
-gcc-clamp-x86-64-v3.s
-gcc-sad-x86-64-v3.s
-```
-
-The manifest uses schema `simd-lab-codegen-v1` and records:
+Snapshots are written under `results/codegen/`. Every manifest uses schema `simd-lab-codegen-v1` and records:
 
 - exact compile command;
 - compiler first-line version string;
@@ -47,32 +49,29 @@ The manifest uses schema `simd-lab-codegen-v1` and records:
 - top mnemonics;
 - tracked SIMD idioms.
 
-Tracked idioms include FP16 conversions (`vcvtph2ps`, `vcvtps2ph`), SAD (`vpsadbw`/`psadbw`), and widening moves (`vpmovzx*` / `vpmovsx*`).
+Tracked x86 signals include FP16 conversions (`vcvtph2ps`, `vcvtps2ph`), SAD (`vpsadbw`/`psadbw`), and widening moves (`vpmovzx*` / `vpmovsx*`). AArch64 signals include `uabd`, widening/reduction operations such as `uaddlp`/`uaddlv`/`uadalp`, FP min/max and conversion operations. WebAssembly tracking recognizes the `v128`, integer-lane, and floating-lane SIMD opcode families.
 
 ## Questions the snapshots should answer
 
-### SAD
+### u8 SAD
 
-For a u8 absolute-difference reduction:
-
-- does the portable/vector implementation become `VPSADBW`?
-- if not, does it lower to min/max/subtract + widening + horizontal adds?
-- how many instructions and widening operations are required?
-- do Rust and C++ autovec discover the idiom without explicit intrinsics?
+- Does Zig's generic vector implementation become the target's compact SAD idiom?
+- On x86, is `VPSADBW` selected?
+- On AArch64, does lowering use `UABD` plus efficient widening/reduction instructions?
+- On wasm-simd128, how many lane-extension and horizontal-reduction operations are required?
+- How do portable/autovec paths compare with explicit ISA references?
 
 ### FP16 clamp
 
-For the clamp family:
-
-- how many `vcvtph2ps` / `vcvtps2ph` conversions are emitted?
-- are conversions hoisted to the boundary or repeated around operations?
-- does target ISA materially change the lowering?
-- does the Sapphire Rapids profile replace conversion-heavy F16C-style lowering with native FP16 instructions?
-- how does native Zig f16 differ from explicit promote-once code?
+- How many half/f32 conversions are emitted on x86 without native FP16 arithmetic?
+- Are conversions hoisted to the boundary or repeated around operations?
+- Does Sapphire Rapids targeting replace conversion-heavy lowering with native FP16 instructions?
+- Does AArch64 FP16 targeting use native half arithmetic rather than promotion?
+- How does Zig native f16 differ from explicit promote-once code across those targets?
 
 ## Comparing snapshots
 
-Raw assembly text is intentionally not used as the regression contract. Compare manifests instead:
+Raw assembly text is intentionally not the regression contract. Compare manifests instead:
 
 ```bash
 python3 scripts/compare_codegen.py \
@@ -81,10 +80,25 @@ python3 scripts/compare_codegen.py \
   --pretty
 ```
 
-The `simd-lab-codegen-diff-v1` output reports per-probe instruction-count, vector-instruction-count, and tracked-mnemonic deltas. This makes large regressions visible while tolerating harmless register allocation and label changes.
+For automated regression checks, use the looser policy layer:
+
+```bash
+python3 scripts/check_codegen_regressions.py \
+  results/codegen/known-good/manifest-x86-64-v3.json \
+  results/codegen/manifest-x86-64-v3.json \
+  --policy codegen-policy.json
+```
+
+`codegen-policy.json` intentionally uses broad instruction/vector growth limits plus tighter high-signal rules for FP16 conversion explosions and widening growth. This avoids treating harmless register allocation or instruction scheduling changes as regressions.
+
+A known-good manifest should only be promoted after manual inspection of compiler versions, semantic equivalence, and the generated assembly. Policy thresholds are safeguards, not a substitute for reviewing a new baseline.
 
 ## CI
 
-The `codegen` CI job generates the x86-64-v3 snapshot set and uploads it as the `codegen-x86-64-v3` artifact. Shared-hosted CI is suitable for deterministic compilation/codegen evidence; runtime timings from shared runners are not treated as performance evidence.
+CI produces three deterministic compile/codegen artifact families:
 
-The next regression step is to retain a known-good manifest or previous CI artifact and establish thresholds for meaningful conversion/instruction-count changes rather than requiring byte-for-byte assembly identity.
+- `codegen-x86-64-v3`
+- `codegen-aarch64-neon`
+- `codegen-wasm-simd128`
+
+Shared-hosted CI is suitable for deterministic compilation/codegen evidence. Runtime timings from shared runners are **not** treated as performance evidence. AArch64 FP16 and Sapphire Rapids profiles remain explicit compile-only investigation runs until their compiler support and expected lowering are established well enough to make them required jobs.
