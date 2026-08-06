@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main, populate-simd-lab]
+  pull_request:
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --release
+      - run: cargo run --release
+
+  cpp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release
+      - run: cmake --build build/cpp -j2
+      - run: ctest --test-dir build/cpp --output-on-failure
+
+  zig:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0-dev.1484+95fceed76
+      - working-directory: zig
+        run: zig build test -Doptimize=ReleaseFast
+      - working-directory: zig
+        run: zig build run -Doptimize=ReleaseFast
