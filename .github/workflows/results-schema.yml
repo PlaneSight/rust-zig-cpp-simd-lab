@@ -1,0 +1,31 @@
+name: Result Schema
+
+on:
+  pull_request:
+    paths:
+      - 'schema/**'
+      - 'results/**'
+      - 'site/**'
+      - 'scripts/build_results_catalog.py'
+      - '.github/workflows/results-schema.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'schema/**'
+      - 'results/**'
+      - 'site/**'
+      - 'scripts/build_results_catalog.py'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse schema and example
+        run: |
+          python3 -m json.tool schema/result-bundle-v1.schema.json >/dev/null
+          python3 -m json.tool schema/example-result-v1.json >/dev/null
+      - name: Build catalog
+        run: python3 scripts/build_results_catalog.py --out /tmp/catalog.json
+      - name: Parse generated catalog
+        run: python3 -m json.tool /tmp/catalog.json >/dev/null
