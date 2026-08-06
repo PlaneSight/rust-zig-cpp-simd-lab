@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>SIMD Lab Results</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">rust · zig 0.16 · c++23</p>
+      <h1>SIMD Lab Results</h1>
+      <p class="lede">Explore runtime, codegen, semantics, and analysis from reproducible SIMD experiments.</p>
+    </div>
+    <div class="hero-actions">
+      <a href="../schema/result-bundle-v1.schema.json">Result schema</a>
+      <a href="https://github.com/PlaneSight/rust-zig-cpp-simd-lab">Repository</a>
+    </div>
+  </header>
+
+  <main>
+    <section id="summary" class="summary"></section>
+
+    <section class="panel controls" aria-label="Filters">
+      <div class="control grow">
+        <label for="search">Search</label>
+        <input id="search" type="search" placeholder="kernel, implementation, compiler, ISA…">
+      </div>
+      <div class="control"><label for="family">Family</label><select id="family"></select></div>
+      <div class="control"><label for="kernel">Kernel</label><select id="kernel"></select></div>
+      <div class="control"><label for="language">Language</label><select id="language"></select></div>
+      <div class="control"><label for="compiler">Compiler</label><select id="compiler"></select></div>
+      <div class="control"><label for="isa">ISA</label><select id="isa"></select></div>
+      <div class="control"><label for="type">Type</label><select id="type"></select></div>
+    </section>
+
+    <section class="tabs" aria-label="Result views">
+      <button class="tab active" data-view="runtime">Runtime</button>
+      <button class="tab" data-view="codegen">Codegen</button>
+      <button class="tab" data-view="semantics">Semantics</button>
+      <button class="tab" data-view="analysis">Analysis</button>
+    </section>
+
+    <section class="panel">
+      <div id="status" class="status"></div>
+      <div class="table-wrap"><table id="results"></table></div>
+    </section>
+  </main>
+
+  <template id="empty-template">
+    <div class="empty">
+      <h2>No results yet</h2>
+      <p>The viewer is ready. Commit <code>simd-lab-result-v1</code> bundles under <code>results/runs/</code> and Pages will index them automatically.</p>
+    </div>
+  </template>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
