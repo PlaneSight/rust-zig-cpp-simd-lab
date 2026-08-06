@@ -12,6 +12,20 @@ The runtime harnesses intentionally use the same dataset sizes, warmup count, it
 - correctness validation happens before timing
 - dispatch checks happen in the timed function only when they are part of the public runtime path being measured
 
+## Current kernel families
+
+### Floating point
+
+- AXPY
+- squared error / MSE-style accumulation
+- FP16 clamp
+
+### Integer
+
+- `u8` absolute-difference / SAD
+
+The SAD family is particularly useful because it compares a generic source-level idiom against a dedicated x86 instruction family. Rust and C++23 have explicit AVX2 `_mm256_sad_epu8` implementations; Zig expresses `absdiff -> widen u8 to u16 -> reduce` with native vector operations and leaves instruction selection to the backend.
+
 ## Shared FP16 dataset
 
 The first FP16 runtime comparison uses identical IEEE-754 binary16 bit patterns in every language:
@@ -28,6 +42,8 @@ The first FP16 runtime comparison uses identical IEEE-754 binary16 bit patterns 
 ```
 
 The clamp bounds are exactly `0.5 .. 2.0` (`0x3800 .. 0x4000`). These are finite, exactly representable values so the first runtime comparison isolates lowering and conversion cost rather than NaN, signed-zero, or rounding-policy differences.
+
+A separate correctness-only edge corpus lives at `data/fp16-edge-corpus.json`. It includes signed zero, subnormals, values adjacent to clamp boundaries, infinities, negative finite values, and multiple NaN encodings. Edge cases are not mixed into the performance dataset.
 
 ## FP16 paths
 
@@ -55,18 +71,9 @@ Each vector input is widened once to `@Vector(16, f32)`, the complete clamp is p
 
 ## Interpretation
 
-The native-f16 and promote/F16C paths are not assumed to have identical semantics for every possible half value. The current exact finite dataset is deliberately chosen so all paths should agree bit-for-bit. Later semantic tests should add:
+The native-f16 and promote/F16C paths are not assumed to have identical semantics for every possible half value. Runtime speed claims must be paired with the numerical contract used by the implementation. See `docs/fp16-semantics.md` and `data/fp16-edge-corpus.json`.
 
-- positive and negative zero
-- infinities
-- quiet/signaling NaNs where representable and meaningful
-- subnormals
-- values near rounding boundaries
-- min/max ordering edge cases
-
-Runtime speed claims must be paired with the numerical contract used by the implementation.
-
-## Running
+## Running individual harnesses
 
 Rust:
 
@@ -92,4 +99,21 @@ zig build bench -Doptimize=ReleaseFast
 
 CI compiles all benchmark targets but does not use shared-hosted runner timings as performance evidence.
 
-The next step is machine-readable JSON/CSV output so results from multiple compiler/ISA configurations can be aggregated without scraping terminal text.
+## Machine-readable collection
+
+`scripts/run_benchmarks.py` builds and runs the three harnesses, parses their common text protocol, captures host/toolchain metadata, and emits `simd-lab-benchmark-v1` JSON.
+
+```bash
+python scripts/run_benchmarks.py --pretty
+python scripts/run_benchmarks.py --pretty --output results/local.json
+```
+
+The document contains:
+
+- OS / machine metadata;
+- Rust, Cargo, Zig, Clang, GCC, CMake versions when available;
+- per-language benchmark metadata;
+- normalized `ns_per_element` and `gib_per_second` results;
+- skipped ISA-specific cases such as F16C on unsupported hosts.
+
+The JSON collector intentionally sits outside the language harnesses. This keeps benchmark source small and makes it possible to evolve the result schema without maintaining three serialization implementations.
