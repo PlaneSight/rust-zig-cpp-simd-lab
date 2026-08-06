@@ -1,3 +1,5 @@
+pub mod f16c;
+
 pub fn axpy_scalar(dst: &mut [f32], x: &[f32], y: &[f32], a: f32) {
     assert_eq!(dst.len(), x.len());
     assert_eq!(x.len(), y.len());
