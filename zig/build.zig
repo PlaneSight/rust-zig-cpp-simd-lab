@@ -24,6 +24,16 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(bench);
 
+    const semantics = b.addExecutable(.{
+        .name = "simd-lab-zig-fp16-semantics",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/fp16_semantics.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+    b.installArtifact(semantics);
+
     const run_cmd = b.addRunArtifact(exe);
     if (b.args) |args| run_cmd.addArgs(args);
     const run_step = b.step("run", "Run the Zig SIMD lab smoke test");
@@ -33,6 +43,10 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| bench_cmd.addArgs(args);
     const bench_step = b.step("bench", "Run the Zig runtime benchmarks");
     bench_step.dependOn(&bench_cmd.step);
+
+    const semantics_cmd = b.addRunArtifact(semantics);
+    const semantics_step = b.step("fp16-semantics", "Dump Zig FP16 semantic results");
+    semantics_step.dependOn(&semantics_cmd.step);
 
     const tests = b.addTest(.{
         .root_module = b.createModule(.{
