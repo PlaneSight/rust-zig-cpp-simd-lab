@@ -1,0 +1,20 @@
+{
+  "schema": "simd-lab-catalog-v1",
+  "result_schema": "simd-lab-result-v1",
+  "count": 0,
+  "errors": [],
+  "facets": {
+    "language": [],
+    "compiler": [],
+    "target": [],
+    "arch": [],
+    "family": [],
+    "kernel": [],
+    "implementation": [],
+    "data_type": [],
+    "isa": [],
+    "dataset": []
+  },
+  "observation_counts": {},
+  "results": []
+}
