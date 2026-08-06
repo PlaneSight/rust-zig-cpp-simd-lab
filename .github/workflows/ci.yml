@@ -16,6 +16,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --release
       - run: cargo build --release --bin bench
+      - run: cargo build --release --bin fp16_semantics
       - run: cargo run --release
 
   cpp:
