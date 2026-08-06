@@ -4,7 +4,7 @@ A comparative SIMD and low-level optimization laboratory for **Rust**, **Zig 0.1
 
 The goal is not to crown a language from toy examples. It is to implement the **same kernels** in each language, inspect the generated machine code, measure them under the same conditions, and document where each language and toolchain makes high-performance SIMD pleasant, awkward, portable, or fragile.
 
-A major investigation track is now **common integer and floating-point lowering**, motivated in part by the severe `f16` codegen pathology documented in `ziglang/zig#19550` and its practical impact on video-processing code such as `zsmooth`.
+A major investigation track is **common integer and floating-point lowering**, motivated in part by the severe `f16` codegen pathology documented in `ziglang/zig#19550` and its practical impact on video-processing code such as `zsmooth`.
 
 ## What this repo studies
 
@@ -26,15 +26,20 @@ A major investigation track is now **common integer and floating-point lowering*
 2. **Squared error**: `sum((a[i] - b[i])^2)` — representative of MSE/PSNR workloads
 3. **Min/max/clamp family** — chosen to expose integer vs floating-point lowering and FP16 conversion behavior
 
-The clamp probes include a Zig `f16` reproduction-shaped path and an explicit **promote once to f32, compute, narrow once** alternative for measuring conversion-hoisting behavior.
+The clamp work includes:
+
+- Zig native `@Vector(16, f16)`
+- Zig explicit promote-once `f16 -> f32 -> f16`
+- Rust x86 F16C boundary conversion with f32 arithmetic
+- C++23 x86 F16C boundary conversion with f32 arithmetic
 
 ## Layout
 
 ```text
 .
-├── cpp/                 # C++23 implementations
-├── rust/                # Rust implementations
-├── zig/                 # Zig 0.16 implementations
+├── cpp/                 # C++23 implementations and benchmarks
+├── rust/                # Rust implementations and benchmarks
+├── zig/                 # Zig 0.16 implementations and benchmarks
 ├── probes/              # tiny standalone codegen experiments
 │   ├── cpp/
 │   ├── rust/
@@ -64,6 +69,7 @@ The clamp probes include a Zig `f16` reproduction-shaped path and an explicit **
 cd rust
 cargo test --release
 cargo run --release
+cargo run --release --bin bench
 ```
 
 ### Zig 0.16
@@ -72,6 +78,7 @@ cargo run --release
 cd zig
 zig build test -Doptimize=ReleaseFast
 zig build run -Doptimize=ReleaseFast
+zig build bench -Doptimize=ReleaseFast
 ```
 
 ### C++23
@@ -81,6 +88,7 @@ cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release
 cmake --build build/cpp -j
 ctest --test-dir build/cpp --output-on-failure
 ./build/cpp/simd_lab_cpp
+./build/cpp/simd_lab_cpp_bench
 ```
 
 ## Codegen probes
@@ -99,27 +107,17 @@ Extract simple machine-readable metrics with:
 python scripts/analyze_asm.py --pretty zig-clamp.s rust-clamp.s cpp-clang-clamp.s
 ```
 
-For the FP16 investigation, conversion counts such as `vcvtph2ps` and `vcvtps2ph` are treated as first-class regression signals.
+For the FP16 investigation, conversion counts such as `vcvtph2ps` and `vcvtps2ph` are first-class regression signals.
+
+## Runtime FP16 comparison
+
+The first runtime matrix uses the same exact binary16 values in all three languages and fixed `0.5 .. 2.0` clamp bounds. This deliberately avoids NaNs, subnormals, and rounding-boundary cases until the basic codegen/performance comparison is established.
 
 See:
 
 - `docs/type-operation-matrix.md`
 - `docs/codegen-probes.md`
 - `docs/benchmarking.md`
-
-## Benchmarking direction
-
-The starter executables are correctness/smoke programs, not a finished benchmarking framework. The next layer should add:
-
-- Criterion-style statistical benchmarking for Rust
-- a small shared benchmark protocol for Zig/C++
-- CPU pinning where supported
-- warmup and multiple sample sizes
-- CSV/JSON output
-- code-size reporting
-- optional Linux `perf stat`
-- generated-assembly snapshots
-- F16C and AVX-512 FP16 target-specific runs
 
 ## SIMD philosophy
 
