@@ -17,6 +17,7 @@ constexpr int iterations = 64;
 constexpr std::array<std::uint16_t, 8> half_values{
     0x0000, 0x3400, 0x3800, 0x3c00, 0x3e00, 0x4000, 0x4200, 0x4400};
 volatile float sink = 0.0f;
+volatile std::uint64_t sink_u64 = 0;
 
 template <class F>
 auto measure(F&& fn) {
@@ -54,6 +55,22 @@ int main() {
 
     t = measure([&] { sink = simd_lab::squared_error_best(x, y); });
     report("sqerr/best-dispatch", t, n * 8);
+
+    std::vector<std::uint8_t> bytes_a(n), bytes_b(n);
+    for (std::size_t i = 0; i < n; ++i) {
+        bytes_a[i] = static_cast<std::uint8_t>((i * 17 + 3) & 255);
+        bytes_b[i] = static_cast<std::uint8_t>((i * 29 + 11) & 255);
+    }
+    if (simd_lab::sad_u8_scalar(bytes_a, bytes_b) != simd_lab::sad_u8_best(bytes_a, bytes_b)) {
+        std::cerr << "u8 SAD validation failed\n";
+        return 1;
+    }
+
+    t = measure([&] { sink_u64 = simd_lab::sad_u8_scalar(bytes_a, bytes_b); });
+    report("sad-u8/scalar-autovec", t, n * 2);
+
+    t = measure([&] { sink_u64 = simd_lab::sad_u8_best(bytes_a, bytes_b); });
+    report("sad-u8/best-dispatch", t, n * 2);
 
     std::vector<std::uint16_t> c(n), lo(n, 0x3800), hi(n, 0x4000), half_dst(n);
     for (std::size_t i = 0; i < n; ++i) c[i] = half_values[i & 7];
