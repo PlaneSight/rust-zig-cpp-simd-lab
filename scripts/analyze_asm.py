@@ -33,6 +33,10 @@ TRACKED_PREFIXES = (
     "vperm",
     "vshuffle",
     "vpshuf",
+    "vpsadbw",
+    "psadbw",
+    "vpmovzx",
+    "vpmovsx",
 )
 
 LABEL_RE = re.compile(r"^[.$A-Za-z_][\w.$@]*:\s*(?:[#;].*)?$")
