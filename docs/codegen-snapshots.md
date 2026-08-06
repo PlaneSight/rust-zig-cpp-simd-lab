@@ -2,7 +2,7 @@
 
 The repository treats generated assembly as versioned experiment evidence.
 
-## Stable target profile
+## Target profiles
 
 CI currently generates snapshots for **x86-64-v3**. This gives Rust, Zig, Clang, and GCC a common AVX2-class target without depending on the GitHub runner's exact host CPU.
 
@@ -10,7 +10,14 @@ CI currently generates snapshots for **x86-64-v3**. This gives Rust, Zig, Clang,
 python3 scripts/generate_codegen_snapshots.py --target x86-64-v3
 ```
 
-Other supported profiles are `x86-64` and `native`. `native` is useful for local investigation but should not be used for cross-machine comparisons without recording the CPU model.
+Supported profiles:
+
+- `x86-64`: conservative baseline.
+- `x86-64-v3`: AVX2-class comparison baseline used in CI.
+- `sapphirerapids`: AVX-512/AVX-512-FP16-class investigation target; useful for checking whether native half arithmetic removes F16C conversion traffic.
+- `native`: local host specialization; do not compare across machines without CPU metadata.
+
+The Sapphire Rapids profile is intentionally not a required CI job yet. Run it to probe compiler support and lowering independently of whether the runner CPU can execute the resulting code; these are compile-only snapshots.
 
 ## Output
 
@@ -60,10 +67,24 @@ For the clamp family:
 - how many `vcvtph2ps` / `vcvtps2ph` conversions are emitted?
 - are conversions hoisted to the boundary or repeated around operations?
 - does target ISA materially change the lowering?
+- does the Sapphire Rapids profile replace conversion-heavy F16C-style lowering with native FP16 instructions?
 - how does native Zig f16 differ from explicit promote-once code?
+
+## Comparing snapshots
+
+Raw assembly text is intentionally not used as the regression contract. Compare manifests instead:
+
+```bash
+python3 scripts/compare_codegen.py \
+  results/codegen/manifest-x86-64-v3-before.json \
+  results/codegen/manifest-x86-64-v3.json \
+  --pretty
+```
+
+The `simd-lab-codegen-diff-v1` output reports per-probe instruction-count, vector-instruction-count, and tracked-mnemonic deltas. This makes large regressions visible while tolerating harmless register allocation and label changes.
 
 ## CI
 
 The `codegen` CI job generates the x86-64-v3 snapshot set and uploads it as the `codegen-x86-64-v3` artifact. Shared-hosted CI is suitable for deterministic compilation/codegen evidence; runtime timings from shared runners are not treated as performance evidence.
 
-A future step should compare the manifest against a checked-in expectation or previous artifact and flag large instruction/conversion regressions without requiring exact assembly-text equality.
+The next regression step is to retain a known-good manifest or previous CI artifact and establish thresholds for meaningful conversion/instruction-count changes rather than requiring byte-for-byte assembly identity.
