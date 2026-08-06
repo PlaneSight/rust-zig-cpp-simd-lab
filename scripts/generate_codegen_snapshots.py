@@ -15,6 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "results" / "codegen"
+PROBES = ["clamp", "sad", "sat_add"]
 
 
 def run(cmd: list[str], cwd: Path = ROOT) -> str:
@@ -48,7 +49,7 @@ def main() -> None:
 
     jobs: list[dict[str, object]] = []
     if shutil.which("rustc"):
-        for probe in ["clamp", "sad"]:
+        for probe in PROBES:
             out = OUT / f"rust-{probe}-{args.target}.s"
             cmd = ["rustc", "-O", "--crate-type=lib", "--emit=asm", *target_flags["rust"], str(ROOT / f"probes/rust/{probe}.rs"), "-o", str(out)]
             run(cmd)
@@ -57,14 +58,14 @@ def main() -> None:
     for exe, key in [("clang++", "clang"), ("g++", "gcc")]:
         if not shutil.which(exe):
             continue
-        for probe in ["clamp", "sad"]:
+        for probe in PROBES:
             out = OUT / f"{key}-{probe}-{args.target}.s"
             cmd = [exe, "-std=c++23", "-O3", "-S", "-masm=intel", *target_flags[key], str(ROOT / f"probes/cpp/{probe}.cpp"), "-o", str(out)]
             run(cmd)
             jobs.append({"toolchain": key, "probe": probe, "assembly": str(out.relative_to(ROOT)), "command": cmd})
 
     if shutil.which("zig"):
-        for probe in ["clamp", "sad"]:
+        for probe in PROBES:
             out = OUT / f"zig-{probe}-{args.target}.s"
             obj = OUT / f"zig-{probe}-{args.target}.o"
             cmd = ["zig", "build-obj", str(ROOT / f"probes/zig/{probe}.zig"), "-O", "ReleaseFast", *target_flags["zig"], f"-femit-asm={out}", f"-femit-bin={obj}"]
