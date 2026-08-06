@@ -45,6 +45,27 @@ pub fn main() !void {
     for (0..iterations) |_| sink += kernels.squaredErrorVector(x, y);
     report("sqerr/native-vector", timer.read(), n * 8);
 
+    const bytes_a = try allocator.alloc(u8, n);
+    defer allocator.free(bytes_a);
+    const bytes_b = try allocator.alloc(u8, n);
+    defer allocator.free(bytes_b);
+    for (bytes_a, bytes_b, 0..) |*av, *bv, i| {
+        av.* = @intCast((i * 17 + 3) & 255);
+        bv.* = @intCast((i * 29 + 11) & 255);
+    }
+    std.debug.assert(kernels.sadU8Scalar(bytes_a, bytes_b) == kernels.sadU8Vector(bytes_a, bytes_b));
+
+    var sink_u64: u64 = 0;
+    for (0..warmup) |_| sink_u64 +%= kernels.sadU8Scalar(bytes_a, bytes_b);
+    timer.reset();
+    for (0..iterations) |_| sink_u64 +%= kernels.sadU8Scalar(bytes_a, bytes_b);
+    report("sad-u8/scalar-autovec", timer.read(), n * 2);
+
+    for (0..warmup) |_| sink_u64 +%= kernels.sadU8Vector(bytes_a, bytes_b);
+    timer.reset();
+    for (0..iterations) |_| sink_u64 +%= kernels.sadU8Vector(bytes_a, bytes_b);
+    report("sad-u8/native-vector", timer.read(), n * 2);
+
     const c = try allocator.alloc(f16, n);
     defer allocator.free(c);
     const lo = try allocator.alloc(f16, n);
@@ -79,6 +100,7 @@ pub fn main() !void {
     report("clamp-f16/promote-f32", timer.read(), n * 8);
 
     std.mem.doNotOptimizeAway(&sink);
+    std.mem.doNotOptimizeAway(&sink_u64);
     std.mem.doNotOptimizeAway(native.ptr);
     std.mem.doNotOptimizeAway(promoted.ptr);
     std.debug.print("N={d} warmup={d} iterations={d}\n", .{ n, warmup, iterations });
