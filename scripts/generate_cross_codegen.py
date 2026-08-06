@@ -61,7 +61,10 @@ def main() -> None:
     jobs: list[dict[str, object]] = []
 
     if shutil.which("clang++"):
-        sources = [("sad-portable", ROOT / "probes/cpp/sad_portable.cpp")]
+        sources = [
+            ("sad-portable", ROOT / "probes/cpp/sad_portable.cpp"),
+            ("sat-add-portable", ROOT / "probes/cpp/sat_add_portable.cpp"),
+        ]
         if args.target == "aarch64-fp16":
             sources.append(("fp16-clang-ext", ROOT / "probes/cpp/fp16_clang.cpp"))
         for probe, source in sources:
@@ -74,7 +77,7 @@ def main() -> None:
                          "assembly": str(out.relative_to(ROOT)), "command": cmd})
 
     if shutil.which("zig"):
-        for probe in ["clamp", "sad"]:
+        for probe in ["clamp", "sad", "sat_add"]:
             source = ROOT / f"probes/zig/{probe}.zig"
             out = OUT / f"zig-{probe}-{args.target}.s"
             obj = OUT / f"zig-{probe}-{args.target}.o"
