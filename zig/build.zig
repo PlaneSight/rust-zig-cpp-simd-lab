@@ -14,10 +14,25 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(exe);
 
+    const bench = b.addExecutable(.{
+        .name = "simd-lab-zig-bench",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/bench.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+    b.installArtifact(bench);
+
     const run_cmd = b.addRunArtifact(exe);
     if (b.args) |args| run_cmd.addArgs(args);
     const run_step = b.step("run", "Run the Zig SIMD lab smoke test");
     run_step.dependOn(&run_cmd.step);
+
+    const bench_cmd = b.addRunArtifact(bench);
+    if (b.args) |args| bench_cmd.addArgs(args);
+    const bench_step = b.step("bench", "Run the Zig runtime benchmarks");
+    bench_step.dependOn(&bench_cmd.step);
 
     const tests = b.addTest(.{
         .root_module = b.createModule(.{
