@@ -1,0 +1,33 @@
+{
+  "schema": "simd-lab-codegen-policy-v1",
+  "defaults": {
+    "max_instruction_growth_ratio": 1.35,
+    "max_vector_instruction_growth_ratio": 1.50
+  },
+  "rules": [
+    {
+      "match": "sad-x86-64-v3",
+      "tracked_max_growth": {
+        "vpmovzx": 8,
+        "vpmovsx": 0
+      },
+      "note": "Large widening growth usually means the u8 SAD idiom stopped lowering compactly."
+    },
+    {
+      "match": "clamp-x86-64-v3",
+      "tracked_max_growth": {
+        "vcvtph2ps": 8,
+        "vcvtps2ph": 8
+      },
+      "note": "FP16 conversion explosions are treated as high-signal regressions."
+    },
+    {
+      "match": "clamp-sapphirerapids",
+      "tracked_max_growth": {
+        "vcvtph2ps": 4,
+        "vcvtps2ph": 4
+      },
+      "note": "Native FP16-class targets should not regress toward repeated half/f32 bouncing."
+    }
+  ]
+}
