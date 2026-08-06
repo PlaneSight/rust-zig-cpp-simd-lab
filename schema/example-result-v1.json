@@ -1,0 +1,71 @@
+{
+  "schema": "simd-lab-result-v1",
+  "id": "example-sad-u8-rust-avx2",
+  "created_at": "2026-08-07T00:00:00Z",
+  "provenance": {
+    "repository": "PlaneSight/rust-zig-cpp-simd-lab",
+    "commit": "0000000000000000000000000000000000000000",
+    "branch": "example",
+    "workflow_run": null,
+    "source_files": ["rust/src/lib.rs"]
+  },
+  "environment": {
+    "os": "linux",
+    "arch": "x86_64",
+    "cpu": "example-cpu",
+    "cpu_features": ["avx2"],
+    "target": "x86_64-unknown-linux-gnu",
+    "runner": "example-only",
+    "virtualized": false
+  },
+  "toolchain": {
+    "language": "rust",
+    "compiler": "rustc",
+    "version": "example",
+    "optimization": "release",
+    "flags": ["-C", "target-cpu=x86-64-v3"]
+  },
+  "experiment": {
+    "family": "reductions",
+    "kernel": "sad_u8",
+    "implementation": "avx2-vpsadbw",
+    "variant": "explicit-intrinsics",
+    "data_type": "u8",
+    "lanes": 32,
+    "isa": "avx2",
+    "semantics": "exact-integer",
+    "dataset": "deterministic-u8-v1",
+    "parameters": {"elements": 1048576}
+  },
+  "observations": [
+    {
+      "kind": "runtime",
+      "metrics": [
+        {"name": "ns_per_element", "value": 0.0, "unit": "ns", "aggregation": "median", "lower": null, "upper": null, "samples": 0}
+      ],
+      "warmup_iterations": 8,
+      "measured_iterations": 64,
+      "elements": 1048576,
+      "bytes_per_iteration": 2097152
+    },
+    {
+      "kind": "codegen",
+      "instruction_count": 0,
+      "vector_instruction_count": 0,
+      "unique_mnemonics": 0,
+      "tracked_mnemonics": {"vpsadbw": 0},
+      "top_mnemonics": {},
+      "assembly_path": null,
+      "ir_path": null
+    },
+    {
+      "kind": "analysis",
+      "summary": "Example structure only; values are placeholders and must not be treated as benchmark evidence.",
+      "severity": "info",
+      "evidence": []
+    }
+  ],
+  "artifacts": [],
+  "tags": ["example", "sad", "u8", "avx2"],
+  "notes": "This file documents the schema shape and is not included in results/runs."
+}
