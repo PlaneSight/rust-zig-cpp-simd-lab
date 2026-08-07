@@ -1,0 +1,126 @@
+{
+  "schema": "simd-lab-result-v1",
+  "id": "2026-08-07-codegen-x86-64-v3-clang-sat_add-x86-64-v3",
+  "created_at": "2026-08-07T02:48:43Z",
+  "provenance": {
+    "repository": "PlaneSight/rust-zig-cpp-simd-lab",
+    "commit": "0055cd3b74017746d501d8973b3441490b154625",
+    "branch": "main",
+    "workflow_run": "31142383190",
+    "source_files": [
+      "probes/cpp/clamp.cpp",
+      "probes/cpp/sad.cpp",
+      "probes/cpp/sat_add.cpp"
+    ]
+  },
+  "environment": {
+    "os": "Linux 6.17.0-1020-azure",
+    "arch": "x86_64",
+    "cpu": "x86-64-v3",
+    "cpu_features": [
+      "avx2",
+      "fma",
+      "f16c"
+    ],
+    "target": "x86_64-unknown-linux-gnu",
+    "runner": "github-hosted-ubuntu",
+    "virtualized": null
+  },
+  "toolchain": {
+    "language": "cpp",
+    "compiler": "clang++",
+    "version": "Ubuntu clang version 18.1.3 (1ubuntu1)",
+    "optimization": "release",
+    "flags": [
+      "clang++",
+      "-std=c++23",
+      "-O3",
+      "-S",
+      "-masm=intel",
+      "-march=x86-64-v3",
+      "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/cpp/sat_add.cpp",
+      "-o",
+      "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/clang-sat_add-x86-64-v3.s"
+    ]
+  },
+  "experiment": {
+    "family": "saturating-arithmetic",
+    "kernel": "sat_add_u8",
+    "implementation": "probe-aggregate",
+    "variant": "scalar-plus-avx2",
+    "data_type": "u8",
+    "lanes": null,
+    "isa": "x86-64-v3",
+    "semantics": "exact-u8-saturation",
+    "dataset": "codegen-probe-v1",
+    "parameters": {
+      "metric_source": "clang-sat_add-x86-64-v3.s",
+      "target_profile": "x86-64-v3"
+    }
+  },
+  "observations": [
+    {
+      "kind": "codegen",
+      "instruction_count": 307,
+      "vector_instruction_count": 93,
+      "unique_mnemonics": 35,
+      "tracked_mnemonics": {
+        "vpack": 10,
+        "vpadd": 12,
+        "vpaddusb": 5,
+        "vperm": 6,
+        "vpmin": 12,
+        "vpmovzx": 24,
+        "vpshuf": 2
+      },
+      "top_mnemonics": {
+        "add": 22,
+        "and": 10,
+        "cmovae": 10,
+        "cmp": 31,
+        "jae": 7,
+        "je": 7,
+        "jmp": 7,
+        "jne": 13,
+        "mov": 40,
+        "movzx": 20,
+        "sub": 11,
+        "test": 6,
+        "vmovdqu": 14,
+        "vpackusdw": 6,
+        "vpaddd": 12,
+        "vpaddusb": 5,
+        "vpermq": 6,
+        "vpminud": 12,
+        "vpmovzxbd": 24,
+        "xor": 8
+      },
+      "assembly_path": "results/codegen/known-good/manifest-x86-64-v3.json#metrics/clang-sat_add-x86-64-v3.s",
+      "ir_path": null
+    },
+    {
+      "kind": "analysis",
+      "summary": "clang x86-64-v3 saturating-add probe tracks 5 VPADDUSB instructions in the aggregate.",
+      "severity": "interesting",
+      "evidence": [
+        "Explicit vector and generic scalar-source lowering are reviewed separately.",
+        "Counts include compiler-specific unrolling and residual paths."
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "codegen-manifest",
+      "path": "results/codegen/known-good/manifest-x86-64-v3.json",
+      "sha256": "10c75969d6bc5d62cf1e62c1892d242387b83c2e7d5cd275a843c0eab68ff0b2",
+      "description": "Reviewed x86-64-v3 manifest containing the aggregate metrics referenced by this bundle."
+    }
+  ],
+  "tags": [
+    "codegen",
+    "x86-64-v3",
+    "clang",
+    "sat_add"
+  ],
+  "notes": "Metrics are whole-file aggregates for clang-sat_add-x86-64-v3.s; the human review records steady-state and tail interpretation separately."
+}

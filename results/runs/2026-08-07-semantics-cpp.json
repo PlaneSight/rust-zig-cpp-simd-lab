@@ -1,0 +1,80 @@
+{
+  "schema": "simd-lab-result-v1",
+  "id": "2026-08-07-semantics-cpp",
+  "created_at": "2026-08-07T03:28:39Z",
+  "provenance": {
+    "repository": "PlaneSight/rust-zig-cpp-simd-lab",
+    "commit": "ec63b51ecbd9f67b1f93d61f92f40dd1d771df67",
+    "branch": "main",
+    "workflow_run": null,
+    "source_files": [
+      "scripts/compare_fp16_semantics.py",
+      "cpp/src/fp16_semantics.cpp",
+      "cpp/src/f16c.cpp"
+    ]
+  },
+  "environment": {
+    "os": "Darwin 25.6.0",
+    "arch": "arm64",
+    "cpu": "arm",
+    "cpu_features": [],
+    "target": "aarch64-apple-darwin",
+    "runner": "local-macos",
+    "virtualized": null
+  },
+  "toolchain": {
+    "language": "cpp",
+    "compiler": "clang++",
+    "version": "Apple clang version 21.0.0 (clang-2100.1.1.101)",
+    "optimization": "release",
+    "flags": [
+      "FP16 semantics probe"
+    ]
+  },
+  "experiment": {
+    "family": "floating-point-semantics",
+    "kernel": "clamp_f16",
+    "implementation": "semantic-dump",
+    "variant": "cpp-f16c",
+    "data_type": "f16",
+    "lanes": 16,
+    "isa": null,
+    "semantics": "binary16 edge corpus with -0.5..2.0 clamp bounds",
+    "dataset": "fp16-edge-corpus-v1",
+    "parameters": {
+      "cases": 23
+    }
+  },
+  "observations": [
+    {
+      "kind": "semantics",
+      "status": "skipped",
+      "reference": "data/fp16-edge-corpus.json",
+      "cases": 23,
+      "mismatches": null,
+      "details_path": "results/artifacts/2026-08-07-baseline/fp16-semantics-comparison.json",
+      "summary": "F16C is unavailable on the local aarch64 host; no output was produced."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "semantic-dump",
+      "path": "results/artifacts/2026-08-07-baseline/fp16-semantics.txt",
+      "sha256": "7cd1c9fbf51fd84787eabe024af52112dd63bdba55aae13a097af141d9e83b4b",
+      "description": "Raw language semantic probe output."
+    },
+    {
+      "kind": "semantic-comparison",
+      "path": "results/artifacts/2026-08-07-baseline/fp16-semantics-comparison.json",
+      "sha256": "98772a1ae5cec23ad909cd4f3d8b6eb3f712f9096786574302c1e3c9fda5d1e9",
+      "description": "Machine-readable cross-strategy comparison."
+    }
+  ],
+  "tags": [
+    "semantics",
+    "fp16",
+    "edge-corpus",
+    "cpp"
+  ],
+  "notes": "Collected locally on the Darwin arm64 host; skipped F16C strategies remain explicit rather than being treated as matches."
+}

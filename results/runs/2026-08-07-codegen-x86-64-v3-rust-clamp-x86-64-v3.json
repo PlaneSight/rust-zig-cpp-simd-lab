@@ -1,0 +1,121 @@
+{
+  "schema": "simd-lab-result-v1",
+  "id": "2026-08-07-codegen-x86-64-v3-rust-clamp-x86-64-v3",
+  "created_at": "2026-08-07T02:48:43Z",
+  "provenance": {
+    "repository": "PlaneSight/rust-zig-cpp-simd-lab",
+    "commit": "0055cd3b74017746d501d8973b3441490b154625",
+    "branch": "main",
+    "workflow_run": "31142383190",
+    "source_files": [
+      "probes/rust/clamp.rs",
+      "probes/rust/sad.rs",
+      "probes/rust/sat_add.rs"
+    ]
+  },
+  "environment": {
+    "os": "Linux 6.17.0-1020-azure",
+    "arch": "x86_64",
+    "cpu": "x86-64-v3",
+    "cpu_features": [
+      "avx2",
+      "fma",
+      "f16c"
+    ],
+    "target": "x86_64-unknown-linux-gnu",
+    "runner": "github-hosted-ubuntu",
+    "virtualized": null
+  },
+  "toolchain": {
+    "language": "rust",
+    "compiler": "rustc",
+    "version": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "optimization": "release",
+    "flags": [
+      "rustc",
+      "--edition=2021",
+      "-O",
+      "--crate-type=lib",
+      "--emit=asm",
+      "-C",
+      "target-cpu=x86-64-v3",
+      "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/rust/clamp.rs",
+      "-o",
+      "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/rust-clamp-x86-64-v3.s"
+    ]
+  },
+  "experiment": {
+    "family": "min-max-clamp",
+    "kernel": "clamp",
+    "implementation": "probe-aggregate",
+    "variant": "mixed-width-probe",
+    "data_type": "mixed",
+    "lanes": null,
+    "isa": "x86-64-v3",
+    "semantics": "min-max-clamp",
+    "dataset": "codegen-probe-v1",
+    "parameters": {
+      "metric_source": "rust-clamp-x86-64-v3.s",
+      "target_profile": "x86-64-v3"
+    }
+  },
+  "observations": [
+    {
+      "kind": "codegen",
+      "instruction_count": 176,
+      "vector_instruction_count": 98,
+      "unique_mnemonics": 20,
+      "tracked_mnemonics": {
+        "vmax": 16,
+        "vmin": 16
+      },
+      "top_mnemonics": {
+        "cmovael": 1,
+        "cmoval": 14,
+        "cmovbl": 15,
+        "cmpb": 15,
+        "cmpw": 15,
+        "jae": 1,
+        "jb": 1,
+        "movl": 9,
+        "movzbl": 2,
+        "retq": 5,
+        "vblendvpd": 16,
+        "vblendvps": 16,
+        "vcmpunordsd": 16,
+        "vcmpunordss": 16,
+        "vmaxsd": 8,
+        "vmaxss": 8,
+        "vminsd": 8,
+        "vminss": 8,
+        "vmovsd": 1,
+        "vmovss": 1
+      },
+      "assembly_path": "results/codegen/known-good/manifest-x86-64-v3.json#metrics/rust-clamp-x86-64-v3.s",
+      "ir_path": null
+    },
+    {
+      "kind": "analysis",
+      "summary": "The x86-64-v3 clamp probe contains integer and f32/f64 paths; this file has no FP16 conversion mnemonics.",
+      "severity": "info",
+      "evidence": [
+        "Reviewed manifest metric source: clamp probe assembly."
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "codegen-manifest",
+      "path": "results/codegen/known-good/manifest-x86-64-v3.json",
+      "sha256": "10c75969d6bc5d62cf1e62c1892d242387b83c2e7d5cd275a843c0eab68ff0b2",
+      "description": "Reviewed x86-64-v3 manifest containing the aggregate metrics referenced by this bundle."
+    }
+  ],
+  "tags": [
+    "codegen",
+    "x86-64-v3",
+    "rust",
+    "clamp"
+  ],
+  "notes": "Metrics are whole-file aggregates for rust-clamp-x86-64-v3.s; the human review records steady-state and tail interpretation separately."
+}

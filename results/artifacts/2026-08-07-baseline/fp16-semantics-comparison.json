@@ -1,0 +1,260 @@
+{
+  "comparisons": [
+    {
+      "all_equal": true,
+      "index": 0,
+      "outputs": {
+        "zig-native-f16": "0000",
+        "zig-promote-f32": "0000"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 1,
+      "outputs": {
+        "zig-native-f16": "8000",
+        "zig-promote-f32": "8000"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 2,
+      "outputs": {
+        "zig-native-f16": "0001",
+        "zig-promote-f32": "0001"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 3,
+      "outputs": {
+        "zig-native-f16": "03ff",
+        "zig-promote-f32": "03ff"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 4,
+      "outputs": {
+        "zig-native-f16": "0400",
+        "zig-promote-f32": "0400"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 5,
+      "outputs": {
+        "zig-native-f16": "37ff",
+        "zig-promote-f32": "37ff"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 6,
+      "outputs": {
+        "zig-native-f16": "3800",
+        "zig-promote-f32": "3800"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 7,
+      "outputs": {
+        "zig-native-f16": "3801",
+        "zig-promote-f32": "3801"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 8,
+      "outputs": {
+        "zig-native-f16": "3bff",
+        "zig-promote-f32": "3bff"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 9,
+      "outputs": {
+        "zig-native-f16": "3c00",
+        "zig-promote-f32": "3c00"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 10,
+      "outputs": {
+        "zig-native-f16": "3c01",
+        "zig-promote-f32": "3c01"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 11,
+      "outputs": {
+        "zig-native-f16": "4000",
+        "zig-promote-f32": "4000"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 12,
+      "outputs": {
+        "zig-native-f16": "4000",
+        "zig-promote-f32": "4000"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 13,
+      "outputs": {
+        "zig-native-f16": "4000",
+        "zig-promote-f32": "4000"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 14,
+      "outputs": {
+        "zig-native-f16": "4000",
+        "zig-promote-f32": "4000"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 15,
+      "outputs": {
+        "zig-native-f16": "4000",
+        "zig-promote-f32": "4000"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 16,
+      "outputs": {
+        "zig-native-f16": "8001",
+        "zig-promote-f32": "8001"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 17,
+      "outputs": {
+        "zig-native-f16": "b800",
+        "zig-promote-f32": "b800"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 18,
+      "outputs": {
+        "zig-native-f16": "b800",
+        "zig-promote-f32": "b800"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 19,
+      "outputs": {
+        "zig-native-f16": "b800",
+        "zig-promote-f32": "b800"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 20,
+      "outputs": {
+        "zig-native-f16": "b800",
+        "zig-promote-f32": "b800"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 21,
+      "outputs": {
+        "zig-native-f16": "b800",
+        "zig-promote-f32": "b800"
+      }
+    },
+    {
+      "all_equal": true,
+      "index": 22,
+      "outputs": {
+        "zig-native-f16": "4000",
+        "zig-promote-f32": "4000"
+      }
+    }
+  ],
+  "divergence_count": 0,
+  "schema": "simd-lab-fp16-semantics-v1",
+  "strategies": [
+    {
+      "available": false,
+      "outputs": [],
+      "strategy": "rust-f16c"
+    },
+    {
+      "available": false,
+      "outputs": [],
+      "strategy": "cpp-f16c"
+    },
+    {
+      "available": true,
+      "outputs": [
+        "0000",
+        "8000",
+        "0001",
+        "03ff",
+        "0400",
+        "37ff",
+        "3800",
+        "3801",
+        "3bff",
+        "3c00",
+        "3c01",
+        "4000",
+        "4000",
+        "4000",
+        "4000",
+        "4000",
+        "8001",
+        "b800",
+        "b800",
+        "b800",
+        "b800",
+        "b800",
+        "4000"
+      ],
+      "strategy": "zig-native-f16"
+    },
+    {
+      "available": true,
+      "outputs": [
+        "0000",
+        "8000",
+        "0001",
+        "03ff",
+        "0400",
+        "37ff",
+        "3800",
+        "3801",
+        "3bff",
+        "3c00",
+        "3c01",
+        "4000",
+        "4000",
+        "4000",
+        "4000",
+        "4000",
+        "8001",
+        "b800",
+        "b800",
+        "b800",
+        "b800",
+        "b800",
+        "4000"
+      ],
+      "strategy": "zig-promote-f32"
+    }
+  ]
+}

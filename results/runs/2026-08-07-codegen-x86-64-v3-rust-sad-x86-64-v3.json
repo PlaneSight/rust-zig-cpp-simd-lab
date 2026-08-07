@@ -1,0 +1,127 @@
+{
+  "schema": "simd-lab-result-v1",
+  "id": "2026-08-07-codegen-x86-64-v3-rust-sad-x86-64-v3",
+  "created_at": "2026-08-07T02:48:43Z",
+  "provenance": {
+    "repository": "PlaneSight/rust-zig-cpp-simd-lab",
+    "commit": "0055cd3b74017746d501d8973b3441490b154625",
+    "branch": "main",
+    "workflow_run": "31142383190",
+    "source_files": [
+      "probes/rust/clamp.rs",
+      "probes/rust/sad.rs",
+      "probes/rust/sat_add.rs"
+    ]
+  },
+  "environment": {
+    "os": "Linux 6.17.0-1020-azure",
+    "arch": "x86_64",
+    "cpu": "x86-64-v3",
+    "cpu_features": [
+      "avx2",
+      "fma",
+      "f16c"
+    ],
+    "target": "x86_64-unknown-linux-gnu",
+    "runner": "github-hosted-ubuntu",
+    "virtualized": null
+  },
+  "toolchain": {
+    "language": "rust",
+    "compiler": "rustc",
+    "version": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "optimization": "release",
+    "flags": [
+      "rustc",
+      "--edition=2021",
+      "-O",
+      "--crate-type=lib",
+      "--emit=asm",
+      "-C",
+      "target-cpu=x86-64-v3",
+      "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/rust/sad.rs",
+      "-o",
+      "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/rust-sad-x86-64-v3.s"
+    ]
+  },
+  "experiment": {
+    "family": "reductions",
+    "kernel": "sad_u8",
+    "implementation": "probe-aggregate",
+    "variant": "scalar-plus-avx2",
+    "data_type": "u8",
+    "lanes": null,
+    "isa": "x86-64-v3",
+    "semantics": "exact-integer",
+    "dataset": "codegen-probe-v1",
+    "parameters": {
+      "metric_source": "rust-sad-x86-64-v3.s",
+      "target_profile": "x86-64-v3"
+    }
+  },
+  "observations": [
+    {
+      "kind": "codegen",
+      "instruction_count": 223,
+      "vector_instruction_count": 117,
+      "unique_mnemonics": 36,
+      "tracked_mnemonics": {
+        "vpadd": 27,
+        "vpmax": 10,
+        "vpmin": 10,
+        "vpmovzx": 10,
+        "vpsadbw": 1,
+        "vpshuf": 5,
+        "vpsub": 10
+      },
+      "top_mnemonics": {
+        "addq": 11,
+        "cmpq": 13,
+        "jae": 5,
+        "je": 5,
+        "jmp": 7,
+        "jne": 6,
+        "movq": 10,
+        "movzbl": 6,
+        "subq": 4,
+        "vextracti128": 5,
+        "vmovd": 20,
+        "vmovq": 8,
+        "vpaddq": 27,
+        "vpmaxub": 10,
+        "vpminub": 10,
+        "vpmovzxbq": 10,
+        "vpshufd": 5,
+        "vpsubb": 10,
+        "vpxor": 8,
+        "xorl": 10
+      },
+      "assembly_path": "results/codegen/known-good/manifest-x86-64-v3.json#metrics/rust-sad-x86-64-v3.s",
+      "ir_path": null
+    },
+    {
+      "kind": "analysis",
+      "summary": "rust x86-64-v3 SAD probe tracks 1 VPSADBW instructions in the aggregate.",
+      "severity": "interesting",
+      "evidence": [
+        "Symbol-local review separates steady-state vector loops from scalar or widening tails.",
+        "Compiler unrolling accounts for differing VPSADBW counts."
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "codegen-manifest",
+      "path": "results/codegen/known-good/manifest-x86-64-v3.json",
+      "sha256": "10c75969d6bc5d62cf1e62c1892d242387b83c2e7d5cd275a843c0eab68ff0b2",
+      "description": "Reviewed x86-64-v3 manifest containing the aggregate metrics referenced by this bundle."
+    }
+  ],
+  "tags": [
+    "codegen",
+    "x86-64-v3",
+    "rust",
+    "sad"
+  ],
+  "notes": "Metrics are whole-file aggregates for rust-sad-x86-64-v3.s; the human review records steady-state and tail interpretation separately."
+}

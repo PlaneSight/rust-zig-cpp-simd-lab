@@ -1,0 +1,9 @@
+[rust]
+{"strategy":"rust-f16c","available":false,"outputs":[]}
+    Finished `release` profile [optimized] target(s) in 0.03s
+     Running `rust/target/release/fp16_semantics`
+[cpp]
+{"strategy":"cpp-f16c","available":false,"outputs":[]}
+[zig]
+{"strategy":"zig-native-f16","available":true,"outputs":["0000","8000","0001","03ff","0400","37ff","3800","3801","3bff","3c00","3c01","4000","4000","4000","4000","4000","8001","b800","b800","b800","b800","b800","4000"]}
+{"strategy":"zig-promote-f32","available":true,"outputs":["0000","8000","0001","03ff","0400","37ff","3800","3801","3bff","3c00","3c01","4000","4000","4000","4000","4000","8001","b800","b800","b800","b800","b800","4000"]}

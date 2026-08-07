@@ -1,0 +1,118 @@
+{
+  "schema": "simd-lab-result-v1",
+  "id": "2026-08-07-codegen-x86-64-v3-zig-sat_add-x86-64-v3",
+  "created_at": "2026-08-07T02:48:43Z",
+  "provenance": {
+    "repository": "PlaneSight/rust-zig-cpp-simd-lab",
+    "commit": "0055cd3b74017746d501d8973b3441490b154625",
+    "branch": "main",
+    "workflow_run": "31142383190",
+    "source_files": [
+      "probes/zig/clamp.zig",
+      "probes/zig/sad.zig",
+      "probes/zig/sat_add.zig"
+    ]
+  },
+  "environment": {
+    "os": "Linux 6.17.0-1020-azure",
+    "arch": "x86_64",
+    "cpu": "x86-64-v3",
+    "cpu_features": [
+      "avx2",
+      "fma",
+      "f16c"
+    ],
+    "target": "x86_64-unknown-linux-gnu",
+    "runner": "github-hosted-ubuntu",
+    "virtualized": null
+  },
+  "toolchain": {
+    "language": "zig",
+    "compiler": "zig",
+    "version": "unavailable",
+    "optimization": "ReleaseFast",
+    "flags": [
+      "zig",
+      "build-obj",
+      "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/zig/sat_add.zig",
+      "-O",
+      "ReleaseFast",
+      "-mcpu=x86_64_v3",
+      "-femit-asm=/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/zig-sat_add-x86-64-v3.s",
+      "-femit-bin=/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/zig-sat_add-x86-64-v3.o"
+    ]
+  },
+  "experiment": {
+    "family": "saturating-arithmetic",
+    "kernel": "sat_add_u8",
+    "implementation": "probe-aggregate",
+    "variant": "scalar-plus-avx2",
+    "data_type": "u8",
+    "lanes": null,
+    "isa": "x86-64-v3",
+    "semantics": "exact-u8-saturation",
+    "dataset": "codegen-probe-v1",
+    "parameters": {
+      "metric_source": "zig-sat_add-x86-64-v3.s",
+      "target_profile": "x86-64-v3"
+    }
+  },
+  "observations": [
+    {
+      "kind": "codegen",
+      "instruction_count": 60,
+      "vector_instruction_count": 1,
+      "unique_mnemonics": 19,
+      "tracked_mnemonics": {
+        "vpaddusb": 1
+      },
+      "top_mnemonics": {
+        "add": 9,
+        "and": 2,
+        "cmovb": 5,
+        "cmp": 3,
+        "inc": 1,
+        "jae": 1,
+        "je": 2,
+        "jmp": 1,
+        "jne": 2,
+        "mov": 10,
+        "movzx": 10,
+        "pop": 2,
+        "push": 2,
+        "ret": 2,
+        "sat_add_u8_scalar": 1,
+        "sat_add_u8x32": 1,
+        "test": 2,
+        "vpaddusb": 1,
+        "xor": 3
+      },
+      "assembly_path": "results/codegen/known-good/manifest-x86-64-v3.json#metrics/zig-sat_add-x86-64-v3.s",
+      "ir_path": null
+    },
+    {
+      "kind": "analysis",
+      "summary": "zig x86-64-v3 saturating-add probe tracks 1 VPADDUSB instructions in the aggregate.",
+      "severity": "interesting",
+      "evidence": [
+        "Explicit vector and generic scalar-source lowering are reviewed separately.",
+        "Counts include compiler-specific unrolling and residual paths."
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "codegen-manifest",
+      "path": "results/codegen/known-good/manifest-x86-64-v3.json",
+      "sha256": "10c75969d6bc5d62cf1e62c1892d242387b83c2e7d5cd275a843c0eab68ff0b2",
+      "description": "Reviewed x86-64-v3 manifest containing the aggregate metrics referenced by this bundle."
+    }
+  ],
+  "tags": [
+    "codegen",
+    "x86-64-v3",
+    "zig",
+    "sat_add"
+  ],
+  "notes": "Metrics are whole-file aggregates for zig-sat_add-x86-64-v3.s; the human review records steady-state and tail interpretation separately."
+}
