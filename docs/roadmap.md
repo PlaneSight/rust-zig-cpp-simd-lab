@@ -647,3 +647,10 @@ provide AVX2 max/min/subtract paths; Zig provides a 16-lane native-vector
 path. The local baseline benchmark was generated with complete host/toolchain
 metadata but remains uncommitted machine-specific evidence; reviewed x86 u16
 codegen and cross-target lowering are still future work.
+
+FP16 host handoff: the ARM64 MacBook run verified the 23-case Zig native versus
+promote-once matrix in ReleaseSafe and ReleaseFast, but Rust/C++ F16C remained
+unavailable. The real-host gate is intentionally deferred to the user's x86
+F16C desktop. There, record CPU feature metadata confirming `f16c` and run
+`python3 scripts/compare_fp16_semantics.py`; do not mark the F16C edge-case
+item complete from the ARM64 or compile-only x86 artifacts.
