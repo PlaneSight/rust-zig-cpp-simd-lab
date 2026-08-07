@@ -544,7 +544,7 @@ Potential candidates should emerge from evidence—for example repeated FP16 con
 - [ ] compiler pathology case studies
 - [x] "how to reproduce" pages for important findings ([`docs/reproducing-findings.md`](reproducing-findings.md))
 - [ ] glossary for autovec, portable SIMD, intrinsics, ISA, vector width, reduction, saturation, widening, FMA, F16C, etc.
-- [ ] contributor guide for adding a new kernel fairly
+- [x] contributor guide for adding a new kernel fairly ([`CONTRIBUTING.md`](../CONTRIBUTING.md))
 
 # 24. Candidate case studies
 

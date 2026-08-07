@@ -71,6 +71,10 @@ The clamp work includes:
 - [`docs/codegen-probes.md`](docs/codegen-probes.md) and
   [`docs/codegen-snapshots.md`](docs/codegen-snapshots.md) — probe design,
   generated manifests, and review rules.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — fair kernel-addition workflow and
+  review checklist.
+- [`results/README.md`](results/README.md) — ownership and evidence rules for
+  manifests, artifacts, bundles, and generated site data.
 
 ## Fair-comparison rules
 
