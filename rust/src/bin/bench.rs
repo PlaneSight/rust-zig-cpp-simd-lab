@@ -5,7 +5,8 @@ use simd_lab_rust::{
     convert_u8_f32_affine_scalar, dispatch_tier, dot_f32_scalar, dot_f64_scalar, dot_i16_scalar,
     dot_u8_i8_scalar, f16c::clamp_f16c, f32_to_u16_sat_scalar, narrow_u16_to_u8_round_scalar,
     narrow_u16_to_u8_sat_scalar, narrow_u16_to_u8_trunc_scalar, pack_u8x4_to_u32_scalar,
-    sad_u8_best, sad_u8_scalar, sat_add_u8_best, sat_add_u8_dispatch_tier, sat_add_u8_scalar,
+    sad_u16_best, sad_u16_scalar, sad_u8_best, sad_u8_scalar, sat_add_u8_best,
+    sat_add_u8_dispatch_tier, sat_add_u8_scalar,
     squared_error_best, squared_error_scalar, unpack_u32_to_u8x4_scalar,
     widen_i16_to_i32_scalar, widen_i8_to_i16_scalar, widen_mul_i16_i32_scalar,
     widen_mul_i32_i64_scalar, widen_mul_i8_i16_scalar, widen_mul_u16_u32_scalar,
@@ -295,6 +296,17 @@ fn main() {
             let a: Vec<u8> = (0..n).map(|i| ((i * 17 + 3) & 255) as u8).collect();
             let b: Vec<u8> = (0..n).map(|i| ((i * 29 + 11) & 255) as u8).collect();
             assert_eq!(sad_u8_scalar(&a, &b), sad_u8_best(&a, &b));
+            for &len in &SAT_ADD_VALIDATION_LENGTHS {
+                let sad_a: Vec<u16> = (0..len).map(|i| SAT_ADD_U16_A[i & 7]).collect();
+                let sad_b: Vec<u16> = (0..len).map(|i| SAT_ADD_U16_B[i & 7]).collect();
+                let expected: u64 = sad_a
+                    .iter()
+                    .zip(&sad_b)
+                    .map(|(&x, &y)| u64::from(x.abs_diff(y)))
+                    .sum();
+                assert_eq!(sad_u16_scalar(&sad_a, &sad_b), expected, "sad-u16 len={len}");
+                assert_eq!(sad_u16_best(&sad_a, &sad_b), expected, "sad-u16 len={len}");
+            }
             let mut sat_reference = vec![0_u8; n];
             let mut sat_dst = vec![0_u8; n];
             let mut blend_dst = vec![0_u8; n];
@@ -451,6 +463,17 @@ fn main() {
                 black_box(sad_u8_best(black_box(&a), black_box(&b)));
             });
             report("sad-u8/best-dispatch", n, n * 2, n * 2, &measurement);
+
+            let measurement = measure(n, || {
+                black_box(sad_u16_scalar(black_box(&u16_a), black_box(&u16_b)));
+            });
+            report("sad-u16/scalar-autovec", n, n * 4, n * 4, &measurement);
+
+            let measurement = measure(n, || {
+                black_box(sad_u16_best(black_box(&u16_a), black_box(&u16_b)));
+            });
+            report("sad-u16/best-dispatch", n, n * 4, n * 4, &measurement);
+
             let measurement = measure(n, || {
                 blend_u8_scalar(
                     black_box(&mut blend_dst),

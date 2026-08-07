@@ -80,6 +80,7 @@ bool run_new_operation_case(std::size_t length, XorShift64& rng,
             i8_a[i] = i8_values[i & 7];
             i8_b[i] = i8_values[(i + 3) & 7];
             u16_a[i] = (i & 1) == 0 ? 0U : 65535U;
+            u16_b[i] = (i & 1) == 0 ? 65535U : 0U;
             u32_a[i] = u32_values[i & 7];
             u32_b[i] = u32_values[(i + 5) & 7];
             i32_a[i] = i32_values[i & 7];
@@ -103,11 +104,11 @@ bool run_new_operation_case(std::size_t length, XorShift64& rng,
             i32_b[i] = static_cast<std::int32_t>(rng.next());
         }
     }
-
     double f32_expected = 0.0;
     double f64_expected = 0.0;
     std::int64_t i16_dot_expected = 0;
     std::int64_t mixed_dot_expected = 0;
+    std::uint64_t sad_u16_expected = 0;
     for (std::size_t i = 0; i < length; ++i) {
         f32_expected += static_cast<double>(f32_a[i]) *
                         static_cast<double>(f32_b[i]);
@@ -116,6 +117,11 @@ bool run_new_operation_case(std::size_t length, XorShift64& rng,
                             static_cast<std::int64_t>(i16_b[i]);
         mixed_dot_expected += static_cast<std::int64_t>(u8_a[i]) *
                               static_cast<std::int64_t>(i8_b[i]);
+        const auto u16_lhs = static_cast<std::uint32_t>(u16_a[i]);
+        const auto u16_rhs = static_cast<std::uint32_t>(u16_b[i]);
+        sad_u16_expected +=
+            u16_lhs > u16_rhs ? static_cast<std::uint64_t>(u16_lhs - u16_rhs)
+                              : static_cast<std::uint64_t>(u16_rhs - u16_lhs);
     }
     const auto close = [](double expected, double actual) {
         return std::abs(expected - actual) /
@@ -126,6 +132,11 @@ bool run_new_operation_case(std::size_t length, XorShift64& rng,
         i16_dot_expected != simd_lab::dot_i16_scalar(i16_a, i16_b) ||
         mixed_dot_expected != simd_lab::dot_u8_i8_scalar(u8_a, i8_b)) {
         std::cerr << "dot mismatch at length " << length << '\n';
+        return false;
+    }
+    if (sad_u16_expected != simd_lab::sad_u16_scalar(u16_a, u16_b) ||
+        sad_u16_expected != simd_lab::sad_u16_best(u16_a, u16_b)) {
+        std::cerr << "u16 SAD mismatch at length " << length << '\n';
         return false;
     }
 

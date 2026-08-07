@@ -167,6 +167,24 @@ pub fn main() !void {
         }
 
         {
+            const u16_a = try allocator.alloc(u16, n);
+            defer allocator.free(u16_a);
+            const u16_b = try allocator.alloc(u16, n);
+            defer allocator.free(u16_b);
+            for (u16_a, u16_b, 0..) |*av, *bv, i| {
+                av.* = @truncate(i * 257 + 3);
+                bv.* = @truncate(i * 509 + 11);
+            }
+            std.debug.assert(kernels.sadU16Scalar(u16_a, u16_b) == kernels.sadU16Vector(u16_a, u16_b));
+
+            var result = try measure(io, kernels.sadU16Scalar, .{ u16_a, u16_b }, n);
+            report("sad-u16/scalar-autovec", n, n * 4, n * 4, result);
+            result = try measure(io, kernels.sadU16Vector, .{ u16_a, u16_b }, n);
+            report("sad-u16/native-vector", n, n * 4, n * 4, result);
+        }
+
+
+        {
             const i8_a = try allocator.alloc(i8, n);
             defer allocator.free(i8_a);
             const i8_b = try allocator.alloc(i8, n);

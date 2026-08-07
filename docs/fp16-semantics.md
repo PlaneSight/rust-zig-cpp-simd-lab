@@ -80,3 +80,27 @@ Exception/flag behavior is intentionally a later layer because it needs platform
 ## Rule
 
 A promoted-f32 implementation is not labelled a drop-in native-f16 replacement merely because it is faster. The repository reports it as a distinct implementation strategy and documents any semantic divergence alongside performance results.
+
+## Current evidence boundary
+
+The checked-in corpus contains 23 cases. The Rust and C++ F16C entry points
+require complete eight-element blocks, so their semantic dump executables use
+an internal 24-element padded scratch buffer and emit only the 23 corpus
+results. The padding is not part of the reported contract.
+
+The local comparison was run on Darwin arm64 (Apple M5). Rust F16C and C++ F16C
+reported `available: false` because the host has no x86 F16C path; those rows
+were excluded rather than treated as equal. Zig native-f16 and promote-f32
+both returned 23 outputs with zero divergence under ReleaseSafe and
+ReleaseFast. This is ARM semantic evidence only, not F16C evidence.
+
+The reviewed x86-64-v3 codegen artifacts show a conversion-hoisting
+difference: the Zig native clamp has 384 `vcvtph2ps` and 256 `vcvtps2ph`
+operations in its bounded symbol, while the promote-once path has 18 and 2.
+These are compile/codegen counts from a reviewed artifact, not runtime
+measurements and not proof that one numerical contract is preferable.
+
+An x86 host with F16C is still required to execute the Rust/C++ edge corpus and
+compare signed zero, subnormal, infinity, NaN payload/sign, and rounding
+behavior. The existing hosted x86 codegen job does not run the semantic
+executables, so that item remains open.

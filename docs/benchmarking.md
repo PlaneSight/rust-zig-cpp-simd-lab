@@ -15,7 +15,7 @@ Each kernel runs at six element counts:
 | `1 << 20` | 4 MiB | shared cache / memory transition |
 | `1 << 22` | 16 MiB | shared cache or DRAM |
 
-The actual working set depends on the kernel and is emitted for every result. AXPY has three f32 arrays; squared error has two; SAD has two byte arrays; u8 saturating add has two byte inputs plus one byte output; FP16 clamp has four binary16 arrays; dot products have two input arrays; widening multiply has two input arrays plus one output array. Mixed-width conversion rows use one source and one destination stream, while `u8x4 <-> u32` packing uses four bytes per group on each side. For `u32/i32 -> u64/i64` widening, that is 16 effective bytes per element. Cache labels are therefore orientation points, not universal classifications.
+The actual working set depends on the kernel and is emitted for every result. AXPY has three f32 arrays; squared error has two; u8 SAD has two byte arrays; u16 SAD has two 16-bit input arrays; u8 saturating add has two byte inputs plus one byte output; FP16 clamp has four binary16 arrays; dot products have two input arrays; widening multiply has two input arrays plus one output array. Mixed-width conversion rows use one source and one destination stream, while `u8x4 <-> u32` packing uses four bytes per group on each side. For `u32/i32 -> u64/i64` widening, that is 16 effective bytes per element. Cache labels are therefore orientation points, not universal classifications.
 
 For every kernel and size:
 
@@ -41,6 +41,7 @@ Deterministic randomized differential tests cover:
 - every remainder modulo eight for F16C rejection;
 - every remainder modulo 32 for byte SIMD tails;
 - all 65,536 pairs of u8 inputs for the saturating-add contract;
+- u16 SAD extrema (`0` and `65535`) plus vector-boundary and randomized lengths;
 - transactional F16C failure: an unsupported partial block must leave `dst` unchanged.
 
 The fixed smoke datasets remain useful for readable failures, but are no longer the only correctness evidence.
@@ -67,6 +68,7 @@ Reported bandwidth is effective algorithmic traffic:
 - AXPY: two f32 reads plus one f32 write = 12 bytes per element;
 - squared error: two f32 reads = 8 bytes per element;
 - u8 SAD: two byte reads = 2 bytes per element;
+- u16 SAD: two 16-bit reads = 4 bytes per element;
 - u8 saturating add: two byte reads plus one byte write = 3 bytes per element;
 - FP16 clamp: three binary16 reads plus one binary16 write = 8 bytes per element.
 

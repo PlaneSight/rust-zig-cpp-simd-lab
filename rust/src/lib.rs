@@ -34,6 +34,14 @@ pub fn sad_u8_scalar(a: &[u8], b: &[u8]) -> u64 {
         .sum()
 }
 
+pub fn sad_u16_scalar(a: &[u16], b: &[u16]) -> u64 {
+    assert_eq!(a.len(), b.len());
+    a.iter()
+        .zip(b)
+        .map(|(&x, &y)| u64::from(x.abs_diff(y)))
+        .sum()
+}
+
 /// Adds unsigned bytes element-wise with saturation at `u8::MAX`.
 ///
 /// The three slices must have identical lengths. Rust's borrowing rules make
@@ -649,6 +657,72 @@ pub unsafe fn sad_u8_avx2(a: &[u8], b: &[u8]) -> u64 {
     sum
 }
 
+/// Computes unsigned 16-bit absolute differences with AVX2 and a scalar tail.
+///
+/// # Safety
+///
+/// The caller must ensure that the current CPU and operating system support
+/// AVX2. Slice lengths are checked before the first vector load.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+pub unsafe fn sad_u16_avx2(a: &[u16], b: &[u16]) -> u64 {
+    use core::arch::x86_64::*;
+
+    assert_eq!(a.len(), b.len());
+    let mut i = 0;
+    let mut acc0 = _mm256_setzero_si256();
+    let mut acc1 = _mm256_setzero_si256();
+    let mut acc2 = _mm256_setzero_si256();
+    let mut acc3 = _mm256_setzero_si256();
+    while i + 16 <= a.len() {
+        // SAFETY: i..i+16 is in bounds for both equally-sized slices.
+        // Unaligned loads are valid, and the function requires AVX2.
+        let (va, vb) = unsafe {
+            (
+                _mm256_loadu_si256(a.as_ptr().add(i).cast()),
+                _mm256_loadu_si256(b.as_ptr().add(i).cast()),
+            )
+        };
+        let diff = _mm256_sub_epi16(_mm256_max_epu16(va, vb), _mm256_min_epu16(va, vb));
+        let diff_lo = _mm256_cvtepu16_epi32(_mm256_castsi256_si128(diff));
+        let diff_hi = _mm256_cvtepu16_epi32(_mm256_extracti128_si256::<1>(diff));
+        acc0 = _mm256_add_epi64(
+            acc0,
+            _mm256_cvtepu32_epi64(_mm256_castsi256_si128(diff_lo)),
+        );
+        acc1 = _mm256_add_epi64(
+            acc1,
+            _mm256_cvtepu32_epi64(_mm256_extracti128_si256::<1>(diff_lo)),
+        );
+        acc2 = _mm256_add_epi64(
+            acc2,
+            _mm256_cvtepu32_epi64(_mm256_castsi256_si128(diff_hi)),
+        );
+        acc3 = _mm256_add_epi64(
+            acc3,
+            _mm256_cvtepu32_epi64(_mm256_extracti128_si256::<1>(diff_hi)),
+        );
+        i += 16;
+    }
+
+    let mut lanes = [0_u64; 16];
+    // SAFETY: lanes provides 16 writable u64 values and unaligned stores are
+    // valid for any ordinary Rust array address.
+    unsafe {
+        _mm256_storeu_si256(lanes.as_mut_ptr().cast(), acc0);
+        _mm256_storeu_si256(lanes.as_mut_ptr().add(4).cast(), acc1);
+        _mm256_storeu_si256(lanes.as_mut_ptr().add(8).cast(), acc2);
+        _mm256_storeu_si256(lanes.as_mut_ptr().add(12).cast(), acc3);
+    }
+    let mut sum = lanes.into_iter().sum::<u64>();
+
+    while i < a.len() {
+        sum += u64::from(a[i].abs_diff(b[i]));
+        i += 1;
+    }
+    sum
+}
+
 /// Adds unsigned bytes with AVX2 packed saturation and a scalar tail.
 ///
 /// # Safety
@@ -708,6 +782,18 @@ pub fn sad_u8_best(a: &[u8], b: &[u8]) -> u64 {
         }
     }
     sad_u8_scalar(a, b)
+}
+
+pub fn sad_u16_best(a: &[u16], b: &[u16]) -> u64 {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if std::arch::is_x86_feature_detected!("avx2") {
+            // SAFETY: runtime feature detection establishes the target-feature
+            // precondition; the callee validates equal slice lengths.
+            return unsafe { sad_u16_avx2(a, b) };
+        }
+    }
+    sad_u16_scalar(a, b)
 }
 
 pub fn sat_add_u8_best(dst: &mut [u8], a: &[u8], b: &[u8]) {
@@ -811,6 +897,72 @@ mod tests {
             }
             sat_add_u8_best(&mut candidate, &bytes_a, &bytes_b);
             assert_eq!(candidate, expected, "len={len}");
+        }
+    }
+
+    #[test]
+    fn sad_u16_covers_pathological_and_random_lengths() {
+        const LENGTHS: [usize; 20] = [
+            0, 1, 2, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127, 255, 256, 257, 513,
+        ];
+        let mut rng = XorShift64(0x6a09_e667_f3bc_c909);
+
+        for &len in &LENGTHS {
+            let a: Vec<u16> = (0..len)
+                .map(|i| match i & 7 {
+                    0 => 0,
+                    1 => u16::MAX,
+                    2 => 1,
+                    3 => u16::MAX - 1,
+                    4 => 0x1234,
+                    5 => 0x8000,
+                    6 => 0xdead,
+                    _ => 0x55aa,
+                })
+                .collect();
+            let b: Vec<u16> = (0..len)
+                .map(|i| match i & 7 {
+                    0 => u16::MAX,
+                    1 => 0,
+                    2 => u16::MAX,
+                    3 => 1,
+                    4 => 0xedcb,
+                    5 => 0x7fff,
+                    6 => 0x1234,
+                    _ => 0xaa55,
+                })
+                .collect();
+            let expected: u64 = a
+                .iter()
+                .zip(&b)
+                .map(|(&x, &y)| u64::from(x.abs_diff(y)))
+                .sum();
+            assert_eq!(sad_u16_scalar(&a, &b), expected, "scalar len={len}");
+            assert_eq!(sad_u16_best(&a, &b), expected, "best len={len}");
+
+            #[cfg(target_arch = "x86_64")]
+            if std::arch::is_x86_feature_detected!("avx2") {
+                // SAFETY: runtime feature detection establishes the AVX2
+                // precondition for the target-feature-gated implementation.
+                assert_eq!(unsafe { sad_u16_avx2(&a, &b) }, expected, "avx2 len={len}");
+            }
+        }
+
+        for trial in 0..256 {
+            let len = if trial < 128 {
+                trial
+            } else {
+                (rng.next() as usize) % 4097
+            };
+            let a: Vec<u16> = (0..len).map(|_| rng.next() as u16).collect();
+            let b: Vec<u16> = (0..len).map(|_| rng.next() as u16).collect();
+            let expected: u64 = a
+                .iter()
+                .zip(&b)
+                .map(|(&x, &y)| u64::from(x.abs_diff(y)))
+                .sum();
+            assert_eq!(sad_u16_scalar(&a, &b), expected, "random scalar trial={trial} len={len}");
+            assert_eq!(sad_u16_best(&a, &b), expected, "random best trial={trial} len={len}");
         }
     }
 

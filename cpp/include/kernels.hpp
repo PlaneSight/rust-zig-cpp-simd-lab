@@ -22,6 +22,12 @@ std::uint64_t sad_u8_scalar(std::span<const std::uint8_t> a,
 std::uint64_t sad_u8_best(std::span<const std::uint8_t> a,
                           std::span<const std::uint8_t> b);
 
+std::uint64_t sad_u16_scalar(std::span<const std::uint16_t> a,
+                             std::span<const std::uint16_t> b);
+
+std::uint64_t sad_u16_best(std::span<const std::uint16_t> a,
+                           std::span<const std::uint16_t> b);
+
 void sat_add_u8_scalar(std::span<std::uint8_t> dst,
                        std::span<const std::uint8_t> a,
                        std::span<const std::uint8_t> b);

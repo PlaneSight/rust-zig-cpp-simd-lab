@@ -18,10 +18,43 @@ jobs:
         with:
           workspaces: rust
       - run: cargo test --release
-      - run: cargo build --release --bin bench
       - run: cargo build --release --bin fp16_semantics
       - run: cargo run --release --bin simd-lab-rust
 
+
+  rust-miri:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: miri
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - working-directory: rust
+        run: cargo miri setup
+      - working-directory: rust
+        run: cargo miri test --lib
+
+  cpp-sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure ASan and UBSan
+        run: >
+          cmake -S cpp -B build/cpp-sanitizers
+          -DCMAKE_BUILD_TYPE=Debug
+          -DSIMD_LAB_CPU=baseline
+          -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all"
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+      - name: Build correctness target
+        run: cmake --build build/cpp-sanitizers --config Debug --target simd_lab_cpp -j2
+      - name: Run C++ smoke test
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: ctest --test-dir build/cpp-sanitizers --build-config Debug --output-on-failure
   cpp:
     strategy:
       matrix:
@@ -41,7 +74,7 @@ jobs:
         run: cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
       - if: runner.os == 'Windows'
         run: cmake -S cpp -B build/cpp
-      - run: cmake --build build/cpp --config Release -j2
+      - run: cmake --build build/cpp --config Release --target simd_lab_cpp -j2
       - run: ctest --test-dir build/cpp --build-config Release --output-on-failure
 
   zig:
@@ -66,6 +99,20 @@ jobs:
         run: zig build -Doptimize=ReleaseFast
       - working-directory: zig
         run: zig build run -Doptimize=ReleaseFast
+  benchmark-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.97.1
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+      - working-directory: rust
+        run: cargo build --release --bin bench
+      - run: cmake -S cpp -B build/cpp-bench -DCMAKE_BUILD_TYPE=Release -DSIMD_LAB_CPU=baseline
+      - run: cmake --build build/cpp-bench --config Release --target simd_lab_cpp_bench -j2
+      - working-directory: zig
+        run: zig build-exe src/bench.zig -O ReleaseFast -femit-bin=/tmp/simd-lab-zig-bench
 
   codegen-x86:
     runs-on: ubuntu-latest

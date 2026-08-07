@@ -23,6 +23,34 @@ def run_json_lines(cmd: list[str], cwd: Path) -> list[dict]:
     return rows
 
 
+def collect_available_strategies(
+    rows: list[dict], expected_length: int
+) -> tuple[dict[str, dict], list[dict]]:
+    active: dict[str, dict] = {}
+    invalid_results: list[dict] = []
+    for row in rows:
+        if not row.get("available"):
+            continue
+
+        outputs = row.get("outputs")
+        actual_length = len(outputs) if isinstance(outputs, list) else None
+        if actual_length != expected_length:
+            invalid_results.append(
+                {
+                    "strategy": row.get("strategy"),
+                    "available": True,
+                    "valid": False,
+                    "reason": "output-length-mismatch",
+                    "expected_length": expected_length,
+                    "actual_length": actual_length,
+                }
+            )
+            continue
+
+        active[row["strategy"]] = row
+    return active, invalid_results
+
+
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
 
@@ -42,15 +70,25 @@ def main() -> int:
     rows += run_json_lines([str(root / "build" / "cpp" / "simd_lab_cpp_fp16_semantics")], root)
     rows += run_json_lines(["zig", "build", "fp16-semantics", "-Doptimize=ReleaseFast"], root / "zig")
 
-    active = {row["strategy"]: row for row in rows if row.get("available")}
+    corpus = json.loads(
+        (root / "data" / "fp16-edge-corpus.json").read_text()
+    )
+    corpus_length = len(corpus["cases"])
+    active, invalid_results = collect_available_strategies(rows, corpus_length)
     names = sorted(active)
     if not names:
-        print(json.dumps({"schema": "simd-lab-fp16-semantics-v1", "strategies": rows, "comparisons": []}, indent=2))
-        return 0
+        result = {
+            "schema": "simd-lab-fp16-semantics-v1",
+            "strategies": rows,
+            "comparisons": [],
+        }
+        if invalid_results:
+            result["invalid_results"] = invalid_results
+        print(json.dumps(result, indent=2))
+        return 1 if invalid_results else 0
 
-    count = min(len(active[name].get("outputs", [])) for name in names)
     comparisons = []
-    for i in range(count):
+    for i in range(corpus_length):
         values = {name: active[name]["outputs"][i] for name in names}
         comparisons.append({
             "index": i,
@@ -64,8 +102,10 @@ def main() -> int:
         "comparisons": comparisons,
         "divergence_count": sum(not item["all_equal"] for item in comparisons),
     }
+    if invalid_results:
+        result["invalid_results"] = invalid_results
     print(json.dumps(result, indent=2, sort_keys=True))
-    return 0
+    return 1 if invalid_results else 0
 
 
 if __name__ == "__main__":

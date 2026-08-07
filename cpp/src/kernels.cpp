@@ -3,7 +3,6 @@
 #include <limits>
 #include <algorithm>
 #include <cassert>
-#include <limits>
 #include <cmath>
 
 #if defined(__x86_64__) || defined(_M_X64)
@@ -42,6 +41,19 @@ std::uint64_t sad_u8_scalar(std::span<const std::uint8_t> a,
     for (std::size_t i = 0; i < a.size(); ++i) {
         const auto x = a[i];
         const auto y = b[i];
+        sum += x > y ? static_cast<std::uint64_t>(x - y)
+                     : static_cast<std::uint64_t>(y - x);
+    }
+    return sum;
+}
+
+std::uint64_t sad_u16_scalar(std::span<const std::uint16_t> a,
+                             std::span<const std::uint16_t> b) {
+    assert(a.size() == b.size());
+    std::uint64_t sum = 0;
+    for (std::size_t i = 0; i < a.size(); ++i) {
+        const auto x = static_cast<std::uint32_t>(a[i]);
+        const auto y = static_cast<std::uint32_t>(b[i]);
         sum += x > y ? static_cast<std::uint64_t>(x - y)
                      : static_cast<std::uint64_t>(y - x);
     }
@@ -656,6 +668,55 @@ static std::uint64_t sad_u8_avx2(std::span<const std::uint8_t> a,
 }
 
 __attribute__((target("avx2")))
+static std::uint64_t sad_u16_avx2(
+    std::span<const std::uint16_t> a,
+    std::span<const std::uint16_t> b) {
+    assert(a.size() == b.size());
+    __m256i acc0 = _mm256_setzero_si256();
+    __m256i acc1 = _mm256_setzero_si256();
+    __m256i acc2 = _mm256_setzero_si256();
+    __m256i acc3 = _mm256_setzero_si256();
+    std::size_t i = 0;
+    for (; i + 16 <= a.size(); i += 16) {
+        const __m256i va = _mm256_loadu_si256(
+            reinterpret_cast<const __m256i*>(a.data() + i));
+        const __m256i vb = _mm256_loadu_si256(
+            reinterpret_cast<const __m256i*>(b.data() + i));
+        const __m256i hi = _mm256_max_epu16(va, vb);
+        const __m256i lo = _mm256_min_epu16(va, vb);
+        const __m256i diff = _mm256_sub_epi16(hi, lo);
+
+        const __m256i diff_lo =
+            _mm256_cvtepu16_epi32(_mm256_castsi256_si128(diff));
+        const __m256i diff_hi = _mm256_cvtepu16_epi32(
+            _mm256_extracti128_si256(diff, 1));
+        acc0 = _mm256_add_epi64(
+            acc0, _mm256_cvtepu32_epi64(_mm256_castsi256_si128(diff_lo)));
+        acc1 = _mm256_add_epi64(
+            acc1, _mm256_cvtepu32_epi64(_mm256_extracti128_si256(diff_lo, 1)));
+        acc2 = _mm256_add_epi64(
+            acc2, _mm256_cvtepu32_epi64(_mm256_castsi256_si128(diff_hi)));
+        acc3 = _mm256_add_epi64(
+            acc3, _mm256_cvtepu32_epi64(_mm256_extracti128_si256(diff_hi, 1)));
+    }
+
+    alignas(32) std::uint64_t lanes[16];
+    _mm256_store_si256(reinterpret_cast<__m256i*>(lanes), acc0);
+    _mm256_store_si256(reinterpret_cast<__m256i*>(lanes + 4), acc1);
+    _mm256_store_si256(reinterpret_cast<__m256i*>(lanes + 8), acc2);
+    _mm256_store_si256(reinterpret_cast<__m256i*>(lanes + 12), acc3);
+    std::uint64_t sum = 0;
+    for (const auto lane : lanes) sum += lane;
+    for (; i < a.size(); ++i) {
+        const auto x = static_cast<std::uint32_t>(a[i]);
+        const auto y = static_cast<std::uint32_t>(b[i]);
+        sum += x > y ? static_cast<std::uint64_t>(x - y)
+                     : static_cast<std::uint64_t>(y - x);
+    }
+    return sum;
+}
+
+__attribute__((target("avx2")))
 static void sat_add_u8_avx2(std::span<std::uint8_t> dst,
                             std::span<const std::uint8_t> a,
                             std::span<const std::uint8_t> b) {
@@ -734,6 +795,14 @@ std::uint64_t sad_u8_best(std::span<const std::uint8_t> a,
     if (cpu_has_avx2()) return sad_u8_avx2_msvc(a, b);
 #endif
     return sad_u8_scalar(a, b);
+}
+
+std::uint64_t sad_u16_best(std::span<const std::uint16_t> a,
+                           std::span<const std::uint16_t> b) {
+#if (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__)
+    if (__builtin_cpu_supports("avx2")) return sad_u16_avx2(a, b);
+#endif
+    return sad_u16_scalar(a, b);
 }
 
 void sat_add_u8_best(std::span<std::uint8_t> dst,

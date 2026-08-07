@@ -32,15 +32,26 @@ The primary codegen question on x86 systems without native FP16 arithmetic is wh
 
 ## SAD / widening family
 
-The second probe family targets a very common image/video primitive: sum of absolute differences over `u8` samples.
+The second probe family targets sum of absolute differences over unsigned
+samples. Both widths use an exact `u64` reduction over equal-length inputs and
+finish arbitrary tails with the scalar reference operation:
 
-- Rust: scalar iterator source plus explicit AVX2 `_mm256_sad_epu8`.
-- C++23: scalar loop plus explicit AVX2 `_mm256_sad_epu8`.
-- Zig: `@Vector(32, u8)` absdiff, explicit widen to `@Vector(32, u16)`, then `@reduce(.Add, ...)`.
+- `u8`: Rust/C++ explicit AVX2 `_mm256_sad_epu8`; Zig
+  `@Vector(32, u8)` absdiff widened to `u16` and reduced.
+- `u16`: Rust/C++ AVX2 max/min/subtract over 16 lanes, widened to `u32` and
+  accumulated into `u64`; Zig `@Vector(16, u16)` uses the same widened
+  reduction. There is no u16 SAD instruction analogous to `VPSADBW`.
 
-The key codegen question is whether generic vector IR recognizes the SAD idiom and selects `VPSADBW` (or an equally efficient sequence), versus lowering it as separate min/max/subtract, zero-extension, and horizontal reduction operations.
+`probes/zig/sad.zig` exports scalar/vector u8 and u16 entry points plus fixed
+lane absdiff probes. Rust and C++ expose scalar and target-gated AVX2 raw
+pointer entry points for both widths. The length-last probe contract guards
+zero-length inputs before pointer views or loads.
 
-`probes/zig/sad.zig` also contains standalone absdiff and widening probes so missed idiom recognition can be separated from widening/reduction cost.
+The key u8 codegen question is whether generic vector IR recognizes the SAD
+idiom and selects `VPSADBW` (or an equally efficient sequence), versus
+lowering it as separate min/max/subtract, zero-extension, and horizontal
+reduction operations. For u16, inspect max/min/subtract, zero-extension,
+reduction, and scalar-tail code rather than expecting a dedicated mnemonic.
 
 ## Dot-product and widening-multiply probes
 

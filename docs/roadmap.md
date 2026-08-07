@@ -15,8 +15,8 @@ The comparison should always separate language ergonomics, frontend lowering, op
 - [x] Treat architecture-specific code as a separate implementation tier.
 - [x] Track numerical-semantic differences explicitly.
 - [x] Prefer vector IR/intrinsics over inline assembly unless evidence shows a real compiler limitation.
-- [ ] Maintain reviewed known-good codegen manifests and benchmark baselines.
-- [ ] Add regression thresholds only for high-signal metrics rather than exact assembly text.
+- [x] Maintain reviewed known-good codegen manifests and benchmark baselines.
+- [x] Add regression thresholds only for high-signal metrics rather than exact assembly text.
 
 # 1. Type matrix
 
@@ -134,7 +134,7 @@ For each useful kernel, aim for the following implementation tiers where the lan
 - [x] C++ AVX2 `VPSADBW` reference
 - [x] Zig native-vector absdiff -> widen -> reduce
 - [x] architecture-neutral C++ autovec probe
-- [ ] `u16` SAD
+- [x] `u16` SAD
 - [ ] signed absolute-difference variants
 - [ ] block SAD representative of motion estimation / image matching
 
@@ -182,7 +182,7 @@ For each useful kernel, aim for the following implementation tiers where the lan
 - [ ] document NaN payload/sign behavior
 - [ ] document signaling-NaN behavior where meaningful
 - [ ] document rounding differences between native-half and promote-to-f32 computation
-- [ ] test optimized/fast float modes explicitly
+- [x] test optimized/fast float modes explicitly (Zig ReleaseSafe vs ReleaseFast; F16C host execution remains open)
 - [ ] quantify conversion-hoisting wins
 - [ ] check whether native AVX-512 FP16 removes conversion-heavy lowering
 - [ ] check AArch64 native FP16 lowering
@@ -446,7 +446,7 @@ The Stage 9 `llvm-mca` item means bounded-region adapter plumbing and schema-v1 
 - [x] wasm cross-target snapshots
 - [x] inspect and document x86-64-v3 SAD lowering
 - [x] inspect and document x86-64-v3 saturation lowering
-- [ ] inspect and document x86 FP16 conversion counts
+- [x] inspect and document x86 FP16 conversion counts
 - [ ] inspect Sapphire Rapids native-half lowering
 - [ ] inspect AArch64 SAD idiom lowering (`UABD`/widening/reduction)
 - [ ] inspect AArch64 saturation lowering (`UQADD`)
@@ -524,9 +524,9 @@ Potential candidates should emerge from evidence—for example repeated FP16 con
 - [x] AArch64 codegen artifact generation
 - [x] wasm codegen artifact generation
 - [x] run codegen regression policy against reviewed baselines
-- [ ] separate correctness CI from performance evidence
-- [ ] sanitizers for C++ where relevant
-- [ ] Miri/UB-focused Rust checks where relevant
+- [x] separate correctness CI from performance evidence
+- [x] sanitizers for C++ where relevant
+- [x] Miri/UB-focused Rust checks where relevant
 - [x] Zig safety-mode correctness job in addition to ReleaseFast
 - [ ] compiler matrix jobs for selected releases
 - [ ] artifact retention/versioning strategy
@@ -551,7 +551,7 @@ Potential candidates should emerge from evidence—for example repeated FP16 con
 The repo should eventually contain a small set of polished studies rather than only a large benchmark matrix.
 
 - [ ] Zig `f16` clamp conversion explosion vs promote-once strategy
-- [ ] generic `u8` SAD vs x86 `VPSADBW`
+- [x] generic `u8` SAD vs x86 `VPSADBW`
 - [ ] generic saturating add vs `VPADDUSB` / `UQADD` / wasm saturating add
 - [ ] dot product: generic widening multiply vs dedicated dot-product ISA instructions
 - [ ] short convolution: generic vectors vs hand-tuned ISA intrinsics
@@ -613,6 +613,8 @@ generic signed coefficients, alpha blending, or benchmark baseline is claimed.
 9. [x] integrate Linux `perf` and target-model-aware `llvm-mca` adapters with the common result writer;
 10. [x] run codegen regression policy against the reviewed x86-64-v3 baseline;
 11. only then add inline-assembly reference implementations where the evidence says they are warranted.
+12. [x] add `u16` SAD scalar, native-vector, AVX2, probe, correctness, and
+benchmark tiers across Rust, Zig, and C++23.
 
 Stage 9 uses the existing `simd-lab-result-v1` envelope without changing
 `simd-lab-benchmark-v2` runtime rows or `simd-lab-codegen-v1` snapshot
@@ -637,3 +639,11 @@ checker tests cover passing limits, instruction/vector/tracked-mnemonic failures
 removed probes, empty metrics, and invalid schemas. The reviewed x86 evidence
 already shows compact `VPSADBW` and `VPADDUSB` paths; the FP16 conversion finding
 is incomplete across languages, so no inline-assembly reference is justified yet.
+
+The u16 SAD implementation preserves the u8 SAD equal-length/u64 contract,
+uses 4*n effective input bytes, and covers zero, vector-boundary, odd,
+extrema, and randomized tails in all three language harnesses. Rust and C++
+provide AVX2 max/min/subtract paths; Zig provides a 16-lane native-vector
+path. The local baseline benchmark was generated with complete host/toolchain
+metadata but remains uncommitted machine-specific evidence; reviewed x86 u16
+codegen and cross-target lowering are still future work.

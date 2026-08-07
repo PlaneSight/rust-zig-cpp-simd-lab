@@ -75,6 +75,40 @@ pub fn sadU8Vector(a: []const u8, b: []const u8) u64 {
     }
     return sum;
 }
+pub fn sadU16Scalar(a: []const u16, b: []const u16) u64 {
+    std.debug.assert(a.len == b.len);
+    var sum: u64 = 0;
+    for (a, b) |x, y| {
+        const difference: u16 = if (x > y) x - y else y - x;
+        sum += @intCast(difference);
+    }
+    return sum;
+}
+
+pub fn sadU16Vector(a: []const u16, b: []const u16) u64 {
+    std.debug.assert(a.len == b.len);
+    const Input = @Vector(16, u16);
+    const Wide = @Vector(16, u32);
+    var sum: u64 = 0;
+    var i: usize = 0;
+
+    while (i + 16 <= a.len) : (i += 16) {
+        const va: Input = a[i..][0..16].*;
+        const vb: Input = b[i..][0..16].*;
+        const difference: Input = @max(va, vb) - @min(va, vb);
+        const wide_difference: Wide = @intCast(difference);
+        sum += @intCast(@reduce(.Add, wide_difference));
+    }
+
+    while (i < a.len) : (i += 1) {
+        const x = a[i];
+        const y = b[i];
+        const difference: u16 = if (x > y) x - y else y - x;
+        sum += @intCast(difference);
+    }
+    return sum;
+}
+
 
 /// Adds unsigned bytes element-wise with saturation at 255.
 /// `dst`, `a`, and `b` must have equal lengths, and `dst` must not partially
@@ -955,17 +989,21 @@ test "randomized vector paths match scalar references across tails" {
     var floats_b: [max_len]f32 = undefined;
     var bytes_a: [max_len]u8 = undefined;
     var bytes_b: [max_len]u8 = undefined;
+    var words_a: [max_len]u16 = undefined;
+    var words_b: [max_len]u16 = undefined;
     var sat_expected: [max_len]u8 = undefined;
     var sat_candidate: [max_len]u8 = undefined;
     var rng = XorShift64{ .state = 0x8f3c_a516_d27b_49e1 };
 
     for (0..256) |trial| {
         const len: usize = if (trial < 64) trial else @intCast(rng.next() % max_len);
-        for (floats_a[0..len], floats_b[0..len], bytes_a[0..len], bytes_b[0..len]) |*fa, *fb, *ba, *bb| {
+        for (floats_a[0..len], floats_b[0..len], bytes_a[0..len], bytes_b[0..len], words_a[0..len], words_b[0..len]) |*fa, *fb, *ba, *bb, *wa, *wb| {
             fa.* = rng.nextF32();
             fb.* = rng.nextF32();
             ba.* = @truncate(rng.next());
             bb.* = @truncate(rng.next());
+            wa.* = @truncate(rng.next());
+            wb.* = @truncate(rng.next());
         }
         const reference = squaredErrorScalar(floats_a[0..len], floats_b[0..len]);
         const candidate = squaredErrorVector(floats_a[0..len], floats_b[0..len]);
@@ -973,6 +1011,9 @@ test "randomized vector paths match scalar references across tails" {
         if (!(relative_error <= 1e-12)) return error.SquaredErrorMismatch;
         if (sadU8Scalar(bytes_a[0..len], bytes_b[0..len]) != sadU8Vector(bytes_a[0..len], bytes_b[0..len])) {
             return error.SadMismatch;
+        }
+        if (sadU16Scalar(words_a[0..len], words_b[0..len]) != sadU16Vector(words_a[0..len], words_b[0..len])) {
+            return error.SadU16Mismatch;
         }
         for (sat_expected[0..len], bytes_a[0..len], bytes_b[0..len]) |*out, x, y| {
             const widened_sum = @as(u16, x) + @as(u16, y);
@@ -988,6 +1029,56 @@ test "randomized vector paths match scalar references across tails" {
         }
     }
 }
+
+test "u16 SAD covers pathological and randomized lengths" {
+    const max_len = 256;
+    var a: [max_len]u16 = undefined;
+    var b: [max_len]u16 = undefined;
+    const pathological = [_]usize{
+        0, 1, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127, 128, 129, 255, 256,
+    };
+    var rng = XorShift64{ .state = 0x1f42_8d90_c3ab_75e6 };
+
+    for (pathological) |len| {
+        for (a[0..len], b[0..len], 0..) |*x, *y, index| {
+            x.* = @truncate(rng.next());
+            y.* = @truncate(rng.next());
+            if (index < 16) {
+                x.* = 0;
+                y.* = std.math.maxInt(u16);
+            }
+        }
+
+        var expected: u64 = 0;
+        for (a[0..len], b[0..len]) |x, y| {
+            const difference: u16 = if (x > y) x - y else y - x;
+            expected += @intCast(difference);
+        }
+        try std.testing.expectEqual(expected, sadU16Scalar(a[0..len], b[0..len]));
+        try std.testing.expectEqual(expected, sadU16Vector(a[0..len], b[0..len]));
+    }
+
+    for (0..256) |_| {
+        const len: usize = @intCast(rng.next() % (max_len + 1));
+        for (a[0..len], b[0..len], 0..) |*x, *y, index| {
+            x.* = @truncate(rng.next());
+            y.* = @truncate(rng.next());
+            if (index < 16) {
+                x.* = 0;
+                y.* = std.math.maxInt(u16);
+            }
+        }
+
+        var expected: u64 = 0;
+        for (a[0..len], b[0..len]) |x, y| {
+            const difference: u16 = if (x > y) x - y else y - x;
+            expected += @intCast(difference);
+        }
+        try std.testing.expectEqual(expected, sadU16Scalar(a[0..len], b[0..len]));
+        try std.testing.expectEqual(expected, sadU16Vector(a[0..len], b[0..len]));
+    }
+}
+
 
 test "saturating add covers every u8 pair" {
     const pair_count = 256 * 256;

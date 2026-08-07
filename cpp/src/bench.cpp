@@ -530,14 +530,25 @@ int main() {
 
         {
             std::vector<std::uint8_t> a(n), b(n);
+            std::vector<std::uint16_t> u16_a(n), u16_b(n);
             for (std::size_t i = 0; i < n; ++i) {
                 a[i] = static_cast<std::uint8_t>((i * 17 + 3) & 255);
                 b[i] = static_cast<std::uint8_t>((i * 29 + 11) & 255);
+                u16_a[i] =
+                    static_cast<std::uint16_t>((i * 257 + 3) & 0xffffU);
+                u16_b[i] =
+                    static_cast<std::uint16_t>((i * 911 + 11) & 0xffffU);
             }
             if (simd_lab::sad_u8_scalar(a, b) != simd_lab::sad_u8_best(a, b)) {
                 std::cerr << "u8 SAD validation failed\n";
                 return 1;
             }
+            if (simd_lab::sad_u16_scalar(u16_a, u16_b) !=
+                simd_lab::sad_u16_best(u16_a, u16_b)) {
+                std::cerr << "u16 SAD validation failed\n";
+                return 1;
+            }
+
             std::vector<std::uint8_t> sat_reference(n), sat_dst(n);
             simd_lab::sat_add_u8_scalar(sat_reference, a, b);
             simd_lab::sat_add_u8_best(sat_dst, a, b);
@@ -555,6 +566,16 @@ int main() {
                 sink_u64 = simd_lab::sad_u8_best(a, b);
             });
             report("sad-u8/best-dispatch", n, n * 2, n * 2, result);
+
+            result = measure(n, [&] {
+                sink_u64 = simd_lab::sad_u16_scalar(u16_a, u16_b);
+            });
+            report("sad-u16/scalar-autovec", n, n * 4, n * 4, result);
+
+            result = measure(n, [&] {
+                sink_u64 = simd_lab::sad_u16_best(u16_a, u16_b);
+            });
+            report("sad-u16/best-dispatch", n, n * 4, n * 4, result);
 
             result = measure(n, [&] {
                 simd_lab::sat_add_u8_scalar(sat_dst, a, b);
