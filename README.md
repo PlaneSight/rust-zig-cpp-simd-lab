@@ -45,10 +45,32 @@ The clamp work includes:
 ├── rust/                # Rust implementations and benchmarks
 ├── zig/                 # Zig 0.16 implementations and benchmarks
 ├── probes/              # tiny standalone codegen experiments
-├── docs/                # methodology, experiment matrix, codegen notes
+├── data/                # shared deterministic input corpora
+├── docs/                # methodology, findings, and roadmap
 ├── scripts/             # repeatable benchmark and asm tooling
+├── results/             # reviewed manifests and result bundles
+├── schema/              # machine-readable result schemas and examples
+├── site/                # generated/static result presentation
 └── .github/workflows/   # correctness and codegen CI
 ```
+
+## Documentation map
+
+- [`docs/roadmap.md`](docs/roadmap.md) — authoritative backlog and completion
+  criteria.
+- [`docs/reproducing-findings.md`](docs/reproducing-findings.md) — commands,
+  metadata requirements, and evidence boundaries for existing findings.
+- [`docs/methodology.md`](docs/methodology.md) — correctness, benchmark, and
+  static-analysis methodology.
+- [`docs/benchmarking.md`](docs/benchmarking.md) — runtime protocol and byte
+  accounting.
+- [`docs/case-study-sad.md`](docs/case-study-sad.md) — reviewed u8 SAD and
+  `VPSADBW` case study.
+- [`docs/fp16-semantics.md`](docs/fp16-semantics.md) — FP16 raw-bit contracts
+  and host evidence.
+- [`docs/codegen-probes.md`](docs/codegen-probes.md) and
+  [`docs/codegen-snapshots.md`](docs/codegen-snapshots.md) — probe design,
+  generated manifests, and review rules.
 
 ## Fair-comparison rules
 
