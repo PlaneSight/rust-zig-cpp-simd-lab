@@ -7,33 +7,37 @@ pub fn axpyScalar(dst: []f32, x: []const f32, y: []const f32, a: f32) void {
     }
 }
 
-pub fn squaredErrorScalar(a: []const f32, b: []const f32) f32 {
+/// Reference squared error for f32 inputs with f64 accumulation.
+/// Subtraction keeps f32 semantics; products and the reduction are widened.
+pub fn squaredErrorScalar(a: []const f32, b: []const f32) f64 {
     std.debug.assert(a.len == b.len);
-    var sum: f32 = 0;
+    var sum: f64 = 0;
     for (a, b) |x, y| {
-        const d = x - y;
+        const d: f64 = @floatCast(x - y);
         sum += d * d;
     }
     return sum;
 }
 
-pub fn squaredErrorVector(a: []const f32, b: []const f32) f32 {
+pub fn squaredErrorVector(a: []const f32, b: []const f32) f64 {
     std.debug.assert(a.len == b.len);
 
-    const Vec = @Vector(8, f32);
-    var acc: Vec = @splat(0.0);
+    const Float = @Vector(8, f32);
+    const Wide = @Vector(8, f64);
+    var acc: Wide = @splat(0.0);
     var i: usize = 0;
 
     while (i + 8 <= a.len) : (i += 8) {
-        const va: Vec = a[i..][0..8].*;
-        const vb: Vec = b[i..][0..8].*;
-        const d = va - vb;
-        acc += d * d;
+        const va: Float = a[i..][0..8].*;
+        const vb: Float = b[i..][0..8].*;
+        const difference: Float = va - vb;
+        const wide: Wide = @floatCast(difference);
+        acc += wide * wide;
     }
 
     var sum = @reduce(.Add, acc);
     while (i < a.len) : (i += 1) {
-        const d = a[i] - b[i];
+        const d: f64 = @floatCast(a[i] - b[i]);
         sum += d * d;
     }
     return sum;
@@ -58,8 +62,8 @@ pub fn sadU8Vector(a: []const u8, b: []const u8) u64 {
     while (i + 32 <= a.len) : (i += 32) {
         const va: Bytes = a[i..][0..32].*;
         const vb: Bytes = b[i..][0..32].*;
-        const diff: Bytes = @max(va, vb) - @min(va, vb);
-        const wide: Wide = @intCast(diff);
+        const difference: Bytes = @max(va, vb) - @min(va, vb);
+        const wide: Wide = @intCast(difference);
         sum += @as(u64, @intCast(@reduce(.Add, wide)));
     }
 
@@ -88,18 +92,18 @@ pub fn clampF16Native(dst: []f16, c: []const f16, lo: []const f16, hi: []const f
 
 pub fn clampF16PromoteOnce(dst: []f16, c: []const f16, lo: []const f16, hi: []const f16) void {
     std.debug.assert(dst.len == c.len and c.len == lo.len and lo.len == hi.len);
-    const H = @Vector(16, f16);
-    const F = @Vector(16, f32);
+    const Half = @Vector(16, f16);
+    const Float = @Vector(16, f32);
     var i: usize = 0;
     while (i + 16 <= dst.len) : (i += 16) {
-        const hc: H = c[i..][0..16].*;
-        const hlo: H = lo[i..][0..16].*;
-        const hhi: H = hi[i..][0..16].*;
-        const vc: F = @floatCast(hc);
-        const vlo: F = @floatCast(hlo);
-        const vhi: F = @floatCast(hhi);
-        const out: F = @max(vlo, @min(vc, vhi));
-        const narrowed: H = @floatCast(out);
+        const hc: Half = c[i..][0..16].*;
+        const hlo: Half = lo[i..][0..16].*;
+        const hhi: Half = hi[i..][0..16].*;
+        const vc: Float = @floatCast(hc);
+        const vlo: Float = @floatCast(hlo);
+        const vhi: Float = @floatCast(hhi);
+        const out: Float = @max(vlo, @min(vc, vhi));
+        const narrowed: Half = @floatCast(out);
         dst[i..][0..16].* = narrowed;
     }
     while (i < dst.len) : (i += 1) {
@@ -110,6 +114,25 @@ pub fn clampF16PromoteOnce(dst: []f16, c: []const f16, lo: []const f16, hi: []co
     }
 }
 
+const XorShift64 = struct {
+    state: u64,
+
+    fn next(self: *XorShift64) u64 {
+        var value = self.state;
+        value ^= value << 13;
+        value ^= value >> 7;
+        value ^= value << 17;
+        self.state = value;
+        return value;
+    }
+
+    fn nextF32(self: *XorShift64) f32 {
+        const top: u32 = @intCast(self.next() >> 40);
+        const unit = @as(f32, @floatFromInt(top)) / @as(f32, @floatFromInt(@as(u32, 1) << 24));
+        return @mulAdd(f32, unit, 8.0, -4.0);
+    }
+};
+
 test "axpy" {
     const x = [_]f32{ 1, 2, 3, 4 };
     const y = [_]f32{ 5, 6, 7, 8 };
@@ -118,42 +141,53 @@ test "axpy" {
     try std.testing.expectEqualSlices(f32, &[_]f32{ 7, 10, 13, 16 }, &dst);
 }
 
-test "vector squared error matches scalar" {
-    var a: [257]f32 = undefined;
-    var b: [257]f32 = undefined;
-    for (&a, &b, 0..) |*av, *bv, i| {
-        av.* = @as(f32, @floatFromInt(i)) * 0.25;
-        bv.* = @as(f32, @floatFromInt(i)) * 0.125 + 1.0;
+test "randomized vector paths match scalar references across tails" {
+    const max_len = 2049;
+    var floats_a: [max_len]f32 = undefined;
+    var floats_b: [max_len]f32 = undefined;
+    var bytes_a: [max_len]u8 = undefined;
+    var bytes_b: [max_len]u8 = undefined;
+    var rng = XorShift64{ .state = 0x8f3c_a516_d27b_49e1 };
+
+    for (0..256) |trial| {
+        const len: usize = if (trial < 64) trial else @intCast(rng.next() % max_len);
+        for (floats_a[0..len], floats_b[0..len], bytes_a[0..len], bytes_b[0..len]) |*fa, *fb, *ba, *bb| {
+            fa.* = rng.nextF32();
+            fb.* = rng.nextF32();
+            ba.* = @truncate(rng.next());
+            bb.* = @truncate(rng.next());
+        }
+
+        const reference = squaredErrorScalar(floats_a[0..len], floats_b[0..len]);
+        const candidate = squaredErrorVector(floats_a[0..len], floats_b[0..len]);
+        const relative_error = @abs(reference - candidate) / @max(@abs(reference), 1.0);
+        try std.testing.expect(relative_error <= 1e-12);
+        try std.testing.expectEqual(
+            sadU8Scalar(bytes_a[0..len], bytes_b[0..len]),
+            sadU8Vector(bytes_a[0..len], bytes_b[0..len]),
+        );
     }
-    const scalar = squaredErrorScalar(&a, &b);
-    const vector = squaredErrorVector(&a, &b);
-    const tolerance = @max(@abs(scalar), 1.0) * 1e-5;
-    try std.testing.expect(@abs(scalar - vector) <= tolerance);
 }
 
-test "vector u8 SAD matches scalar" {
-    var a: [1025]u8 = undefined;
-    var b: [1025]u8 = undefined;
-    for (&a, &b, 0..) |*av, *bv, i| {
-        av.* = @intCast((i * 17 + 3) & 255);
-        bv.* = @intCast((i * 29 + 11) & 255);
-    }
-    try std.testing.expectEqual(sadU8Scalar(&a, &b), sadU8Vector(&a, &b));
-}
+test "randomized f16 clamp strategies match across vector tails" {
+    const half_values = [_]f16{ 0.0, 0.25, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0 };
+    var c: [257]f16 = undefined;
+    var lo: [257]f16 = undefined;
+    var hi: [257]f16 = undefined;
+    var native: [257]f16 = undefined;
+    var promoted: [257]f16 = undefined;
+    var rng = XorShift64{ .state = 0xc672_b9e4_215d_8a3f };
 
-test "promoted f16 clamp matches native for finite exact inputs" {
-    var c: [32]f16 = undefined;
-    var lo: [32]f16 = undefined;
-    var hi: [32]f16 = undefined;
-    var native: [32]f16 = undefined;
-    var promoted: [32]f16 = undefined;
-    for (&c, &lo, &hi, 0..) |*cv, *lv, *hv, i| {
-        const v: f32 = @floatFromInt(i % 8);
-        cv.* = @floatCast(v * 0.5);
-        lv.* = 0.5;
-        hv.* = 2.5;
+    for (0..192) |trial| {
+        const len: usize = if (trial < 64) trial else @intCast(rng.next() % 258);
+        for (c[0..len], lo[0..len], hi[0..len]) |*value, *low, *high| {
+            const index: usize = @intCast(rng.next() & 7);
+            value.* = half_values[index];
+            low.* = 0.5;
+            high.* = 2.0;
+        }
+        clampF16Native(native[0..len], c[0..len], lo[0..len], hi[0..len]);
+        clampF16PromoteOnce(promoted[0..len], c[0..len], lo[0..len], hi[0..len]);
+        try std.testing.expectEqualSlices(f16, native[0..len], promoted[0..len]);
     }
-    clampF16Native(&native, &c, &lo, &hi);
-    clampF16PromoteOnce(&promoted, &c, &lo, &hi);
-    try std.testing.expectEqualSlices(f16, &native, &promoted);
 }

@@ -9,8 +9,10 @@ from __future__ import annotations
 import argparse
 import json
 import platform
+import shlex
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,7 +21,11 @@ PROBES = ["clamp", "sad", "sat_add"]
 
 
 def run(cmd: list[str], cwd: Path = ROOT) -> str:
-    p = subprocess.run(cmd, cwd=cwd, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.run(cmd, cwd=cwd, check=False, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if p.returncode != 0:
+        print(f"command failed: {shlex.join(cmd)}", file=sys.stderr)
+        print(p.stdout, file=sys.stderr, end="" if p.stdout.endswith("\n") else "\n")
+        p.check_returncode()
     return p.stdout.strip()
 
 
@@ -51,7 +57,7 @@ def main() -> None:
     if shutil.which("rustc"):
         for probe in PROBES:
             out = OUT / f"rust-{probe}-{args.target}.s"
-            cmd = ["rustc", "-O", "--crate-type=lib", "--emit=asm", *target_flags["rust"], str(ROOT / f"probes/rust/{probe}.rs"), "-o", str(out)]
+            cmd = ["rustc", "--edition=2021", "-O", "--crate-type=lib", "--emit=asm", *target_flags["rust"], str(ROOT / f"probes/rust/{probe}.rs"), "-o", str(out)]
             run(cmd)
             jobs.append({"toolchain": "rustc", "probe": probe, "assembly": str(out.relative_to(ROOT)), "command": cmd})
 

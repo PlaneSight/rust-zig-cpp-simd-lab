@@ -36,7 +36,7 @@ The comparison should always separate language ergonomics, frontend lowering, op
 - [x] `f16` investigation track
 - [x] `f32`
 - [x] `f64` scalar/codegen probes
-- [ ] broaden `f64` runtime/vector coverage
+- [x] broaden `f64` runtime/vector coverage
 - [ ] investigate `bf16` where language/toolchain/ISA support is practical
 
 ## Mixed-width pipelines
@@ -285,6 +285,7 @@ These are the bridge from microbenchmarks to realistic workloads.
 - [x] scalar/autovec source
 - [x] x86 intrinsics
 - [x] runtime CPU detection on GCC/Clang
+- [x] MSVC runtime dispatch with an isolated `/arch:AVX2` translation unit
 - [ ] compare GCC vs Clang consistently
 - [ ] investigate `std::experimental::simd` / implementation status separately from ISO C++23 baseline
 - [ ] portable wrapper/library comparison if worthwhile
@@ -349,20 +350,20 @@ These are the bridge from microbenchmarks to realistic workloads.
 - [ ] contiguous vs strided access
 - [ ] structure-of-arrays vs array-of-structures
 - [ ] interleaved RGB/RGBA access
-- [ ] cache-resident vs streaming datasets
-- [ ] working-set sweeps across L1/L2/L3/DRAM
+- [x] cache-resident vs streaming datasets
+- [x] working-set sweeps across L1/L2/L3/DRAM
 - [ ] memory-bandwidth roofline comparisons
 - [ ] aliasing/restrict/noalias effects
-- [ ] allocation-free benchmark discipline
+- [x] allocation-free benchmark discipline
 
 # 12. Tail handling
 
-- [ ] scalar tails
+- [x] scalar tails
 - [ ] masked tails
 - [ ] overread-safe padded buffers where appropriate
 - [ ] loop peeling for alignment
 - [ ] compare vector widths on short arrays
-- [ ] test pathological lengths: 0, 1, lanes-1, lanes, lanes+1, odd sizes, prime sizes
+- [x] test pathological lengths: 0, 1, lanes-1, lanes, lanes+1, odd sizes, prime sizes
 - [ ] benchmark tail overhead separately from steady-state throughput
 
 # 13. Benchmark methodology
@@ -374,8 +375,8 @@ These are the bridge from microbenchmarks to realistic workloads.
 - [x] effective GiB/s
 - [x] machine-readable benchmark JSON
 - [ ] cycles/element
-- [ ] multiple samples and robust statistics
-- [ ] median / p95 / standard deviation
+- [x] multiple samples and robust statistics
+- [x] median / p95 / median absolute deviation
 - [ ] confidence intervals where useful
 - [ ] CPU pinning guidance
 - [ ] governor/frequency guidance
@@ -452,8 +453,8 @@ These are the bridge from microbenchmarks to realistic workloads.
 - [x] scalar references
 - [x] exact finite FP16 validation
 - [x] FP16 raw-bit edge corpus
-- [ ] reusable random differential tests across language implementations
-- [ ] deterministic seeded datasets
+- [x] reusable random differential tests across language implementations
+- [x] deterministic seeded datasets
 - [ ] integer exhaustive testing for small-vector kernels where feasible
 - [ ] float ULP-distance reporting
 - [ ] absolute/relative error reporting
@@ -479,8 +480,8 @@ Potential candidates should emerge from evidence—for example repeated FP16 con
 
 # 20. Compiler/toolchain matrix
 
-- [x] stable rustc baseline
-- [x] Zig 0.16 development toolchain pin in CI
+- [x] pinned stable rustc baseline
+- [x] Zig 0.16 stable toolchain pin in CI
 - [x] GCC
 - [x] Clang
 - [ ] track exact LLVM major version underneath Rust/Zig/Clang where useful
@@ -518,7 +519,7 @@ Potential candidates should emerge from evidence—for example repeated FP16 con
 - [ ] separate correctness CI from performance evidence
 - [ ] sanitizers for C++ where relevant
 - [ ] Miri/UB-focused Rust checks where relevant
-- [ ] Zig safety-mode correctness job in addition to ReleaseFast
+- [x] Zig safety-mode correctness job in addition to ReleaseFast
 - [ ] compiler matrix jobs for selected releases
 - [ ] artifact retention/versioning strategy
 
