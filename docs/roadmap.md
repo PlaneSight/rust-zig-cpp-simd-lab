@@ -91,7 +91,7 @@ For each useful kernel, aim for the following implementation tiers where the lan
 ## Saturating arithmetic
 
 - [x] `u8` saturating-add codegen probes
-- [ ] `u8` saturating-add runtime benchmarks
+- [x] `u8` saturating-add runtime benchmarks
 - [ ] `u8` saturating subtract
 - [ ] `i8` saturating add/subtract
 - [ ] `u16` saturating add/subtract

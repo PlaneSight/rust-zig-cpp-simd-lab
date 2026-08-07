@@ -26,7 +26,9 @@ A major investigation track is **common integer and floating-point lowering**, m
 
 1. **AXPY**: `dst[i] = a * x[i] + y[i]`
 2. **Squared error**: `sum((a[i] - b[i])^2)` with f64 accumulation
-3. **Min/max/clamp family** — chosen to expose integer vs floating-point lowering and FP16 conversion behavior
+3. **u8 SAD**: exact absolute-difference reduction, including AVX2 `VPSADBW`
+4. **u8 saturating add**: `dst[i] = min(255, a[i] + b[i])`, including AVX2 `VPADDUSB`
+5. **Min/max/clamp family** — chosen to expose integer vs floating-point lowering and FP16 conversion behavior
 
 The clamp work includes:
 
@@ -110,11 +112,11 @@ ctest --test-dir build/cpp --output-on-failure
 ./build/cpp/simd_lab_cpp_bench
 ```
 
-MSVC uses a baseline dispatcher plus a separate `/arch:AVX2` translation unit. The runtime output states whether `best-dispatch` selected `avx2+fma` or `scalar`.
+MSVC uses a baseline dispatcher plus a separate `/arch:AVX2` translation unit. Runtime metadata reports the floating-point `avx2+fma` tier and the AVX2-only u8 saturating-add tier separately.
 
 ## Runtime protocol
 
-The default sweep spans 4 KiB through 16 MiB per f32 array, covering L1/L2-resident and shared-cache/DRAM-sized inputs. Every point retains 15 independent samples and reports minimum, median, p95, MAD, and effective GiB/s. Randomized differential tests exercise vector tails and verify that rejected F16C partial blocks do not modify output.
+The default sweep spans 4 KiB through 16 MiB per f32 array, covering L1/L2-resident and shared-cache/DRAM-sized inputs. Every point retains 15 independent samples and reports minimum, median, p95, MAD, and effective GiB/s. Randomized differential tests exercise vector tails; the u8 saturating-add contract is exhaustive over every input pair; rejected F16C partial blocks are verified to leave output untouched.
 
 Collect all three languages into one JSON document:
 
