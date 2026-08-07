@@ -378,13 +378,6 @@ bool run_saturating_add_case(std::size_t length, XorShift64& rng,
         i64_expected[i] = sat_add_reference(i64_a[i], i64_b[i]);
     }
 
-    simd_lab::sat_add_i8_scalar(i8_actual, i8_a, i8_b);
-    simd_lab::sat_add_u16_scalar(u16_actual, u16_a, u16_b);
-    simd_lab::sat_add_i16_scalar(i16_actual, i16_a, i16_b);
-    simd_lab::sat_add_u32_scalar(u32_actual, u32_a, u32_b);
-    simd_lab::sat_add_i32_scalar(i32_actual, i32_a, i32_b);
-    simd_lab::sat_add_u64_scalar(u64_actual, u64_a, u64_b);
-    simd_lab::sat_add_i64_scalar(i64_actual, i64_a, i64_b);
     const auto check = [length](const auto& actual, const auto& expected,
                                 const char* type) {
         if (actual != expected) {
@@ -394,13 +387,36 @@ bool run_saturating_add_case(std::size_t length, XorShift64& rng,
         }
         return true;
     };
-    return check(i8_actual, i8_expected, "i8") &&
-           check(u16_actual, u16_expected, "u16") &&
-           check(i16_actual, i16_expected, "i16") &&
-           check(u32_actual, u32_expected, "u32") &&
-           check(i32_actual, i32_expected, "i32") &&
-           check(u64_actual, u64_expected, "u64") &&
-           check(i64_actual, i64_expected, "i64");
+    simd_lab::sat_add_i8_scalar(i8_actual, i8_a, i8_b);
+    simd_lab::sat_add_u16_scalar(u16_actual, u16_a, u16_b);
+    simd_lab::sat_add_i16_scalar(i16_actual, i16_a, i16_b);
+    simd_lab::sat_add_u32_scalar(u32_actual, u32_a, u32_b);
+    simd_lab::sat_add_i32_scalar(i32_actual, i32_a, i32_b);
+    simd_lab::sat_add_u64_scalar(u64_actual, u64_a, u64_b);
+    simd_lab::sat_add_i64_scalar(i64_actual, i64_a, i64_b);
+    if (!check(i8_actual, i8_expected, "i8-scalar") ||
+        !check(u16_actual, u16_expected, "u16-scalar") ||
+        !check(i16_actual, i16_expected, "i16-scalar") ||
+        !check(u32_actual, u32_expected, "u32-scalar") ||
+        !check(i32_actual, i32_expected, "i32-scalar") ||
+        !check(u64_actual, u64_expected, "u64-scalar") ||
+        !check(i64_actual, i64_expected, "i64-scalar")) {
+        return false;
+    }
+    simd_lab::sat_add_i8_widened(i8_actual, i8_a, i8_b);
+    simd_lab::sat_add_u16_widened(u16_actual, u16_a, u16_b);
+    simd_lab::sat_add_i16_widened(i16_actual, i16_a, i16_b);
+    simd_lab::sat_add_u32_widened(u32_actual, u32_a, u32_b);
+    simd_lab::sat_add_i32_widened(i32_actual, i32_a, i32_b);
+    simd_lab::sat_add_u64_widened(u64_actual, u64_a, u64_b);
+    simd_lab::sat_add_i64_widened(i64_actual, i64_a, i64_b);
+    return check(i8_actual, i8_expected, "i8-widened") &&
+           check(u16_actual, u16_expected, "u16-widened") &&
+           check(i16_actual, i16_expected, "i16-widened") &&
+           check(u32_actual, u32_expected, "u32-widened") &&
+           check(i32_actual, i32_expected, "i32-widened") &&
+           check(u64_actual, u64_expected, "u64-widened") &&
+           check(i64_actual, i64_expected, "i64-widened");
 }
 
 bool run_saturating_sub_case(std::size_t length, XorShift64& rng,
@@ -565,14 +581,6 @@ bool run_saturating_sub_case(std::size_t length, XorShift64& rng,
         i64_expected[i] = sat_sub_reference(i64_a[i], i64_b[i]);
     }
 
-    simd_lab::sat_sub_u8_scalar(u8_actual, u8_a, u8_b);
-    if (u8_actual != u8_expected) {
-        std::cerr << "saturating-sub u8 scalar mismatch at length "
-                  << length << '\n';
-        return false;
-    }
-    std::fill(u8_actual.begin(), u8_actual.end(), std::uint8_t{0});
-    simd_lab::sat_sub_u8_best(u8_actual, u8_a, u8_b);
     const auto check = [length](const auto& actual, const auto& expected,
                                 const char* type) {
         if (actual != expected) {
@@ -582,6 +590,11 @@ bool run_saturating_sub_case(std::size_t length, XorShift64& rng,
         }
         return true;
     };
+    simd_lab::sat_sub_u8_scalar(u8_actual, u8_a, u8_b);
+    if (!check(u8_actual, u8_expected, "u8-scalar")) return false;
+    std::fill(u8_actual.begin(), u8_actual.end(), std::uint8_t{0});
+    simd_lab::sat_sub_u8_best(u8_actual, u8_a, u8_b);
+    if (!check(u8_actual, u8_expected, "u8-best")) return false;
     simd_lab::sat_sub_i8_scalar(i8_actual, i8_a, i8_b);
     simd_lab::sat_sub_u16_scalar(u16_actual, u16_a, u16_b);
     simd_lab::sat_sub_i16_scalar(i16_actual, i16_a, i16_b);
@@ -589,14 +602,31 @@ bool run_saturating_sub_case(std::size_t length, XorShift64& rng,
     simd_lab::sat_sub_i32_scalar(i32_actual, i32_a, i32_b);
     simd_lab::sat_sub_u64_scalar(u64_actual, u64_a, u64_b);
     simd_lab::sat_sub_i64_scalar(i64_actual, i64_a, i64_b);
-    return check(u8_actual, u8_expected, "u8-best") &&
-           check(i8_actual, i8_expected, "i8") &&
-           check(u16_actual, u16_expected, "u16") &&
-           check(i16_actual, i16_expected, "i16") &&
-           check(u32_actual, u32_expected, "u32") &&
-           check(i32_actual, i32_expected, "i32") &&
-           check(u64_actual, u64_expected, "u64") &&
-           check(i64_actual, i64_expected, "i64");
+    if (!check(i8_actual, i8_expected, "i8-scalar") ||
+        !check(u16_actual, u16_expected, "u16-scalar") ||
+        !check(i16_actual, i16_expected, "i16-scalar") ||
+        !check(u32_actual, u32_expected, "u32-scalar") ||
+        !check(i32_actual, i32_expected, "i32-scalar") ||
+        !check(u64_actual, u64_expected, "u64-scalar") ||
+        !check(i64_actual, i64_expected, "i64-scalar")) {
+        return false;
+    }
+    simd_lab::sat_sub_u8_widened(u8_actual, u8_a, u8_b);
+    simd_lab::sat_sub_i8_widened(i8_actual, i8_a, i8_b);
+    simd_lab::sat_sub_u16_widened(u16_actual, u16_a, u16_b);
+    simd_lab::sat_sub_i16_widened(i16_actual, i16_a, i16_b);
+    simd_lab::sat_sub_u32_widened(u32_actual, u32_a, u32_b);
+    simd_lab::sat_sub_i32_widened(i32_actual, i32_a, i32_b);
+    simd_lab::sat_sub_u64_widened(u64_actual, u64_a, u64_b);
+    simd_lab::sat_sub_i64_widened(i64_actual, i64_a, i64_b);
+    return check(u8_actual, u8_expected, "u8-widened") &&
+           check(i8_actual, i8_expected, "i8-widened") &&
+           check(u16_actual, u16_expected, "u16-widened") &&
+           check(i16_actual, i16_expected, "i16-widened") &&
+           check(u32_actual, u32_expected, "u32-widened") &&
+           check(i32_actual, i32_expected, "i32-widened") &&
+           check(u64_actual, u64_expected, "u64-widened") &&
+           check(i64_actual, i64_expected, "i64-widened");
 }
 
 
@@ -771,6 +801,14 @@ bool run_randomized_differential_tests() {
             std::cerr << "saturating-add mismatch at length " << length << '\n';
             return false;
         }
+        std::fill(sat_candidate.begin(), sat_candidate.end(),
+                  std::uint8_t{0});
+        simd_lab::sat_add_u8_widened(sat_candidate, bytes_a, bytes_b);
+        if (sat_candidate != expected) {
+            std::cerr << "widened saturating-add mismatch at length "
+                      << length << '\n';
+            return false;
+        }
 
         std::vector<std::uint16_t> c(length), lo(length, 0x3800),
             hi(length, 0x4000), dst(length, 0xdead);
@@ -825,6 +863,12 @@ bool run_exhaustive_saturating_add_test() {
         std::cerr << "dispatched saturating-add exhaustive test failed\n";
         return false;
     }
+    std::fill(candidate.begin(), candidate.end(), std::uint8_t{0});
+    simd_lab::sat_add_u8_widened(candidate, a, b);
+    if (candidate != expected) {
+        std::cerr << "widened saturating-add exhaustive test failed\n";
+        return false;
+    }
     return true;
 }
 
@@ -846,6 +890,12 @@ bool run_exhaustive_saturating_sub_test() {
     simd_lab::sat_sub_u8_scalar(candidate, a, b);
     if (candidate != expected) {
         std::cerr << "scalar saturating-sub exhaustive test failed\n";
+        return false;
+    }
+    std::fill(candidate.begin(), candidate.end(), std::uint8_t{0});
+    simd_lab::sat_sub_u8_widened(candidate, a, b);
+    if (candidate != expected) {
+        std::cerr << "widened saturating-sub exhaustive test failed\n";
         return false;
     }
     std::fill(candidate.begin(), candidate.end(), std::uint8_t{0});

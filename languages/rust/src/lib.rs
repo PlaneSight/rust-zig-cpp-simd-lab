@@ -145,6 +145,119 @@ pub fn sat_add_i64_scalar(dst: &mut [i64], a: &[i64], b: &[i64]) {
     }
 }
 
+/// Adds unsigned bytes element-wise with widened arithmetic and saturation at `u8::MAX`.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_add_u8_widened(dst: &mut [u8], a: &[u8], b: &[u8]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        let sum = u128::from(x) + u128::from(y);
+        *out = sum.min(u128::from(u8::MAX)) as u8;
+    }
+}
+
+/// Adds signed bytes element-wise with widened arithmetic and saturation at the `i8` bounds.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_add_i8_widened(dst: &mut [i8], a: &[i8], b: &[i8]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        let sum = i128::from(x) + i128::from(y);
+        *out = sum.clamp(i128::from(i8::MIN), i128::from(i8::MAX)) as i8;
+    }
+}
+
+/// Adds unsigned 16-bit integers element-wise with widened arithmetic and saturation at `u16::MAX`.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_add_u16_widened(dst: &mut [u16], a: &[u16], b: &[u16]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        let sum = u128::from(x) + u128::from(y);
+        *out = sum.min(u128::from(u16::MAX)) as u16;
+    }
+}
+
+/// Adds signed 16-bit integers element-wise with widened arithmetic and saturation at the `i16` bounds.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_add_i16_widened(dst: &mut [i16], a: &[i16], b: &[i16]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        let sum = i128::from(x) + i128::from(y);
+        *out = sum.clamp(i128::from(i16::MIN), i128::from(i16::MAX)) as i16;
+    }
+}
+
+/// Adds unsigned 32-bit integers element-wise with widened arithmetic and saturation at `u32::MAX`.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_add_u32_widened(dst: &mut [u32], a: &[u32], b: &[u32]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        let sum = u128::from(x) + u128::from(y);
+        *out = sum.min(u128::from(u32::MAX)) as u32;
+    }
+}
+
+/// Adds signed 32-bit integers element-wise with widened arithmetic and saturation at the `i32` bounds.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_add_i32_widened(dst: &mut [i32], a: &[i32], b: &[i32]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        let sum = i128::from(x) + i128::from(y);
+        *out = sum.clamp(i128::from(i32::MIN), i128::from(i32::MAX)) as i32;
+    }
+}
+
+/// Adds unsigned 64-bit integers element-wise with widened arithmetic and saturation at `u64::MAX`.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_add_u64_widened(dst: &mut [u64], a: &[u64], b: &[u64]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        let sum = u128::from(x) + u128::from(y);
+        *out = sum.min(u128::from(u64::MAX)) as u64;
+    }
+}
+
+/// Adds signed 64-bit integers element-wise with widened arithmetic and saturation at the `i64` bounds.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_add_i64_widened(dst: &mut [i64], a: &[i64], b: &[i64]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        let sum = i128::from(x) + i128::from(y);
+        *out = sum.clamp(i128::from(i64::MIN), i128::from(i64::MAX)) as i64;
+    }
+}
+
+
 /// Subtracts unsigned bytes element-wise with saturation at zero.
 ///
 /// The three slices must have identical lengths. Rust's borrowing rules make
@@ -248,6 +361,119 @@ pub fn sat_sub_i64_scalar(dst: &mut [i64], a: &[i64], b: &[i64]) {
         *out = x.saturating_sub(y);
     }
 }
+
+/// Subtracts unsigned bytes element-wise with widened arithmetic and saturation at zero.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_sub_u8_widened(dst: &mut [u8], a: &[u8], b: &[u8]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        let difference = u128::from(x).saturating_sub(u128::from(y));
+        *out = difference.min(u128::from(u8::MAX)) as u8;
+    }
+}
+
+/// Subtracts signed bytes element-wise with widened arithmetic and saturation at the `i8` bounds.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_sub_i8_widened(dst: &mut [i8], a: &[i8], b: &[i8]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        let difference = i128::from(x) - i128::from(y);
+        *out = difference.clamp(i128::from(i8::MIN), i128::from(i8::MAX)) as i8;
+    }
+}
+
+/// Subtracts unsigned 16-bit integers element-wise with widened arithmetic and saturation at zero.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_sub_u16_widened(dst: &mut [u16], a: &[u16], b: &[u16]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        let difference = u128::from(x).saturating_sub(u128::from(y));
+        *out = difference.min(u128::from(u16::MAX)) as u16;
+    }
+}
+
+/// Subtracts signed 16-bit integers element-wise with widened arithmetic and saturation at the `i16` bounds.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_sub_i16_widened(dst: &mut [i16], a: &[i16], b: &[i16]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        let difference = i128::from(x) - i128::from(y);
+        *out = difference.clamp(i128::from(i16::MIN), i128::from(i16::MAX)) as i16;
+    }
+}
+
+/// Subtracts unsigned 32-bit integers element-wise with widened arithmetic and saturation at zero.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_sub_u32_widened(dst: &mut [u32], a: &[u32], b: &[u32]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        let difference = u128::from(x).saturating_sub(u128::from(y));
+        *out = difference.min(u128::from(u32::MAX)) as u32;
+    }
+}
+
+/// Subtracts signed 32-bit integers element-wise with widened arithmetic and saturation at the `i32` bounds.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_sub_i32_widened(dst: &mut [i32], a: &[i32], b: &[i32]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        let difference = i128::from(x) - i128::from(y);
+        *out = difference.clamp(i128::from(i32::MIN), i128::from(i32::MAX)) as i32;
+    }
+}
+
+/// Subtracts unsigned 64-bit integers element-wise with widened arithmetic and saturation at zero.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_sub_u64_widened(dst: &mut [u64], a: &[u64], b: &[u64]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        let difference = u128::from(x).saturating_sub(u128::from(y));
+        *out = difference.min(u128::from(u64::MAX)) as u64;
+    }
+}
+
+/// Subtracts signed 64-bit integers element-wise with widened arithmetic and saturation at the `i64` bounds.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_sub_i64_widened(dst: &mut [i64], a: &[i64], b: &[i64]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        let difference = i128::from(x) - i128::from(y);
+        *out = difference.clamp(i128::from(i64::MIN), i128::from(i64::MAX)) as i64;
+    }
+}
+
 /// Computes an f32 dot product with f64 products and accumulation.
 pub fn dot_f32_scalar(a: &[f32], b: &[f32]) -> f64 {
     assert_eq!(a.len(), b.len());
@@ -1150,6 +1376,9 @@ mod tests {
         candidate.fill(0);
         sat_add_u8_best(&mut candidate, &a, &b);
         assert_eq!(candidate, expected);
+        candidate.fill(0);
+        sat_add_u8_widened(&mut candidate, &a, &b);
+        assert_eq!(candidate, expected);
     }
 
     #[test]
@@ -1174,6 +1403,9 @@ mod tests {
         candidate.fill(0);
         sat_sub_u8_best(&mut candidate, &a, &b);
         assert_eq!(candidate, expected);
+        candidate.fill(0);
+        sat_sub_u8_widened(&mut candidate, &a, &b);
+        assert_eq!(candidate, expected);
     }
 
     #[test]
@@ -1184,7 +1416,7 @@ mod tests {
         let mut rng = XorShift64(0xa6e4_1b29_7c53_d08f);
 
         macro_rules! check_signed {
-            ($len:ident, $ty:ty, $wide:ty, $function:ident) => {{
+            ($len:ident, $ty:ty, $wide:ty, $function:ident, $widened:ident) => {{
                 let a: Vec<$ty> = (0..$len)
                     .map(|i| match i {
                         0 => <$ty>::MIN,
@@ -1224,14 +1456,23 @@ mod tests {
                 assert_eq!(
                     candidate,
                     expected,
-                    "signed type {} len={}",
+                    "signed scalar type {} len={}",
+                    stringify!($ty),
+                    $len
+                );
+                candidate.fill(0);
+                $widened(&mut candidate, &a, &b);
+                assert_eq!(
+                    candidate,
+                    expected,
+                    "signed widened type {} len={}",
                     stringify!($ty),
                     $len
                 );
             }};
         }
         macro_rules! check_unsigned {
-            ($len:ident, $ty:ty, $wide:ty, $function:ident) => {{
+            ($len:ident, $ty:ty, $wide:ty, $function:ident, $widened:ident) => {{
                 let a: Vec<$ty> = (0..$len)
                     .map(|i| match i {
                         0 => 0,
@@ -1270,7 +1511,16 @@ mod tests {
                 assert_eq!(
                     candidate,
                     expected,
-                    "unsigned type {} len={}",
+                    "unsigned scalar type {} len={}",
+                    stringify!($ty),
+                    $len
+                );
+                candidate.fill(0);
+                $widened(&mut candidate, &a, &b);
+                assert_eq!(
+                    candidate,
+                    expected,
+                    "unsigned widened type {} len={}",
                     stringify!($ty),
                     $len
                 );
@@ -1278,13 +1528,13 @@ mod tests {
         }
 
         for &len in &LENGTHS {
-            check_signed!(len, i8, i128, sat_sub_i8_scalar);
-            check_unsigned!(len, u16, u128, sat_sub_u16_scalar);
-            check_signed!(len, i16, i128, sat_sub_i16_scalar);
-            check_unsigned!(len, u32, u128, sat_sub_u32_scalar);
-            check_signed!(len, i32, i128, sat_sub_i32_scalar);
-            check_unsigned!(len, u64, u128, sat_sub_u64_scalar);
-            check_signed!(len, i64, i128, sat_sub_i64_scalar);
+            check_signed!(len, i8, i128, sat_sub_i8_scalar, sat_sub_i8_widened);
+            check_unsigned!(len, u16, u128, sat_sub_u16_scalar, sat_sub_u16_widened);
+            check_signed!(len, i16, i128, sat_sub_i16_scalar, sat_sub_i16_widened);
+            check_unsigned!(len, u32, u128, sat_sub_u32_scalar, sat_sub_u32_widened);
+            check_signed!(len, i32, i128, sat_sub_i32_scalar, sat_sub_i32_widened);
+            check_unsigned!(len, u64, u128, sat_sub_u64_scalar, sat_sub_u64_widened);
+            check_signed!(len, i64, i128, sat_sub_i64_scalar, sat_sub_i64_widened);
         }
 
         for trial in 0..256 {
@@ -1293,13 +1543,13 @@ mod tests {
             } else {
                 (rng.next() as usize) % 4097
             };
-            check_signed!(len, i8, i128, sat_sub_i8_scalar);
-            check_unsigned!(len, u16, u128, sat_sub_u16_scalar);
-            check_signed!(len, i16, i128, sat_sub_i16_scalar);
-            check_unsigned!(len, u32, u128, sat_sub_u32_scalar);
-            check_signed!(len, i32, i128, sat_sub_i32_scalar);
-            check_unsigned!(len, u64, u128, sat_sub_u64_scalar);
-            check_signed!(len, i64, i128, sat_sub_i64_scalar);
+            check_signed!(len, i8, i128, sat_sub_i8_scalar, sat_sub_i8_widened);
+            check_unsigned!(len, u16, u128, sat_sub_u16_scalar, sat_sub_u16_widened);
+            check_signed!(len, i16, i128, sat_sub_i16_scalar, sat_sub_i16_widened);
+            check_unsigned!(len, u32, u128, sat_sub_u32_scalar, sat_sub_u32_widened);
+            check_signed!(len, i32, i128, sat_sub_i32_scalar, sat_sub_i32_widened);
+            check_unsigned!(len, u64, u128, sat_sub_u64_scalar, sat_sub_u64_widened);
+            check_signed!(len, i64, i128, sat_sub_i64_scalar, sat_sub_i64_widened);
         }
     }
 
@@ -1538,7 +1788,7 @@ mod tests {
         let mut rng = XorShift64(0x4a21_8c73_d5e9_0b6f);
 
         macro_rules! check_signed {
-            ($len:ident, $ty:ty, $wide:ty, $function:ident) => {{
+            ($len:ident, $ty:ty, $wide:ty, $function:ident, $widened:ident) => {{
                 let a: Vec<$ty> = (0..$len)
                     .map(|i| match i {
                         0 => <$ty>::MIN,
@@ -1576,14 +1826,23 @@ mod tests {
                 assert_eq!(
                     candidate,
                     expected,
-                    "signed type {} len={}",
+                    "signed scalar type {} len={}",
+                    stringify!($ty),
+                    $len
+                );
+                candidate.fill(0);
+                $widened(&mut candidate, &a, &b);
+                assert_eq!(
+                    candidate,
+                    expected,
+                    "signed widened type {} len={}",
                     stringify!($ty),
                     $len
                 );
             }};
         }
         macro_rules! check_unsigned {
-            ($len:ident, $ty:ty, $wide:ty, $function:ident) => {{
+            ($len:ident, $ty:ty, $wide:ty, $function:ident, $widened:ident) => {{
                 let a: Vec<$ty> = (0..$len)
                     .map(|i| match i {
                         0 => 0,
@@ -1621,7 +1880,16 @@ mod tests {
                 assert_eq!(
                     candidate,
                     expected,
-                    "unsigned type {} len={}",
+                    "unsigned scalar type {} len={}",
+                    stringify!($ty),
+                    $len
+                );
+                candidate.fill(0);
+                $widened(&mut candidate, &a, &b);
+                assert_eq!(
+                    candidate,
+                    expected,
+                    "unsigned widened type {} len={}",
                     stringify!($ty),
                     $len
                 );
@@ -1629,13 +1897,13 @@ mod tests {
         }
 
         for &len in &LENGTHS {
-            check_signed!(len, i8, i128, sat_add_i8_scalar);
-            check_unsigned!(len, u16, u128, sat_add_u16_scalar);
-            check_signed!(len, i16, i128, sat_add_i16_scalar);
-            check_unsigned!(len, u32, u128, sat_add_u32_scalar);
-            check_signed!(len, i32, i128, sat_add_i32_scalar);
-            check_unsigned!(len, u64, u128, sat_add_u64_scalar);
-            check_signed!(len, i64, i128, sat_add_i64_scalar);
+            check_signed!(len, i8, i128, sat_add_i8_scalar, sat_add_i8_widened);
+            check_unsigned!(len, u16, u128, sat_add_u16_scalar, sat_add_u16_widened);
+            check_signed!(len, i16, i128, sat_add_i16_scalar, sat_add_i16_widened);
+            check_unsigned!(len, u32, u128, sat_add_u32_scalar, sat_add_u32_widened);
+            check_signed!(len, i32, i128, sat_add_i32_scalar, sat_add_i32_widened);
+            check_unsigned!(len, u64, u128, sat_add_u64_scalar, sat_add_u64_widened);
+            check_signed!(len, i64, i128, sat_add_i64_scalar, sat_add_i64_widened);
         }
 
 

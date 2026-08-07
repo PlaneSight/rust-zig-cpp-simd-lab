@@ -187,6 +187,83 @@ pub fn satAddI64Scalar(dst: []i64, a: []const i64, b: []const i64) void {
         out.* = x +| y;
     }
 }
+
+pub fn satAddU8Widened(dst: []u8, a: []const u8, b: []const u8) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const sum: u16 = @as(u16, x) + @as(u16, y);
+        const max_value: u16 = @intCast(std.math.maxInt(u8));
+        out.* = @intCast(@min(sum, max_value));
+    }
+}
+
+pub fn satAddI8Widened(dst: []i8, a: []const i8, b: []const i8) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const sum: i16 = @as(i16, x) + @as(i16, y);
+        const min_value: i16 = @intCast(std.math.minInt(i8));
+        const max_value: i16 = @intCast(std.math.maxInt(i8));
+        out.* = if (sum < min_value) std.math.minInt(i8) else if (sum > max_value) std.math.maxInt(i8) else @intCast(sum);
+    }
+}
+
+pub fn satAddU16Widened(dst: []u16, a: []const u16, b: []const u16) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const sum: u32 = @as(u32, x) + @as(u32, y);
+        const max_value: u32 = @intCast(std.math.maxInt(u16));
+        out.* = @intCast(@min(sum, max_value));
+    }
+}
+
+pub fn satAddI16Widened(dst: []i16, a: []const i16, b: []const i16) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const sum: i32 = @as(i32, x) + @as(i32, y);
+        const min_value: i32 = @intCast(std.math.minInt(i16));
+        const max_value: i32 = @intCast(std.math.maxInt(i16));
+        out.* = if (sum < min_value) std.math.minInt(i16) else if (sum > max_value) std.math.maxInt(i16) else @intCast(sum);
+    }
+}
+
+pub fn satAddU32Widened(dst: []u32, a: []const u32, b: []const u32) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const sum: u64 = @as(u64, x) + @as(u64, y);
+        const max_value: u64 = @intCast(std.math.maxInt(u32));
+        out.* = @intCast(@min(sum, max_value));
+    }
+}
+
+pub fn satAddI32Widened(dst: []i32, a: []const i32, b: []const i32) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const sum: i64 = @as(i64, x) + @as(i64, y);
+        const min_value: i64 = @intCast(std.math.minInt(i32));
+        const max_value: i64 = @intCast(std.math.maxInt(i32));
+        out.* = if (sum < min_value) std.math.minInt(i32) else if (sum > max_value) std.math.maxInt(i32) else @intCast(sum);
+    }
+}
+
+pub fn satAddU64Widened(dst: []u64, a: []const u64, b: []const u64) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const sum: u128 = @as(u128, x) + @as(u128, y);
+        const max_value: u128 = @intCast(std.math.maxInt(u64));
+        out.* = @intCast(@min(sum, max_value));
+    }
+}
+
+pub fn satAddI64Widened(dst: []i64, a: []const i64, b: []const i64) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const sum: i128 = @as(i128, x) + @as(i128, y);
+        const min_value: i128 = @intCast(std.math.minInt(i64));
+        const max_value: i128 = @intCast(std.math.maxInt(i64));
+        out.* = if (sum < min_value) std.math.minInt(i64) else if (sum > max_value) std.math.maxInt(i64) else @intCast(sum);
+    }
+}
+
 /// Subtracts unsigned bytes element-wise with saturation at zero.
 /// `dst`, `a`, and `b` must have equal lengths, and `dst` must not partially
 /// overlap either input.
@@ -264,6 +341,79 @@ pub fn satSubI64Scalar(dst: []i64, a: []const i64, b: []const i64) void {
         out.* = x -| y;
     }
 }
+/// Subtracts unsigned bytes element-wise with widened arithmetic and saturation at zero.
+pub fn satSubU8Widened(dst: []u8, a: []const u8, b: []const u8) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const difference: i16 = @as(i16, x) - @as(i16, y);
+        out.* = if (difference < 0) 0 else @intCast(difference);
+    }
+}
+
+pub fn satSubI8Widened(dst: []i8, a: []const i8, b: []const i8) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const difference: i16 = @as(i16, x) - @as(i16, y);
+        const min_value: i16 = @intCast(std.math.minInt(i8));
+        const max_value: i16 = @intCast(std.math.maxInt(i8));
+        out.* = if (difference < min_value) std.math.minInt(i8) else if (difference > max_value) std.math.maxInt(i8) else @intCast(difference);
+    }
+}
+
+pub fn satSubU16Widened(dst: []u16, a: []const u16, b: []const u16) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const difference: i32 = @as(i32, x) - @as(i32, y);
+        out.* = if (difference < 0) 0 else @intCast(difference);
+    }
+}
+
+pub fn satSubI16Widened(dst: []i16, a: []const i16, b: []const i16) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const difference: i32 = @as(i32, x) - @as(i32, y);
+        const min_value: i32 = @intCast(std.math.minInt(i16));
+        const max_value: i32 = @intCast(std.math.maxInt(i16));
+        out.* = if (difference < min_value) std.math.minInt(i16) else if (difference > max_value) std.math.maxInt(i16) else @intCast(difference);
+    }
+}
+
+pub fn satSubU32Widened(dst: []u32, a: []const u32, b: []const u32) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const difference: i64 = @as(i64, x) - @as(i64, y);
+        out.* = if (difference < 0) 0 else @intCast(difference);
+    }
+}
+
+pub fn satSubI32Widened(dst: []i32, a: []const i32, b: []const i32) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const difference: i64 = @as(i64, x) - @as(i64, y);
+        const min_value: i64 = @intCast(std.math.minInt(i32));
+        const max_value: i64 = @intCast(std.math.maxInt(i32));
+        out.* = if (difference < min_value) std.math.minInt(i32) else if (difference > max_value) std.math.maxInt(i32) else @intCast(difference);
+    }
+}
+
+pub fn satSubU64Widened(dst: []u64, a: []const u64, b: []const u64) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const difference: i128 = @as(i128, x) - @as(i128, y);
+        out.* = if (difference < 0) 0 else @intCast(difference);
+    }
+}
+
+pub fn satSubI64Widened(dst: []i64, a: []const i64, b: []const i64) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const difference: i128 = @as(i128, x) - @as(i128, y);
+        const min_value: i128 = @intCast(std.math.minInt(i64));
+        const max_value: i128 = @intCast(std.math.maxInt(i64));
+        out.* = if (difference < min_value) std.math.minInt(i64) else if (difference > max_value) std.math.maxInt(i64) else @intCast(difference);
+    }
+}
+
 pub fn dotF32Scalar(a: []const f32, b: []const f32) f64 {
     std.debug.assert(a.len == b.len);
     var sum: f64 = 0;
@@ -1618,6 +1768,23 @@ test "saturating add scalar paths match widened checked references" {
         try std.testing.expectEqualSlices(i32, i32_expected[0..len], i32_candidate[0..len]);
         try std.testing.expectEqualSlices(u64, u64_expected[0..len], u64_candidate[0..len]);
         try std.testing.expectEqualSlices(i64, i64_expected[0..len], i64_candidate[0..len]);
+        satAddU8Widened(u8_candidate[0..len], u8_a[0..len], u8_b[0..len]);
+        satAddI8Widened(i8_candidate[0..len], i8_a[0..len], i8_b[0..len]);
+        satAddU16Widened(u16_candidate[0..len], u16_a[0..len], u16_b[0..len]);
+        satAddI16Widened(i16_candidate[0..len], i16_a[0..len], i16_b[0..len]);
+        satAddU32Widened(u32_candidate[0..len], u32_a[0..len], u32_b[0..len]);
+        satAddI32Widened(i32_candidate[0..len], i32_a[0..len], i32_b[0..len]);
+        satAddU64Widened(u64_candidate[0..len], u64_a[0..len], u64_b[0..len]);
+        satAddI64Widened(i64_candidate[0..len], i64_a[0..len], i64_b[0..len]);
+
+        try std.testing.expectEqualSlices(u8, u8_expected[0..len], u8_candidate[0..len]);
+        try std.testing.expectEqualSlices(i8, i8_expected[0..len], i8_candidate[0..len]);
+        try std.testing.expectEqualSlices(u16, u16_expected[0..len], u16_candidate[0..len]);
+        try std.testing.expectEqualSlices(i16, i16_expected[0..len], i16_candidate[0..len]);
+        try std.testing.expectEqualSlices(u32, u32_expected[0..len], u32_candidate[0..len]);
+        try std.testing.expectEqualSlices(i32, i32_expected[0..len], i32_candidate[0..len]);
+        try std.testing.expectEqualSlices(u64, u64_expected[0..len], u64_candidate[0..len]);
+        try std.testing.expectEqualSlices(i64, i64_expected[0..len], i64_candidate[0..len]);
     }
 }
 
@@ -1792,6 +1959,23 @@ test "saturating subtract scalar paths match widened checked references" {
         satSubU64Scalar(u64_candidate[0..len], u64_a[0..len], u64_b[0..len]);
         satSubI64Scalar(i64_candidate[0..len], i64_a[0..len], i64_b[0..len]);
 
+        try std.testing.expectEqualSlices(i8, i8_expected[0..len], i8_candidate[0..len]);
+        try std.testing.expectEqualSlices(u16, u16_expected[0..len], u16_candidate[0..len]);
+        try std.testing.expectEqualSlices(i16, i16_expected[0..len], i16_candidate[0..len]);
+        try std.testing.expectEqualSlices(u32, u32_expected[0..len], u32_candidate[0..len]);
+        try std.testing.expectEqualSlices(i32, i32_expected[0..len], i32_candidate[0..len]);
+        try std.testing.expectEqualSlices(u64, u64_expected[0..len], u64_candidate[0..len]);
+        try std.testing.expectEqualSlices(i64, i64_expected[0..len], i64_candidate[0..len]);
+        satSubU8Widened(u8_candidate[0..len], u8_a[0..len], u8_b[0..len]);
+        satSubI8Widened(i8_candidate[0..len], i8_a[0..len], i8_b[0..len]);
+        satSubU16Widened(u16_candidate[0..len], u16_a[0..len], u16_b[0..len]);
+        satSubI16Widened(i16_candidate[0..len], i16_a[0..len], i16_b[0..len]);
+        satSubU32Widened(u32_candidate[0..len], u32_a[0..len], u32_b[0..len]);
+        satSubI32Widened(i32_candidate[0..len], i32_a[0..len], i32_b[0..len]);
+        satSubU64Widened(u64_candidate[0..len], u64_a[0..len], u64_b[0..len]);
+        satSubI64Widened(i64_candidate[0..len], i64_a[0..len], i64_b[0..len]);
+
+        try std.testing.expectEqualSlices(u8, u8_expected[0..len], u8_candidate[0..len]);
         try std.testing.expectEqualSlices(i8, i8_expected[0..len], i8_candidate[0..len]);
         try std.testing.expectEqualSlices(u16, u16_expected[0..len], u16_candidate[0..len]);
         try std.testing.expectEqualSlices(i16, i16_expected[0..len], i16_candidate[0..len]);

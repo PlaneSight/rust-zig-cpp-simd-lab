@@ -98,6 +98,35 @@ idioms are compiler-lowering evidence, not required instructions or thresholds.
 These observations describe compiler lowering only. They do not set a
 correctness threshold or replace independent scalar-reference runtime checks.
 
+### Widened-clamp snapshots
+
+The x86 snapshot registry includes `sat_add_widened` and `sat_sub_widened`
+alongside the existing saturation probes. Each family covers `u8`, `i8`,
+`u16`, `i16`, `u32`, `i32`, `u64`, and `i64`. Cross-target manifests use the
+`sat-add-widened` and `sat-sub-widened` job names for the C++ and Zig probes
+when those source files are present. The generator references are:
+
+```bash
+python3 scripts/generate_codegen_snapshots.py --target x86-64-v3
+python3 scripts/generate_cross_codegen.py --target aarch64-neon
+python3 scripts/generate_cross_codegen.py --target wasm-simd128
+```
+
+Review these entries for widening arithmetic, bound selection, and any
+overflow-safe handling needed by the 64-bit cases. Compare Rust, Zig, and C++
+only with the same target profile and after confirming that the fallback,
+scalar/autovec, and native/ISA rows implement the same saturation semantics.
+Do not merge their labels into a single performance ranking: a widened-clamp
+entry identifies the implementation strategy, not a measured performance
+claim.
+
+The generated assembly is lowering evidence only. It may show a native
+saturating instruction, a widened arithmetic sequence, or a checked
+overflow-safe sequence, but none is required by this probe family. A snapshot
+does not establish runtime throughput or cycles, replace independent scalar
+reference checks, or justify treating the fallback as an ISA implementation.
+
+
 ### llvm-mca sidecars
 
 `simd-lab-codegen-v1` manifests remain compile/codegen evidence. They may

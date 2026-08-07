@@ -102,6 +102,61 @@ void sat_add_u64_scalar(std::span<std::uint64_t> dst,
 void sat_add_i64_scalar(std::span<std::int64_t> dst,
                         std::span<const std::int64_t> a,
                         std::span<const std::int64_t> b);
+void sat_add_u8_widened(std::span<std::uint8_t> dst,
+                        std::span<const std::uint8_t> a,
+                        std::span<const std::uint8_t> b);
+void sat_sub_u8_widened(std::span<std::uint8_t> dst,
+                        std::span<const std::uint8_t> a,
+                        std::span<const std::uint8_t> b);
+
+void sat_add_i8_widened(std::span<std::int8_t> dst,
+                        std::span<const std::int8_t> a,
+                        std::span<const std::int8_t> b);
+void sat_sub_i8_widened(std::span<std::int8_t> dst,
+                        std::span<const std::int8_t> a,
+                        std::span<const std::int8_t> b);
+
+void sat_add_u16_widened(std::span<std::uint16_t> dst,
+                         std::span<const std::uint16_t> a,
+                         std::span<const std::uint16_t> b);
+void sat_sub_u16_widened(std::span<std::uint16_t> dst,
+                         std::span<const std::uint16_t> a,
+                         std::span<const std::uint16_t> b);
+
+void sat_add_i16_widened(std::span<std::int16_t> dst,
+                         std::span<const std::int16_t> a,
+                         std::span<const std::int16_t> b);
+void sat_sub_i16_widened(std::span<std::int16_t> dst,
+                         std::span<const std::int16_t> a,
+                         std::span<const std::int16_t> b);
+
+void sat_add_u32_widened(std::span<std::uint32_t> dst,
+                         std::span<const std::uint32_t> a,
+                         std::span<const std::uint32_t> b);
+void sat_sub_u32_widened(std::span<std::uint32_t> dst,
+                         std::span<const std::uint32_t> a,
+                         std::span<const std::uint32_t> b);
+
+void sat_add_i32_widened(std::span<std::int32_t> dst,
+                         std::span<const std::int32_t> a,
+                         std::span<const std::int32_t> b);
+void sat_sub_i32_widened(std::span<std::int32_t> dst,
+                         std::span<const std::int32_t> a,
+                         std::span<const std::int32_t> b);
+
+void sat_add_u64_widened(std::span<std::uint64_t> dst,
+                         std::span<const std::uint64_t> a,
+                         std::span<const std::uint64_t> b);
+void sat_sub_u64_widened(std::span<std::uint64_t> dst,
+                         std::span<const std::uint64_t> a,
+                         std::span<const std::uint64_t> b);
+
+void sat_add_i64_widened(std::span<std::int64_t> dst,
+                         std::span<const std::int64_t> a,
+                         std::span<const std::int64_t> b);
+void sat_sub_i64_widened(std::span<std::int64_t> dst,
+                         std::span<const std::int64_t> a,
+                         std::span<const std::int64_t> b);
 
 void sat_add_u8_best(std::span<std::uint8_t> dst,
                      std::span<const std::uint8_t> a,

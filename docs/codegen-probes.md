@@ -103,6 +103,33 @@ Compiler evidence may include x86 `vpsubusb`/`vpsubsb` or other `vpsub*`
 lowering, AArch64 `uqsub`/`sqsub`, and wasm `sub_sat` lane opcodes. These are
 observations rather than required instruction sequences or thresholds.
 
+## Widened-clamp probes
+
+The dedicated `sat_add_widened` and `sat_sub_widened` probe families expose
+the explicit widening-plus-clamp fallback for every fixed-width type:
+`u8`, `i8`, `u16`, `i16`, `u32`, `i32`, `u64`, and `i64`. Each language keeps
+these probes separate from its native or ISA-specific saturation entry points.
+The corresponding public benchmark rows use
+`sat-add-<type>/widened-clamp` and `sat-sub-<type>/widened-clamp`; the
+implementation label identifies the fallback under test and does not imply a
+measured speedup.
+
+The add family widens each pair before applying the destination bounds:
+unsigned sums clamp to `MAX`, while signed sums clamp to `MIN`/`MAX`. The
+subtract family clamps unsigned underflow to `0` and signed results to
+`MIN`/`MAX`. The 8-, 16-, and 32-bit cases use a wider arithmetic domain; the
+64-bit cases use checked, wider, or otherwise overflow-safe logic as required
+by each language rather than relying on wraparound. Raw-pointer entry points
+take an explicit element count, and the runtime harnesses remain responsible for
+equal-length, extrema, zero-length, cancellation, and arbitrary-tail checks.
+
+These are semantic code-generation probes, not benchmark harnesses: they do
+not allocate, perform I/O, measure runtime, or establish that a compiler
+lowered the fallback to a native saturation instruction. Compare their
+generated output only after confirming semantic equivalence with the
+independent scalar references.
+
+
 ## Stage 8 image-kernel probes
 
 The Stage 8 probe family is tagged `image_kernels`. Raw-pointer
@@ -170,6 +197,26 @@ rustc -O --crate-type=lib --emit=asm probes/rust/sat_sub.rs -o rust-sat_sub.s
 clang++ -std=c++23 -O3 -S -masm=intel probes/cpp/sat_sub.cpp -o cpp-clang-sat_sub.s
 g++ -std=c++23 -O3 -S -masm=intel probes/cpp/sat_sub.cpp -o cpp-gcc-sat_sub.s
 ```
+
+Widened-clamp probes:
+
+```bash
+zig build-obj probes/zig/sat_add_widened.zig -O ReleaseFast -femit-asm=zig-sat_add_widened.s
+rustc -O --crate-type=lib --emit=asm probes/rust/sat_add_widened.rs -o rust-sat_add_widened.s
+clang++ -std=c++23 -O3 -S -masm=intel probes/cpp/sat_add_widened.cpp -o cpp-clang-sat_add_widened.s
+g++ -std=c++23 -O3 -S -masm=intel probes/cpp/sat_add_widened.cpp -o cpp-gcc-sat_add_widened.s
+zig build-obj probes/zig/sat_sub_widened.zig -O ReleaseFast -femit-asm=zig-sat_sub_widened.s
+rustc -O --crate-type=lib --emit=asm probes/rust/sat_sub_widened.rs -o rust-sat_sub_widened.s
+clang++ -std=c++23 -O3 -S -masm=intel probes/cpp/sat_sub_widened.cpp -o cpp-clang-sat_sub_widened.s
+g++ -std=c++23 -O3 -S -masm=intel probes/cpp/sat_sub_widened.cpp -o cpp-gcc-sat_sub_widened.s
+```
+
+The x86 snapshot generator registers both files as `sat_add_widened` and
+`sat_sub_widened`. The cross-target generator registers the corresponding
+`sat-add-widened` and `sat-sub-widened` C++ and Zig jobs when those source
+files are available. Use the target-profile commands below rather than
+comparing assembly emitted with unrelated compiler flags.
+
 
 Generate the Stage 7 and Stage 8 probes with the same target-profile pipeline:
 

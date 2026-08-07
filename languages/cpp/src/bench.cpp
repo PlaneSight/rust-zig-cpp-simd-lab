@@ -611,6 +611,12 @@ int main() {
                 std::cerr << "u8 saturating-add validation failed\n";
                 return 1;
             }
+            simd_lab::sat_add_u8_widened(sat_dst, a, b);
+            if (sat_dst != sat_reference) {
+                std::cerr << "u8 widened saturating-add validation failed\n";
+                return 1;
+            }
+
 
             std::vector<std::uint8_t> sat_sub_expected(n), sat_sub_dst(n);
             for (std::size_t i = 0; i < n; ++i) {
@@ -624,6 +630,11 @@ int main() {
             simd_lab::sat_sub_u8_best(sat_sub_dst, a, b);
             if (sat_sub_dst != sat_sub_expected) {
                 std::cerr << "u8 saturating-sub best validation failed\n";
+                return 1;
+            }
+            simd_lab::sat_sub_u8_widened(sat_sub_dst, a, b);
+            if (sat_sub_dst != sat_sub_expected) {
+                std::cerr << "u8 widened saturating-sub validation failed\n";
                 return 1;
             }
 
@@ -652,6 +663,11 @@ int main() {
                 simd_lab::sat_add_u8_scalar(sat_dst, a, b);
             });
             report("sat-add-u8/scalar-autovec", n, n * 3, n * 3, result);
+            result = measure(n, [&] {
+                simd_lab::sat_add_u8_widened(sat_dst, a, b);
+                sink_u64 = sat_dst[n - 1U];
+            });
+            report("sat-add-u8/widened-clamp", n, n * 3U, n * 3U, result);
 
             result = measure(n, [&] {
                 simd_lab::sat_add_u8_best(sat_dst, a, b);
@@ -671,6 +687,13 @@ int main() {
                 sink_u64 = sat_sub_dst[n - 1U];
             });
             report("sat-sub-u8/best-dispatch", n,
+                   n * sizeof(std::uint8_t) * 3U,
+                   n * sizeof(std::uint8_t) * 3U, result);
+            result = measure(n, [&] {
+                simd_lab::sat_sub_u8_widened(sat_sub_dst, a, b);
+                sink_u64 = sat_sub_dst[n - 1U];
+            });
+            report("sat-sub-u8/widened-clamp", n,
                    n * sizeof(std::uint8_t) * 3U,
                    n * sizeof(std::uint8_t) * 3U, result);
         }
@@ -881,6 +904,29 @@ int main() {
                                   sizeof(std::int64_t) * 3)) {
                 return 1;
             }
+            if (!run_sat_add_case("sat-add-i8/widened-clamp", n, i8_a, i8_b,
+                                  simd_lab::sat_add_i8_widened,
+                                  sizeof(std::int8_t) * 3) ||
+                !run_sat_add_case("sat-add-u16/widened-clamp", n, u16_a,
+                                  u16_b, simd_lab::sat_add_u16_widened,
+                                  sizeof(std::uint16_t) * 3) ||
+                !run_sat_add_case("sat-add-i16/widened-clamp", n, i16_a,
+                                  i16_b, simd_lab::sat_add_i16_widened,
+                                  sizeof(std::int16_t) * 3) ||
+                !run_sat_add_case("sat-add-u32/widened-clamp", n, u32_a,
+                                  u32_b, simd_lab::sat_add_u32_widened,
+                                  sizeof(std::uint32_t) * 3) ||
+                !run_sat_add_case("sat-add-i32/widened-clamp", n, i32_a,
+                                  i32_b, simd_lab::sat_add_i32_widened,
+                                  sizeof(std::int32_t) * 3) ||
+                !run_sat_add_case("sat-add-u64/widened-clamp", n, u64_a,
+                                  u64_b, simd_lab::sat_add_u64_widened,
+                                  sizeof(std::uint64_t) * 3) ||
+                !run_sat_add_case("sat-add-i64/widened-clamp", n, i64_a,
+                                  i64_b, simd_lab::sat_add_i64_widened,
+                                  sizeof(std::int64_t) * 3)) {
+                return 1;
+            }
             if (!run_sat_sub_case("sat-sub-i8/scalar-autovec", n, i8_a, i8_b,
                                   simd_lab::sat_sub_i8_scalar,
                                   sizeof(std::int8_t) * 3) ||
@@ -901,6 +947,29 @@ int main() {
                                   sizeof(std::uint64_t) * 3) ||
                 !run_sat_sub_case("sat-sub-i64/scalar-autovec", n, i64_a,
                                   i64_b, simd_lab::sat_sub_i64_scalar,
+                                  sizeof(std::int64_t) * 3)) {
+                return 1;
+            }
+            if (!run_sat_sub_case("sat-sub-i8/widened-clamp", n, i8_a, i8_b,
+                                  simd_lab::sat_sub_i8_widened,
+                                  sizeof(std::int8_t) * 3) ||
+                !run_sat_sub_case("sat-sub-u16/widened-clamp", n, u16_a,
+                                  u16_b, simd_lab::sat_sub_u16_widened,
+                                  sizeof(std::uint16_t) * 3) ||
+                !run_sat_sub_case("sat-sub-i16/widened-clamp", n, i16_a,
+                                  i16_b, simd_lab::sat_sub_i16_widened,
+                                  sizeof(std::int16_t) * 3) ||
+                !run_sat_sub_case("sat-sub-u32/widened-clamp", n, u32_a,
+                                  u32_b, simd_lab::sat_sub_u32_widened,
+                                  sizeof(std::uint32_t) * 3) ||
+                !run_sat_sub_case("sat-sub-i32/widened-clamp", n, i32_a,
+                                  i32_b, simd_lab::sat_sub_i32_widened,
+                                  sizeof(std::int32_t) * 3) ||
+                !run_sat_sub_case("sat-sub-u64/widened-clamp", n, u64_a,
+                                  u64_b, simd_lab::sat_sub_u64_widened,
+                                  sizeof(std::uint64_t) * 3) ||
+                !run_sat_sub_case("sat-sub-i64/widened-clamp", n, i64_a,
+                                  i64_b, simd_lab::sat_sub_i64_widened,
                                   sizeof(std::int64_t) * 3)) {
                 return 1;
             }

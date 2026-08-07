@@ -161,6 +161,10 @@ pub fn main() !void {
             kernels.satSubU8Scalar(sat_sub_reference, a, b);
             kernels.satSubU8Vector(sat_sub_dst, a, b);
             std.debug.assert(std.mem.eql(u8, sat_sub_reference, sat_sub_dst));
+            kernels.satAddU8Widened(sat_dst, a, b);
+            std.debug.assert(std.mem.eql(u8, sat_reference, sat_dst));
+            kernels.satSubU8Widened(sat_sub_dst, a, b);
+            std.debug.assert(std.mem.eql(u8, sat_sub_reference, sat_sub_dst));
 
             var result = try measure(io, kernels.sadU8Scalar, .{ a, b }, n);
             report("sad-u8/scalar-autovec", n, n * 2, n * 2, result);
@@ -175,6 +179,10 @@ pub fn main() !void {
             report("sat-sub-u8/scalar-autovec", n, n * 3, n * 3, result);
             result = try measure(io, kernels.satSubU8Vector, .{ sat_sub_dst, a, b }, n);
             report("sat-sub-u8/native-vector", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.satAddU8Widened, .{ sat_dst, a, b }, n);
+            report("sat-add-u8/widened-clamp", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.satSubU8Widened, .{ sat_sub_dst, a, b }, n);
+            report("sat-sub-u8/widened-clamp", n, n * 3, n * 3, result);
         }
 
         {
@@ -364,6 +372,20 @@ pub fn main() !void {
             std.debug.assert(std.mem.eql(u64, u64_reference, u64_dst));
             kernels.satAddI64Scalar(i64_dst, i64_a, i64_b);
             std.debug.assert(std.mem.eql(i64, i64_reference, i64_dst));
+            kernels.satAddI8Widened(i8_dst, i8_a, i8_b);
+            std.debug.assert(std.mem.eql(i8, i8_reference, i8_dst));
+            kernels.satAddU16Widened(u16_dst, u16_a, u16_b);
+            std.debug.assert(std.mem.eql(u16, u16_reference, u16_dst));
+            kernels.satAddI16Widened(i16_dst, i16_a, i16_b);
+            std.debug.assert(std.mem.eql(i16, i16_reference, i16_dst));
+            kernels.satAddU32Widened(u32_dst, u32_a, u32_b);
+            std.debug.assert(std.mem.eql(u32, u32_reference, u32_dst));
+            kernels.satAddI32Widened(i32_dst, i32_a, i32_b);
+            std.debug.assert(std.mem.eql(i32, i32_reference, i32_dst));
+            kernels.satAddU64Widened(u64_dst, u64_a, u64_b);
+            std.debug.assert(std.mem.eql(u64, u64_reference, u64_dst));
+            kernels.satAddI64Widened(i64_dst, i64_a, i64_b);
+            std.debug.assert(std.mem.eql(i64, i64_reference, i64_dst));
             for (i8_reference, i8_a, i8_b) |*out, a, b| {
                 const difference: i16 = @as(i16, a) - @as(i16, b);
                 const min_value: i16 = @intCast(std.math.minInt(i8));
@@ -414,6 +436,20 @@ pub fn main() !void {
             std.debug.assert(std.mem.eql(u64, u64_reference, u64_dst));
             kernels.satSubI64Scalar(i64_dst, i64_a, i64_b);
             std.debug.assert(std.mem.eql(i64, i64_reference, i64_dst));
+            kernels.satSubI8Widened(i8_dst, i8_a, i8_b);
+            std.debug.assert(std.mem.eql(i8, i8_reference, i8_dst));
+            kernels.satSubU16Widened(u16_dst, u16_a, u16_b);
+            std.debug.assert(std.mem.eql(u16, u16_reference, u16_dst));
+            kernels.satSubI16Widened(i16_dst, i16_a, i16_b);
+            std.debug.assert(std.mem.eql(i16, i16_reference, i16_dst));
+            kernels.satSubU32Widened(u32_dst, u32_a, u32_b);
+            std.debug.assert(std.mem.eql(u32, u32_reference, u32_dst));
+            kernels.satSubI32Widened(i32_dst, i32_a, i32_b);
+            std.debug.assert(std.mem.eql(i32, i32_reference, i32_dst));
+            kernels.satSubU64Widened(u64_dst, u64_a, u64_b);
+            std.debug.assert(std.mem.eql(u64, u64_reference, u64_dst));
+            kernels.satSubI64Widened(i64_dst, i64_a, i64_b);
+            std.debug.assert(std.mem.eql(i64, i64_reference, i64_dst));
 
             var result = try measure(io, kernels.satAddI8Scalar, .{ i8_dst, i8_a, i8_b }, n);
             report("sat-add-i8/scalar-autovec", n, n * 3, n * 3, result);
@@ -429,6 +465,20 @@ pub fn main() !void {
             report("sat-add-u64/scalar-autovec", n, n * 24, n * 24, result);
             result = try measure(io, kernels.satAddI64Scalar, .{ i64_dst, i64_a, i64_b }, n);
             report("sat-add-i64/scalar-autovec", n, n * 24, n * 24, result);
+            result = try measure(io, kernels.satAddI8Widened, .{ i8_dst, i8_a, i8_b }, n);
+            report("sat-add-i8/widened-clamp", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.satAddU16Widened, .{ u16_dst, u16_a, u16_b }, n);
+            report("sat-add-u16/widened-clamp", n, n * 6, n * 6, result);
+            result = try measure(io, kernels.satAddI16Widened, .{ i16_dst, i16_a, i16_b }, n);
+            report("sat-add-i16/widened-clamp", n, n * 6, n * 6, result);
+            result = try measure(io, kernels.satAddU32Widened, .{ u32_dst, u32_a, u32_b }, n);
+            report("sat-add-u32/widened-clamp", n, n * 12, n * 12, result);
+            result = try measure(io, kernels.satAddI32Widened, .{ i32_dst, i32_a, i32_b }, n);
+            report("sat-add-i32/widened-clamp", n, n * 12, n * 12, result);
+            result = try measure(io, kernels.satAddU64Widened, .{ u64_dst, u64_a, u64_b }, n);
+            report("sat-add-u64/widened-clamp", n, n * 24, n * 24, result);
+            result = try measure(io, kernels.satAddI64Widened, .{ i64_dst, i64_a, i64_b }, n);
+            report("sat-add-i64/widened-clamp", n, n * 24, n * 24, result);
             result = try measure(io, kernels.satSubI8Scalar, .{ i8_dst, i8_a, i8_b }, n);
             report("sat-sub-i8/scalar-autovec", n, n * 3, n * 3, result);
             result = try measure(io, kernels.satSubU16Scalar, .{ u16_dst, u16_a, u16_b }, n);
@@ -443,6 +493,20 @@ pub fn main() !void {
             report("sat-sub-u64/scalar-autovec", n, n * 24, n * 24, result);
             result = try measure(io, kernels.satSubI64Scalar, .{ i64_dst, i64_a, i64_b }, n);
             report("sat-sub-i64/scalar-autovec", n, n * 24, n * 24, result);
+            result = try measure(io, kernels.satSubI8Widened, .{ i8_dst, i8_a, i8_b }, n);
+            report("sat-sub-i8/widened-clamp", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.satSubU16Widened, .{ u16_dst, u16_a, u16_b }, n);
+            report("sat-sub-u16/widened-clamp", n, n * 6, n * 6, result);
+            result = try measure(io, kernels.satSubI16Widened, .{ i16_dst, i16_a, i16_b }, n);
+            report("sat-sub-i16/widened-clamp", n, n * 6, n * 6, result);
+            result = try measure(io, kernels.satSubU32Widened, .{ u32_dst, u32_a, u32_b }, n);
+            report("sat-sub-u32/widened-clamp", n, n * 12, n * 12, result);
+            result = try measure(io, kernels.satSubI32Widened, .{ i32_dst, i32_a, i32_b }, n);
+            report("sat-sub-i32/widened-clamp", n, n * 12, n * 12, result);
+            result = try measure(io, kernels.satSubU64Widened, .{ u64_dst, u64_a, u64_b }, n);
+            report("sat-sub-u64/widened-clamp", n, n * 24, n * 24, result);
+            result = try measure(io, kernels.satSubI64Widened, .{ i64_dst, i64_a, i64_b }, n);
+            report("sat-sub-i64/widened-clamp", n, n * 24, n * 24, result);
         }
 
         {

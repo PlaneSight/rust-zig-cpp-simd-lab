@@ -19,7 +19,14 @@ use simd_lab_rust::{
     sat_add_u16_scalar, sat_add_u32_scalar, sat_add_u64_scalar, sat_sub_i16_scalar,
     sat_sub_i32_scalar, sat_sub_i64_scalar, sat_sub_i8_scalar, sat_sub_u16_scalar,
     sat_sub_u32_scalar, sat_sub_u64_scalar,
+    sat_add_i16_widened, sat_add_i32_widened, sat_add_i64_widened, sat_add_i8_widened,
+    sat_add_u16_widened, sat_add_u32_widened, sat_add_u64_widened, sat_add_u8_widened,
+    sat_sub_i16_widened, sat_sub_i32_widened, sat_sub_i64_widened, sat_sub_i8_widened,
+    sat_sub_u16_widened, sat_sub_u32_widened, sat_sub_u64_widened, sat_sub_u8_widened,
 };
+const SAT_ADD_U8_A: [u8; 8] = [0, u8::MAX, 1, u8::MAX - 1, 0x12, 0x80, 0xde, 0x55];
+const SAT_ADD_U8_B: [u8; 8] = [u8::MAX, 0, u8::MAX, 1, 0xed, 0x7f, 0x12, 0xaa];
+
 const SAT_ADD_VALIDATION_LENGTHS: [usize; 14] =
     [0, 1, 7, 8, 9, 15, 16, 17, 31, 32, 63, 64, 65, 127];
 const SAT_ADD_I8_A: [i8; 8] = [i8::MIN, i8::MAX, i8::MIN + 1, i8::MAX - 1, -1, 0, 37, -73];
@@ -362,6 +369,65 @@ fn report(
         print!("{value:.9}");
     }
     println!();
+}
+
+fn validate_widened<T, F, R>(
+    lengths: &[usize],
+    lhs_pattern: &[T],
+    rhs_pattern: &[T],
+    operation: F,
+    reference: R,
+    label: &str,
+) where
+    T: Copy + std::fmt::Debug + PartialEq,
+    F: Fn(&mut [T], &[T], &[T]),
+    R: Fn(T, T) -> T,
+{
+    for &len in lengths {
+        let lhs: Vec<T> = (0..len)
+            .map(|index| lhs_pattern[index % lhs_pattern.len()])
+            .collect();
+        let rhs: Vec<T> = (0..len)
+            .map(|index| rhs_pattern[index % rhs_pattern.len()])
+            .collect();
+        let expected: Vec<T> = lhs
+            .iter()
+            .copied()
+            .zip(rhs.iter().copied())
+            .map(|(left, right)| reference(left, right))
+            .collect();
+        let mut candidate = vec![lhs_pattern[0]; len];
+        operation(&mut candidate, &lhs, &rhs);
+        assert_eq!(candidate, expected, "{label} len={len}");
+    }
+}
+
+fn report_widened<T, F>(
+    name: &str,
+    n: usize,
+    destination: &mut [T],
+    lhs: &[T],
+    rhs: &[T],
+    operation: F,
+    bytes_per_element: usize,
+) where
+    F: Fn(&mut [T], &[T], &[T]),
+{
+    let measurement = measure(n, || {
+        operation(
+            black_box(&mut *destination),
+            black_box(lhs),
+            black_box(rhs),
+        );
+        black_box(&*destination);
+    });
+    report(
+        name,
+        n,
+        n * bytes_per_element,
+        n * bytes_per_element,
+        &measurement,
+    );
 }
 
 fn main() {
@@ -821,6 +887,150 @@ fn main() {
                 report("sat-add-i64/scalar-autovec", n, n * 24, n * 24, &measurement);
             }
 
+            validate_widened(
+                &SAT_ADD_VALIDATION_LENGTHS,
+                &SAT_ADD_U8_A,
+                &SAT_ADD_U8_B,
+                sat_add_u8_widened,
+                |x, y| (u16::from(x) + u16::from(y)).min(u16::from(u8::MAX)) as u8,
+                "sat-add-u8/widened-clamp",
+            );
+            validate_widened(
+                &SAT_ADD_VALIDATION_LENGTHS,
+                &SAT_ADD_I8_A,
+                &SAT_ADD_I8_B,
+                sat_add_i8_widened,
+                |x, y| {
+                    (i16::from(x) + i16::from(y))
+                        .clamp(i16::from(i8::MIN), i16::from(i8::MAX)) as i8
+                },
+                "sat-add-i8/widened-clamp",
+            );
+            validate_widened(
+                &SAT_ADD_VALIDATION_LENGTHS,
+                &SAT_ADD_U16_A,
+                &SAT_ADD_U16_B,
+                sat_add_u16_widened,
+                |x, y| (u32::from(x) + u32::from(y)).min(u32::from(u16::MAX)) as u16,
+                "sat-add-u16/widened-clamp",
+            );
+            validate_widened(
+                &SAT_ADD_VALIDATION_LENGTHS,
+                &SAT_ADD_I16_A,
+                &SAT_ADD_I16_B,
+                sat_add_i16_widened,
+                |x, y| {
+                    (i32::from(x) + i32::from(y))
+                        .clamp(i32::from(i16::MIN), i32::from(i16::MAX)) as i16
+                },
+                "sat-add-i16/widened-clamp",
+            );
+            validate_widened(
+                &SAT_ADD_VALIDATION_LENGTHS,
+                &SAT_ADD_U32_A,
+                &SAT_ADD_U32_B,
+                sat_add_u32_widened,
+                |x, y| (u64::from(x) + u64::from(y)).min(u64::from(u32::MAX)) as u32,
+                "sat-add-u32/widened-clamp",
+            );
+            validate_widened(
+                &SAT_ADD_VALIDATION_LENGTHS,
+                &SAT_ADD_I32_A,
+                &SAT_ADD_I32_B,
+                sat_add_i32_widened,
+                |x, y| {
+                    (i64::from(x) + i64::from(y))
+                        .clamp(i64::from(i32::MIN), i64::from(i32::MAX)) as i32
+                },
+                "sat-add-i32/widened-clamp",
+            );
+            validate_widened(
+                &SAT_ADD_VALIDATION_LENGTHS,
+                &SAT_ADD_U64_A,
+                &SAT_ADD_U64_B,
+                sat_add_u64_widened,
+                |x, y| (u128::from(x) + u128::from(y)).min(u128::from(u64::MAX)) as u64,
+                "sat-add-u64/widened-clamp",
+            );
+            validate_widened(
+                &SAT_ADD_VALIDATION_LENGTHS,
+                &SAT_ADD_I64_A,
+                &SAT_ADD_I64_B,
+                sat_add_i64_widened,
+                |x, y| {
+                    (i128::from(x) + i128::from(y))
+                        .clamp(i128::from(i64::MIN), i128::from(i64::MAX)) as i64
+                },
+                "sat-add-i64/widened-clamp",
+            );
+
+            report_widened(
+                "sat-add-u8/widened-clamp", n, &mut sat_dst, &a, &b, sat_add_u8_widened, 3,
+            );
+            report_widened(
+                "sat-add-i8/widened-clamp",
+                n,
+                &mut sat_i8_dst,
+                &sat_i8_a,
+                &sat_i8_b,
+                sat_add_i8_widened,
+                3,
+            );
+            report_widened(
+                "sat-add-u16/widened-clamp",
+                n,
+                &mut sat_u16_dst,
+                &sat_u16_a,
+                &sat_u16_b,
+                sat_add_u16_widened,
+                6,
+            );
+            report_widened(
+                "sat-add-i16/widened-clamp",
+                n,
+                &mut sat_i16_dst,
+                &sat_i16_a,
+                &sat_i16_b,
+                sat_add_i16_widened,
+                6,
+            );
+            report_widened(
+                "sat-add-u32/widened-clamp",
+                n,
+                &mut sat_u32_dst,
+                &sat_u32_a,
+                &sat_u32_b,
+                sat_add_u32_widened,
+                12,
+            );
+            report_widened(
+                "sat-add-i32/widened-clamp",
+                n,
+                &mut sat_i32_dst,
+                &sat_i32_a,
+                &sat_i32_b,
+                sat_add_i32_widened,
+                12,
+            );
+            report_widened(
+                "sat-add-u64/widened-clamp",
+                n,
+                &mut sat_u64_dst,
+                &sat_u64_a,
+                &sat_u64_b,
+                sat_add_u64_widened,
+                24,
+            );
+            report_widened(
+                "sat-add-i64/widened-clamp",
+                n,
+                &mut sat_i64_dst,
+                &sat_i64_a,
+                &sat_i64_b,
+                sat_add_i64_widened,
+                24,
+            );
+
             {
                 let sat_sub_i8_a: Vec<i8> = (0..n).map(|i| SAT_SUB_I8_A[i & 7]).collect();
                 let sat_sub_i8_b: Vec<i8> = (0..n).map(|i| SAT_SUB_I8_B[i & 7]).collect();
@@ -1067,7 +1277,151 @@ fn main() {
                     black_box(&sat_sub_dst);
                 });
                 report("sat-sub-u8/best-dispatch", n, n * 3, n * 3, &measurement);
+                validate_widened(
+                    &SAT_SUB_VALIDATION_LENGTHS,
+                    &SAT_SUB_U8_A,
+                    &SAT_SUB_U8_B,
+                    sat_sub_u8_widened,
+                    |x, y| u16::from(x).saturating_sub(u16::from(y)) as u8,
+                    "sat-sub-u8/widened-clamp",
+                );
+                validate_widened(
+                    &SAT_SUB_VALIDATION_LENGTHS,
+                    &SAT_SUB_I8_A,
+                    &SAT_SUB_I8_B,
+                    sat_sub_i8_widened,
+                    |x, y| {
+                        (i16::from(x) - i16::from(y))
+                            .clamp(i16::from(i8::MIN), i16::from(i8::MAX)) as i8
+                    },
+                    "sat-sub-i8/widened-clamp",
+                );
+                validate_widened(
+                    &SAT_SUB_VALIDATION_LENGTHS,
+                    &SAT_SUB_U16_A,
+                    &SAT_SUB_U16_B,
+                    sat_sub_u16_widened,
+                    |x, y| u32::from(x).saturating_sub(u32::from(y)) as u16,
+                    "sat-sub-u16/widened-clamp",
+                );
+                validate_widened(
+                    &SAT_SUB_VALIDATION_LENGTHS,
+                    &SAT_SUB_I16_A,
+                    &SAT_SUB_I16_B,
+                    sat_sub_i16_widened,
+                    |x, y| {
+                        (i32::from(x) - i32::from(y))
+                            .clamp(i32::from(i16::MIN), i32::from(i16::MAX)) as i16
+                    },
+                    "sat-sub-i16/widened-clamp",
+                );
+                validate_widened(
+                    &SAT_SUB_VALIDATION_LENGTHS,
+                    &SAT_SUB_U32_A,
+                    &SAT_SUB_U32_B,
+                    sat_sub_u32_widened,
+                    |x, y| u64::from(x).saturating_sub(u64::from(y)) as u32,
+                    "sat-sub-u32/widened-clamp",
+                );
+                validate_widened(
+                    &SAT_SUB_VALIDATION_LENGTHS,
+                    &SAT_SUB_I32_A,
+                    &SAT_SUB_I32_B,
+                    sat_sub_i32_widened,
+                    |x, y| {
+                        (i64::from(x) - i64::from(y))
+                            .clamp(i64::from(i32::MIN), i64::from(i32::MAX)) as i32
+                    },
+                    "sat-sub-i32/widened-clamp",
+                );
+                validate_widened(
+                    &SAT_SUB_VALIDATION_LENGTHS,
+                    &SAT_SUB_U64_A,
+                    &SAT_SUB_U64_B,
+                    sat_sub_u64_widened,
+                    |x, y| u128::from(x).saturating_sub(u128::from(y)) as u64,
+                    "sat-sub-u64/widened-clamp",
+                );
+                validate_widened(
+                    &SAT_SUB_VALIDATION_LENGTHS,
+                    &SAT_SUB_I64_A,
+                    &SAT_SUB_I64_B,
+                    sat_sub_i64_widened,
+                    |x, y| {
+                        (i128::from(x) - i128::from(y))
+                            .clamp(i128::from(i64::MIN), i128::from(i64::MAX)) as i64
+                    },
+                    "sat-sub-i64/widened-clamp",
+                );
+
+                report_widened(
+                    "sat-sub-u8/widened-clamp", n, &mut sat_sub_dst, &a, &b, sat_sub_u8_widened, 3,
+                );
+                report_widened(
+                    "sat-sub-i8/widened-clamp",
+                    n,
+                    &mut sat_sub_i8_dst,
+                    &sat_sub_i8_a,
+                    &sat_sub_i8_b,
+                    sat_sub_i8_widened,
+                    3,
+                );
+                report_widened(
+                    "sat-sub-u16/widened-clamp",
+                    n,
+                    &mut sat_sub_u16_dst,
+                    &sat_sub_u16_a,
+                    &sat_sub_u16_b,
+                    sat_sub_u16_widened,
+                    6,
+                );
+                report_widened(
+                    "sat-sub-i16/widened-clamp",
+                    n,
+                    &mut sat_sub_i16_dst,
+                    &sat_sub_i16_a,
+                    &sat_sub_i16_b,
+                    sat_sub_i16_widened,
+                    6,
+                );
+                report_widened(
+                    "sat-sub-u32/widened-clamp",
+                    n,
+                    &mut sat_sub_u32_dst,
+                    &sat_sub_u32_a,
+                    &sat_sub_u32_b,
+                    sat_sub_u32_widened,
+                    12,
+                );
+                report_widened(
+                    "sat-sub-i32/widened-clamp",
+                    n,
+                    &mut sat_sub_i32_dst,
+                    &sat_sub_i32_a,
+                    &sat_sub_i32_b,
+                    sat_sub_i32_widened,
+                    12,
+                );
+                report_widened(
+                    "sat-sub-u64/widened-clamp",
+                    n,
+                    &mut sat_sub_u64_dst,
+                    &sat_sub_u64_a,
+                    &sat_sub_u64_b,
+                    sat_sub_u64_widened,
+                    24,
+                );
+                report_widened(
+                    "sat-sub-i64/widened-clamp",
+                    n,
+                    &mut sat_sub_i64_dst,
+                    &sat_sub_i64_a,
+                    &sat_sub_i64_b,
+                    sat_sub_i64_widened,
+                    24,
+                );
             }
+
 
             let measurement = measure(n, || {
                 black_box(dot_i16_scalar(black_box(&i16_a), black_box(&i16_b)));

@@ -85,6 +85,12 @@ def main() -> None:
         sat_sub_source = ROOT / "probes/cpp/sat_sub_portable.cpp"
         if sat_sub_source.exists():
             sources.insert(4, ("sat-sub-portable", sat_sub_source))
+        for probe, source in [
+            ("sat-add-widened", ROOT / "probes/cpp/sat_add_widened.cpp"),
+            ("sat-sub-widened", ROOT / "probes/cpp/sat_sub_widened.cpp"),
+        ]:
+            if source.exists():
+                sources.append((probe, source))
         if args.target == "aarch64-fp16":
             sources.append(("fp16-clang-ext", ROOT / "probes/cpp/fp16_clang.cpp"))
         for probe, source in sources:
@@ -97,8 +103,19 @@ def main() -> None:
                          "assembly": str(out.relative_to(ROOT)), "command": cmd})
 
     if shutil.which("zig"):
-        for probe in ["clamp", "dot", "image_kernels", "mixed_width", "sad", "sat_add", "sat_sub", "widen_mul"]:
-            source = ROOT / f"probes/zig/{probe}.zig"
+        for probe, source_name in [
+            ("clamp", "clamp"),
+            ("dot", "dot"),
+            ("image_kernels", "image_kernels"),
+            ("mixed_width", "mixed_width"),
+            ("sad", "sad"),
+            ("sat_add", "sat_add"),
+            ("sat-add-widened", "sat_add_widened"),
+            ("sat_sub", "sat_sub"),
+            ("sat-sub-widened", "sat_sub_widened"),
+            ("widen_mul", "widen_mul"),
+        ]:
+            source = ROOT / f"probes/zig/{source_name}.zig"
             if not source.exists():
                 continue
             out = OUT / f"zig-{probe}-{args.target}.s"

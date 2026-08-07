@@ -103,6 +103,39 @@ references. Runtime measurements and codegen snapshots are separate evidence;
 the scalar/autovec label changes the implementation under test, not the
 traffic contract.
 
+### Widened-clamp fallback rows
+
+The explicit widening fallback uses the public labels
+`sat-add-<type>/widened-clamp` and `sat-sub-<type>/widened-clamp` for every
+fixed-width type: `u8`, `i8`, `u16`, `i16`, `u32`, `i32`, `u64`, and `i64`.
+`widened-clamp` names the implementation strategy; it is not a performance
+claim and must not be folded into a generic native/ISA ranking.
+
+These rows use the same effective algorithmic traffic and working-set model as
+the other saturating rows: two input streams plus one output stream, or
+`3 * sizeof(T)` bytes per element. That is 3 bytes for `u8`/`i8`, 6 for
+`u16`/`i16`, 12 for `u32`/`i32`, and 24 for `u64`/`i64`. The accounting is
+identical across Rust, Zig, and C++; the fallback label does not add a hidden
+stream for its wider intermediate.
+
+For addition, unsigned values are widened before clamping to `MAX`, while
+signed values are widened before clamping to `MIN`/`MAX`. For subtraction,
+unsigned underflow clamps to `0`, while signed results clamp to `MIN`/`MAX`.
+The 8-, 16-, and 32-bit implementations use a wider arithmetic domain; each
+language uses checked, wider, or otherwise overflow-safe logic for 64-bit
+inputs. These semantics are part of the row contract, not an inference from
+the generated assembly.
+
+Compare a widened-clamp row with scalar/autovec and native/ISA rows only when
+the type, element count, target profile, input contract, correctness checks,
+and byte-accounting model are identical. Native/ISA code is a separate
+implementation under test, not a privileged baseline; do not compare unlike
+numerical semantics or merge `baseline`, `native`, and `x86-64-v3` tiers into
+one ranking. Runtime measurements, independent scalar-reference checks, and
+codegen snapshots remain separate evidence. Assembly can document lowering,
+but it does not by itself establish runtime throughput or cycles.
+
+
 ## Stage 8 blend and short-convolution rows
 
 Stage 8 benchmark rows are semantic workload definitions, not a benchmark

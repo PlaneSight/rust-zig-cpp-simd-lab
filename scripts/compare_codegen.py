@@ -8,9 +8,8 @@ from pathlib import Path
 
 
 def key_for(path: str) -> str:
-    name = Path(path).name
-    parts = name.split("-")
-    return "-".join(parts[:2]) if len(parts) >= 2 else name
+    """Use the complete assembly stem so distinct probe names cannot collide."""
+    return Path(path).stem
 
 
 def main() -> None:

@@ -100,7 +100,7 @@ For each useful kernel, aim for the following implementation tiers where the lan
 - [x] `u64` saturating-add runtime/probe coverage
 - [x] `i64` saturating-add runtime/probe coverage
 - [x] saturating subtract for the fixed-width matrix
-- [ ] explicit widening + clamp fallback implementations for comparison
+- [x] explicit widening + clamp fallback implementations for comparison
 
 ## Shifts and bit operations
 

@@ -424,6 +424,266 @@ void sat_sub_i64_scalar(std::span<std::int64_t> dst,
         }
     }
 }
+void sat_add_u8_widened(std::span<std::uint8_t> dst,
+                        std::span<const std::uint8_t> a,
+                        std::span<const std::uint8_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr std::uint16_t min_value = 0;
+    constexpr auto max_value =
+        static_cast<std::uint16_t>(std::numeric_limits<std::uint8_t>::max());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const std::uint16_t widened_sum =
+            static_cast<std::uint16_t>(a[i]) +
+            static_cast<std::uint16_t>(b[i]);
+        dst[i] = static_cast<std::uint8_t>(
+            std::clamp(widened_sum, min_value, max_value));
+    }
+}
+
+void sat_sub_u8_widened(std::span<std::uint8_t> dst,
+                        std::span<const std::uint8_t> a,
+                        std::span<const std::uint8_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr std::int16_t min_value = 0;
+    constexpr auto max_value =
+        static_cast<std::int16_t>(std::numeric_limits<std::uint8_t>::max());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const std::int16_t widened_difference =
+            static_cast<std::int16_t>(a[i]) -
+            static_cast<std::int16_t>(b[i]);
+        dst[i] = static_cast<std::uint8_t>(
+            std::clamp(widened_difference, min_value, max_value));
+    }
+}
+
+void sat_add_i8_widened(std::span<std::int8_t> dst,
+                        std::span<const std::int8_t> a,
+                        std::span<const std::int8_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr auto min_value =
+        static_cast<std::int16_t>(std::numeric_limits<std::int8_t>::min());
+    constexpr auto max_value =
+        static_cast<std::int16_t>(std::numeric_limits<std::int8_t>::max());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const std::int16_t widened_sum =
+            static_cast<std::int16_t>(a[i]) +
+            static_cast<std::int16_t>(b[i]);
+        dst[i] = static_cast<std::int8_t>(
+            std::clamp(widened_sum, min_value, max_value));
+    }
+}
+
+void sat_sub_i8_widened(std::span<std::int8_t> dst,
+                        std::span<const std::int8_t> a,
+                        std::span<const std::int8_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr auto min_value =
+        static_cast<std::int16_t>(std::numeric_limits<std::int8_t>::min());
+    constexpr auto max_value =
+        static_cast<std::int16_t>(std::numeric_limits<std::int8_t>::max());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const std::int16_t widened_difference =
+            static_cast<std::int16_t>(a[i]) -
+            static_cast<std::int16_t>(b[i]);
+        dst[i] = static_cast<std::int8_t>(
+            std::clamp(widened_difference, min_value, max_value));
+    }
+}
+
+void sat_add_u16_widened(std::span<std::uint16_t> dst,
+                         std::span<const std::uint16_t> a,
+                         std::span<const std::uint16_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr std::uint32_t min_value = 0;
+    constexpr auto max_value =
+        static_cast<std::uint32_t>(std::numeric_limits<std::uint16_t>::max());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const std::uint32_t widened_sum =
+            static_cast<std::uint32_t>(a[i]) +
+            static_cast<std::uint32_t>(b[i]);
+        dst[i] = static_cast<std::uint16_t>(
+            std::clamp(widened_sum, min_value, max_value));
+    }
+}
+
+void sat_sub_u16_widened(std::span<std::uint16_t> dst,
+                         std::span<const std::uint16_t> a,
+                         std::span<const std::uint16_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr std::int32_t min_value = 0;
+    constexpr auto max_value =
+        static_cast<std::int32_t>(std::numeric_limits<std::uint16_t>::max());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const std::int32_t widened_difference =
+            static_cast<std::int32_t>(a[i]) -
+            static_cast<std::int32_t>(b[i]);
+        dst[i] = static_cast<std::uint16_t>(
+            std::clamp(widened_difference, min_value, max_value));
+    }
+}
+
+void sat_add_i16_widened(std::span<std::int16_t> dst,
+                         std::span<const std::int16_t> a,
+                         std::span<const std::int16_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr auto min_value =
+        static_cast<std::int32_t>(std::numeric_limits<std::int16_t>::min());
+    constexpr auto max_value =
+        static_cast<std::int32_t>(std::numeric_limits<std::int16_t>::max());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const std::int32_t widened_sum =
+            static_cast<std::int32_t>(a[i]) +
+            static_cast<std::int32_t>(b[i]);
+        dst[i] = static_cast<std::int16_t>(
+            std::clamp(widened_sum, min_value, max_value));
+    }
+}
+
+void sat_sub_i16_widened(std::span<std::int16_t> dst,
+                         std::span<const std::int16_t> a,
+                         std::span<const std::int16_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr auto min_value =
+        static_cast<std::int32_t>(std::numeric_limits<std::int16_t>::min());
+    constexpr auto max_value =
+        static_cast<std::int32_t>(std::numeric_limits<std::int16_t>::max());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const std::int32_t widened_difference =
+            static_cast<std::int32_t>(a[i]) -
+            static_cast<std::int32_t>(b[i]);
+        dst[i] = static_cast<std::int16_t>(
+            std::clamp(widened_difference, min_value, max_value));
+    }
+}
+
+void sat_add_u32_widened(std::span<std::uint32_t> dst,
+                         std::span<const std::uint32_t> a,
+                         std::span<const std::uint32_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr std::uint64_t min_value = 0;
+    constexpr auto max_value =
+        static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const std::uint64_t widened_sum =
+            static_cast<std::uint64_t>(a[i]) +
+            static_cast<std::uint64_t>(b[i]);
+        dst[i] = static_cast<std::uint32_t>(
+            std::clamp(widened_sum, min_value, max_value));
+    }
+}
+
+void sat_sub_u32_widened(std::span<std::uint32_t> dst,
+                         std::span<const std::uint32_t> a,
+                         std::span<const std::uint32_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr std::int64_t min_value = 0;
+    constexpr auto max_value =
+        static_cast<std::int64_t>(std::numeric_limits<std::uint32_t>::max());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const std::int64_t widened_difference =
+            static_cast<std::int64_t>(a[i]) -
+            static_cast<std::int64_t>(b[i]);
+        dst[i] = static_cast<std::uint32_t>(
+            std::clamp(widened_difference, min_value, max_value));
+    }
+}
+
+void sat_add_i32_widened(std::span<std::int32_t> dst,
+                         std::span<const std::int32_t> a,
+                         std::span<const std::int32_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr auto min_value =
+        static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::min());
+    constexpr auto max_value =
+        static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::max());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const std::int64_t widened_sum =
+            static_cast<std::int64_t>(a[i]) +
+            static_cast<std::int64_t>(b[i]);
+        dst[i] = static_cast<std::int32_t>(
+            std::clamp(widened_sum, min_value, max_value));
+    }
+}
+
+void sat_sub_i32_widened(std::span<std::int32_t> dst,
+                         std::span<const std::int32_t> a,
+                         std::span<const std::int32_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr auto min_value =
+        static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::min());
+    constexpr auto max_value =
+        static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::max());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const std::int64_t widened_difference =
+            static_cast<std::int64_t>(a[i]) -
+            static_cast<std::int64_t>(b[i]);
+        dst[i] = static_cast<std::int32_t>(
+            std::clamp(widened_difference, min_value, max_value));
+    }
+}
+
+// There is no wider standard integer type for 64-bit operands, so these
+// fallbacks check each operation before performing the native-width arithmetic.
+void sat_add_u64_widened(std::span<std::uint64_t> dst,
+                         std::span<const std::uint64_t> a,
+                         std::span<const std::uint64_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr auto max_value = std::numeric_limits<std::uint64_t>::max();
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto lhs = a[i];
+        const auto rhs = b[i];
+        dst[i] = lhs > max_value - rhs ? max_value : lhs + rhs;
+    }
+}
+
+void sat_sub_u64_widened(std::span<std::uint64_t> dst,
+                         std::span<const std::uint64_t> a,
+                         std::span<const std::uint64_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto lhs = a[i];
+        const auto rhs = b[i];
+        dst[i] = lhs < rhs ? 0U : lhs - rhs;
+    }
+}
+
+void sat_add_i64_widened(std::span<std::int64_t> dst,
+                         std::span<const std::int64_t> a,
+                         std::span<const std::int64_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr auto min_value = std::numeric_limits<std::int64_t>::min();
+    constexpr auto max_value = std::numeric_limits<std::int64_t>::max();
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto lhs = a[i];
+        const auto rhs = b[i];
+        if (rhs > 0 && lhs > max_value - rhs) {
+            dst[i] = max_value;
+        } else if (rhs < 0 && lhs < min_value - rhs) {
+            dst[i] = min_value;
+        } else {
+            dst[i] = lhs + rhs;
+        }
+    }
+}
+
+void sat_sub_i64_widened(std::span<std::int64_t> dst,
+                         std::span<const std::int64_t> a,
+                         std::span<const std::int64_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr auto min_value = std::numeric_limits<std::int64_t>::min();
+    constexpr auto max_value = std::numeric_limits<std::int64_t>::max();
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto lhs = a[i];
+        const auto rhs = b[i];
+        if (rhs > 0 && lhs < min_value + rhs) {
+            dst[i] = min_value;
+        } else if (rhs < 0 && lhs > max_value + rhs) {
+            dst[i] = max_value;
+        } else {
+            dst[i] = lhs - rhs;
+        }
+    }
+}
 
 
 double dot_f32_scalar(std::span<const float> a,
