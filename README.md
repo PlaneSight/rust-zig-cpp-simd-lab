@@ -41,9 +41,10 @@ The clamp work includes:
 
 ```text
 .
-├── cpp/                 # C++23 implementations and benchmarks
-├── rust/                # Rust implementations and benchmarks
-├── zig/                 # Zig 0.16 implementations and benchmarks
+├── languages/           # production implementations and benchmarks
+│   ├── cpp/             # C++23 implementation and benchmarks
+│   ├── rust/            # Rust implementation and benchmarks
+│   └── zig/             # Zig 0.16 implementation and benchmarks
 ├── probes/              # tiny standalone codegen experiments
 ├── data/                # shared deterministic input corpora
 ├── docs/                # methodology, findings, and roadmap
@@ -116,7 +117,7 @@ Supported values are `baseline`, `native`, `x86-64-v3`, and `avx2`. The benchmar
 Rust is pinned by `rust-toolchain.toml`.
 
 ```bash
-cd rust
+cd languages/rust
 cargo test --release
 cargo run --release --bin bench
 ```
@@ -124,7 +125,7 @@ cargo run --release --bin bench
 ### Zig 0.16
 
 ```bash
-cd zig
+cd languages/zig
 zig build test -Doptimize=ReleaseSafe
 zig build bench -Doptimize=ReleaseFast
 ```
@@ -132,7 +133,7 @@ zig build bench -Doptimize=ReleaseFast
 ### C++23
 
 ```bash
-cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release -DSIMD_LAB_CPU=baseline
+cmake -S languages/cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release -DSIMD_LAB_CPU=baseline
 cmake --build build/cpp -j
 ctest --test-dir build/cpp --output-on-failure
 ./build/cpp/simd_lab_cpp_bench

@@ -39,7 +39,7 @@ local sanitizer runtime supports it, use a separate build directory and keep
 leak-detection settings explicit:
 
 ```bash
-cmake -S cpp -B build/cpp-sanitizers \
+cmake -S languages/cpp -B build/cpp-sanitizers \
   -DCMAKE_BUILD_TYPE=Debug \
   -DSIMD_LAB_CPU=baseline \
   -DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all' \

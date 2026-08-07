@@ -6,9 +6,9 @@ default:
     @just --list
 
 test:
-    cd rust && cargo test --release
-    cd zig && zig build test -Doptimize=ReleaseSafe
-    cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release -DSIMD_LAB_CPU={{cpu}}
+    cd languages/rust && cargo test --release
+    cd languages/zig && zig build test -Doptimize=ReleaseSafe
+    cmake -S languages/cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release -DSIMD_LAB_CPU={{cpu}}
     cmake --build build/cpp -j2
     ctest --test-dir build/cpp --output-on-failure
 

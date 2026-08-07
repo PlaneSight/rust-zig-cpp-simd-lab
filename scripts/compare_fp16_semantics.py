@@ -55,10 +55,10 @@ def main() -> int:
     root = Path(__file__).resolve().parents[1]
 
     builds = [
-        (["cargo", "build", "--release", "--bin", "fp16_semantics"], root / "rust"),
-        (["cmake", "-S", "cpp", "-B", "build/cpp", "-DCMAKE_BUILD_TYPE=Release"], root),
+        (["cargo", "build", "--release", "--bin", "fp16_semantics"], root / "languages" / "rust"),
+        (["cmake", "-S", "languages/cpp", "-B", "build/cpp", "-DCMAKE_BUILD_TYPE=Release"], root),
         (["cmake", "--build", "build/cpp", "--target", "simd_lab_cpp_fp16_semantics", "-j2"], root),
-        (["zig", "build", "-Doptimize=ReleaseFast"], root / "zig"),
+        (["zig", "build", "-Doptimize=ReleaseFast"], root / "languages" / "zig"),
     ]
     for cmd, cwd in builds:
         proc = subprocess.run(cmd, cwd=cwd)
@@ -66,9 +66,9 @@ def main() -> int:
             return proc.returncode
 
     rows: list[dict] = []
-    rows += run_json_lines(["cargo", "run", "--release", "--bin", "fp16_semantics"], root / "rust")
+    rows += run_json_lines(["cargo", "run", "--release", "--bin", "fp16_semantics"], root / "languages" / "rust")
     rows += run_json_lines([str(root / "build" / "cpp" / "simd_lab_cpp_fp16_semantics")], root)
-    rows += run_json_lines(["zig", "build", "fp16-semantics", "-Doptimize=ReleaseFast"], root / "zig")
+    rows += run_json_lines(["zig", "build", "fp16-semantics", "-Doptimize=ReleaseFast"], root / "languages" / "zig")
 
     corpus = json.loads(
         (root / "data" / "fp16-edge-corpus.json").read_text()

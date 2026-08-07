@@ -46,9 +46,9 @@ The semantic clamp uses `-0.5 .. +2.0` bounds so negative values and signed zero
 Each implementation has a tiny semantic dump executable:
 
 ```text
-Rust    rust/src/bin/fp16_semantics.rs
-C++23   cpp/src/fp16_semantics.cpp
-Zig     zig/src/fp16_semantics.zig
+Rust    languages/rust/src/bin/fp16_semantics.rs
+C++23   languages/cpp/src/fp16_semantics.cpp
+Zig     languages/zig/src/fp16_semantics.zig
 ```
 
 They output the resulting binary16 bit patterns as JSON lines. This is deliberately lower-level than comparing floating-point values: signed zero, NaN payload changes, and quieting/canonicalization remain visible.

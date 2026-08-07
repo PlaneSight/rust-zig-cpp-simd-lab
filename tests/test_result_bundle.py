@@ -55,7 +55,7 @@ class ResultBundleTests(unittest.TestCase):
     def test_required_provenance_environment_and_experiment_fields(self) -> None:
         args = self.parse_args(
             "--source",
-            "rust/src/lib.rs",
+            "languages/rust/src/lib.rs",
             "--cpu-feature",
             "avx2",
             "--virtualized",
@@ -75,7 +75,7 @@ class ResultBundleTests(unittest.TestCase):
         self.assertEqual(document["provenance"]["repository"], REPOSITORY)
         self.assertEqual(document["provenance"]["commit"], "deadbeef")
         self.assertEqual(document["provenance"]["branch"], "main")
-        self.assertEqual(document["provenance"]["source_files"], ["rust/src/lib.rs"])
+        self.assertEqual(document["provenance"]["source_files"], ["languages/rust/src/lib.rs"])
         self.assertTrue(document["created_at"].endswith("Z"))
 
         environment = document["environment"]

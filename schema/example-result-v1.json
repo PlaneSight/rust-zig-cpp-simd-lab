@@ -7,7 +7,7 @@
     "commit": "0000000000000000000000000000000000000000",
     "branch": "example",
     "workflow_run": null,
-    "source_files": ["rust/src/lib.rs"]
+    "source_files": ["languages/rust/src/lib.rs"]
   },
   "environment": {
     "os": "linux",

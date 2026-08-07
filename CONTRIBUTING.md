@@ -22,9 +22,9 @@ allowed difference.
 
 | Concern | Location |
 |---|---|
-| Rust implementation and tests | `rust/src/` |
-| Zig implementation and tests | `zig/src/` |
-| C++ implementation and smoke tests | `cpp/src/`, `cpp/include/` |
+| Rust implementation and tests | `languages/rust/src/` |
+| Zig implementation and tests | `languages/zig/src/` |
+| C++ implementation and smoke tests | `languages/cpp/src/`, `languages/cpp/include/` |
 | Minimal codegen inputs | `probes/rust/`, `probes/zig/`, `probes/cpp/` |
 | Shared input corpus | `data/` |
 | Repeatable tooling | `scripts/` |

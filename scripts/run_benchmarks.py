@@ -190,12 +190,12 @@ def main() -> int:
     zig_release_args = ["-Doptimize=ReleaseFast", *tier.zig_args]
 
     builds = [
-        Command(["cargo", "build", "--release", "--bin", "bench"], root / "rust"),
+        Command(["cargo", "build", "--release", "--bin", "bench"], root / "languages" / "rust"),
         Command(
             [
                 "cmake",
                 "-S",
-                "cpp",
+                "languages/cpp",
                 "-B",
                 "build/cpp",
                 "-DCMAKE_BUILD_TYPE=Release",
@@ -207,12 +207,12 @@ def main() -> int:
             ["cmake", "--build", "build/cpp", "--target", "simd_lab_cpp_bench", "-j2"],
             root,
         ),
-        Command(["zig", "build", *zig_release_args], root / "zig"),
+        Command(["zig", "build", *zig_release_args], root / "languages" / "zig"),
     ]
     commands = {
-        "rust": Command(["cargo", "run", "--release", "--bin", "bench"], root / "rust"),
+        "rust": Command(["cargo", "run", "--release", "--bin", "bench"], root / "languages" / "rust"),
         "cpp23": Command([str(root / "build" / "cpp" / "simd_lab_cpp_bench")], root),
-        "zig": Command(["zig", "build", "bench", *zig_release_args], root / "zig"),
+        "zig": Command(["zig", "build", "bench", *zig_release_args], root / "languages" / "zig"),
     }
 
     try:

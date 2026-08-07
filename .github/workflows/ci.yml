@@ -10,13 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: rust
+        working-directory: languages/rust
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.97.1
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: rust
+          workspaces: languages/rust
       - run: cargo test --release
       - run: cargo build --release --bin fp16_semantics
       - run: cargo run --release --bin simd-lab-rust
@@ -31,10 +31,10 @@ jobs:
           components: miri
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: rust
-      - working-directory: rust
+          workspaces: languages/rust
+      - working-directory: languages/rust
         run: cargo miri setup
-      - working-directory: rust
+      - working-directory: languages/rust
         run: cargo miri test --lib
 
   cpp-sanitizers:
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Configure ASan and UBSan
         run: >
-          cmake -S cpp -B build/cpp-sanitizers
+          cmake -S languages/cpp -B build/cpp-sanitizers
           -DCMAKE_BUILD_TYPE=Debug
           -DSIMD_LAB_CPU=baseline
           -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all"
@@ -66,14 +66,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ccache
-          key: ccache-${{ runner.os }}-${{ hashFiles('cpp/**') }}
+          key: ccache-${{ runner.os }}-${{ hashFiles('languages/cpp/**') }}
           restore-keys: ccache-${{ runner.os }}-
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y ccache
       - if: runner.os == 'Linux'
-        run: cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        run: cmake -S languages/cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
       - if: runner.os == 'Windows'
-        run: cmake -S cpp -B build/cpp
+        run: cmake -S languages/cpp -B build/cpp
       - run: cmake --build build/cpp --config Release --target simd_lab_cpp -j2
       - run: ctest --test-dir build/cpp --build-config Release --output-on-failure
 
@@ -88,16 +88,16 @@ jobs:
         with:
           path: |
             ~/.cache/zig
-            zig/.zig-cache
-          key: zig-${{ runner.os }}-${{ hashFiles('zig/**') }}
+            languages/zig/.zig-cache
+          key: zig-${{ runner.os }}-${{ hashFiles('languages/zig/**') }}
           restore-keys: zig-${{ runner.os }}-
-      - working-directory: zig
+      - working-directory: languages/zig
         run: zig build test -Doptimize=ReleaseSafe
-      - working-directory: zig
+      - working-directory: languages/zig
         run: zig build test -Doptimize=ReleaseFast
-      - working-directory: zig
+      - working-directory: languages/zig
         run: zig build -Doptimize=ReleaseFast
-      - working-directory: zig
+      - working-directory: languages/zig
         run: zig build run -Doptimize=ReleaseFast
   benchmark-build:
     runs-on: ubuntu-latest
@@ -107,11 +107,11 @@ jobs:
       - uses: mlugg/setup-zig@v2
         with:
           version: 0.16.0
-      - working-directory: rust
+      - working-directory: languages/rust
         run: cargo build --release --bin bench
-      - run: cmake -S cpp -B build/cpp-bench -DCMAKE_BUILD_TYPE=Release -DSIMD_LAB_CPU=baseline
+      - run: cmake -S languages/cpp -B build/cpp-bench -DCMAKE_BUILD_TYPE=Release -DSIMD_LAB_CPU=baseline
       - run: cmake --build build/cpp-bench --config Release --target simd_lab_cpp_bench -j2
-      - working-directory: zig
+      - working-directory: languages/zig
         run: zig build-exe src/bench.zig -O ReleaseFast -femit-bin=/tmp/simd-lab-zig-bench
 
   codegen-x86:
@@ -121,7 +121,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.97.1
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: rust
+          workspaces: languages/rust
       - uses: mlugg/setup-zig@v2
         with:
           version: 0.16.0

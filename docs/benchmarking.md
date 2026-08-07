@@ -170,9 +170,9 @@ python3 scripts/run_benchmarks.py --pretty --cpu x86-64-v3 --output results/loca
 Individual harnesses remain available:
 
 ```bash
-(cd rust && cargo run --release --bin bench)
-(cd zig && zig build bench -Doptimize=ReleaseFast)
-cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release -DSIMD_LAB_CPU=baseline
+(cd languages/rust && cargo run --release --bin bench)
+(cd languages/zig && zig build bench -Doptimize=ReleaseFast)
+cmake -S languages/cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release -DSIMD_LAB_CPU=baseline
 cmake --build build/cpp -j
 ./build/cpp/simd_lab_cpp_bench
 ```
