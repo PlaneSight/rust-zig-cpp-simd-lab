@@ -175,14 +175,14 @@ For each useful kernel, aim for the following implementation tiers where the lan
 - [x] shared edge-case corpus
 - [x] per-strategy semantic dump executables
 - [x] cross-strategy raw-bit comparator
-- [ ] run and interpret edge cases on a host with F16C
-- [ ] document signed-zero behavior
-- [ ] document infinity behavior
-- [ ] document subnormal behavior
-- [ ] document NaN payload/sign behavior
+- [x] run and interpret edge cases on a host with F16C (hosted x86 runner `31167176176`)
+- [x] document signed-zero behavior (`0000`/`8000` preserved)
+- [x] document infinity behavior (clamped to the documented bounds)
+- [x] document subnormal behavior (`0001`, `03ff`, `0400`, and `8001` agreed)
+- [x] document quiet-NaN payload/sign behavior (all strategies agreed on the clamp result)
 - [ ] document signaling-NaN behavior where meaningful
-- [ ] document rounding differences between native-half and promote-to-f32 computation
-- [x] test optimized/fast float modes explicitly (Zig ReleaseSafe vs ReleaseFast; F16C host execution remains open)
+- [x] document rounding behavior for the 23-case clamp corpus (native/promoted outputs agree; values are exactly representable)
+- [x] test optimized/fast float modes explicitly (Zig ReleaseSafe vs ReleaseFast; hosted x86 F16C execution verified separately)
 - [ ] quantify conversion-hoisting wins
 - [ ] check whether native AVX-512 FP16 removes conversion-heavy lowering
 - [ ] check AArch64 native FP16 lowering
