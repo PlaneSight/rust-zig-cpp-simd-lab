@@ -1,5 +1,6 @@
 #include "kernels.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -59,6 +60,28 @@ std::uint64_t sad_u8_avx2_msvc(std::span<const std::uint8_t> a,
                      : static_cast<std::uint64_t>(y - x);
     }
     return sum;
+}
+
+void sat_add_u8_avx2_msvc(std::span<std::uint8_t> dst,
+                          std::span<const std::uint8_t> a,
+                          std::span<const std::uint8_t> b) noexcept {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    std::size_t i = 0;
+    for (; i + 32 <= dst.size(); i += 32) {
+        const __m256i va = _mm256_loadu_si256(
+            reinterpret_cast<const __m256i*>(a.data() + i));
+        const __m256i vb = _mm256_loadu_si256(
+            reinterpret_cast<const __m256i*>(b.data() + i));
+        const __m256i result = _mm256_adds_epu8(va, vb);
+        _mm256_storeu_si256(
+            reinterpret_cast<__m256i*>(dst.data() + i), result);
+    }
+    for (; i < dst.size(); ++i) {
+        const auto widened_sum = static_cast<unsigned>(a[i]) +
+                                 static_cast<unsigned>(b[i]);
+        dst[i] = static_cast<std::uint8_t>(
+            std::min(widened_sum, 255U));
+    }
 }
 
 void clamp_f16c_msvc(std::uint16_t* dst, const std::uint16_t* c,

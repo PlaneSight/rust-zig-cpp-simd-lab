@@ -65,6 +65,19 @@ bool run_randomized_differential_tests() {
             return false;
         }
 
+        std::vector<std::uint8_t> expected(length), sat_candidate(length);
+        for (std::size_t i = 0; i < length; ++i) {
+            const auto widened_sum = static_cast<unsigned>(bytes_a[i]) +
+                                     static_cast<unsigned>(bytes_b[i]);
+            expected[i] = static_cast<std::uint8_t>(
+                std::min(widened_sum, 255U));
+        }
+        simd_lab::sat_add_u8_best(sat_candidate, bytes_a, bytes_b);
+        if (sat_candidate != expected) {
+            std::cerr << "saturating-add mismatch at length " << length << '\n';
+            return false;
+        }
+
         std::vector<std::uint16_t> c(length), lo(length, 0x3800),
             hi(length, 0x4000), dst(length, 0xdead);
         for (std::size_t i = 0; i < length; ++i) {
@@ -92,6 +105,35 @@ bool run_randomized_differential_tests() {
     return true;
 }
 
+bool run_exhaustive_saturating_add_test() {
+    constexpr std::size_t pair_count = 256 * 256;
+    std::vector<std::uint8_t> a(pair_count), b(pair_count),
+        expected(pair_count), candidate(pair_count);
+
+    for (std::size_t x = 0; x < 256; ++x) {
+        for (std::size_t y = 0; y < 256; ++y) {
+            const auto index = x * 256 + y;
+            a[index] = static_cast<std::uint8_t>(x);
+            b[index] = static_cast<std::uint8_t>(y);
+            expected[index] = static_cast<std::uint8_t>(
+                std::min(x + y, std::size_t{255}));
+        }
+    }
+
+    simd_lab::sat_add_u8_scalar(candidate, a, b);
+    if (candidate != expected) {
+        std::cerr << "scalar saturating-add exhaustive test failed\n";
+        return false;
+    }
+    std::fill(candidate.begin(), candidate.end(), std::uint8_t{0});
+    simd_lab::sat_add_u8_best(candidate, a, b);
+    if (candidate != expected) {
+        std::cerr << "dispatched saturating-add exhaustive test failed\n";
+        return false;
+    }
+    return true;
+}
+
 } // namespace
 
 int main() {
@@ -110,12 +152,15 @@ int main() {
     const auto relative_error = std::abs(scalar - best) /
                                 std::max(std::abs(scalar), 1.0);
 
-    if (relative_error > 1e-12 || !run_randomized_differential_tests()) {
+    if (relative_error > 1e-12 || !run_randomized_differential_tests() ||
+        !run_exhaustive_saturating_add_test()) {
         return 1;
     }
 
     std::cout << "C++23 SIMD lab smoke test\n"
               << "Dispatch tier: " << simd_lab::dispatch_tier() << '\n'
+              << "Saturating-add tier: "
+              << simd_lab::sat_add_u8_dispatch_tier() << '\n'
               << "AXPY checksum: " << checksum << '\n'
               << "Squared error scalar: " << scalar << '\n'
               << "Squared error best:   " << best << '\n';
