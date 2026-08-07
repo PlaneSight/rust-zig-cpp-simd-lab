@@ -1,0 +1,391 @@
+{
+  "schema": "simd-lab-result-v1",
+  "id": "2026-08-07-baseline-rust-sad-u8-best-dispatch",
+  "created_at": "2026-08-07T03:28:39Z",
+  "provenance": {
+    "repository": "PlaneSight/rust-zig-cpp-simd-lab",
+    "commit": "ec63b51ecbd9f67b1f93d61f92f40dd1d771df67",
+    "branch": "main",
+    "workflow_run": null,
+    "source_files": [
+      "scripts/run_benchmarks.py",
+      "rust/src/bin/bench.rs",
+      "rust/src/lib.rs"
+    ]
+  },
+  "environment": {
+    "os": "Darwin 25.6.0",
+    "arch": "arm64",
+    "cpu": "arm",
+    "cpu_features": [],
+    "target": "aarch64-apple-darwin",
+    "runner": "local-macos",
+    "virtualized": null
+  },
+  "toolchain": {
+    "language": "rust",
+    "compiler": "rustc",
+    "version": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "optimization": "release",
+    "flags": [
+      "cargo",
+      "run",
+      "--release",
+      "--bin",
+      "bench"
+    ]
+  },
+  "experiment": {
+    "family": "reductions",
+    "kernel": "sad_u8",
+    "implementation": "runtime-dispatch",
+    "variant": "best-dispatch",
+    "data_type": "u8",
+    "lanes": 32,
+    "isa": null,
+    "semantics": "exact-integer",
+    "dataset": "deterministic-u8-v1",
+    "parameters": {
+      "target_tier": "baseline",
+      "sample_count": 15,
+      "warmup_samples": 3,
+      "size_count": 6
+    }
+  },
+  "observations": [
+    {
+      "kind": "runtime",
+      "metrics": [
+        {
+          "name": "ns_per_element",
+          "value": 0.077724457,
+          "unit": "ns/element",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "effective_gib_per_second",
+          "value": 23.964724,
+          "unit": "GiB/s",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "min_ns_per_element",
+          "value": 0.064213753,
+          "unit": "ns/element",
+          "aggregation": "minimum",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "p95_ns_per_element",
+          "value": 0.077843666,
+          "unit": "ns/element",
+          "aggregation": "p95",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "mad_ns_per_element",
+          "value": 0.000119209,
+          "unit": "ns/element",
+          "aggregation": "median_absolute_deviation",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        }
+      ],
+      "measured_iterations": 1024,
+      "elements": 1024,
+      "bytes_per_iteration": 2048
+    },
+    {
+      "kind": "runtime",
+      "metrics": [
+        {
+          "name": "ns_per_element",
+          "value": 0.060717583,
+          "unit": "ns/element",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "effective_gib_per_second",
+          "value": 30.677195,
+          "unit": "GiB/s",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "min_ns_per_element",
+          "value": 0.060637474,
+          "unit": "ns/element",
+          "aggregation": "minimum",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "p95_ns_per_element",
+          "value": 0.061312675,
+          "unit": "ns/element",
+          "aggregation": "p95",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "mad_ns_per_element",
+          "value": 8.0109e-05,
+          "unit": "ns/element",
+          "aggregation": "median_absolute_deviation",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        }
+      ],
+      "measured_iterations": 128,
+      "elements": 8192,
+      "bytes_per_iteration": 16384
+    },
+    {
+      "kind": "runtime",
+      "metrics": [
+        {
+          "name": "ns_per_element",
+          "value": 0.054201126,
+          "unit": "ns/element",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "effective_gib_per_second",
+          "value": 34.365433,
+          "unit": "GiB/s",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "min_ns_per_element",
+          "value": 0.054121017,
+          "unit": "ns/element",
+          "aggregation": "minimum",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "p95_ns_per_element",
+          "value": 0.058094978,
+          "unit": "ns/element",
+          "aggregation": "p95",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "mad_ns_per_element",
+          "value": 7.8201e-05,
+          "unit": "ns/element",
+          "aggregation": "median_absolute_deviation",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        }
+      ],
+      "measured_iterations": 16,
+      "elements": 65536,
+      "bytes_per_iteration": 131072
+    },
+    {
+      "kind": "runtime",
+      "metrics": [
+        {
+          "name": "ns_per_element",
+          "value": 0.054200172,
+          "unit": "ns/element",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "effective_gib_per_second",
+          "value": 34.366037,
+          "unit": "GiB/s",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "min_ns_per_element",
+          "value": 0.054121017,
+          "unit": "ns/element",
+          "aggregation": "minimum",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "p95_ns_per_element",
+          "value": 0.054240227,
+          "unit": "ns/element",
+          "aggregation": "p95",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "mad_ns_per_element",
+          "value": 3.9101e-05,
+          "unit": "ns/element",
+          "aggregation": "median_absolute_deviation",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        }
+      ],
+      "measured_iterations": 4,
+      "elements": 262144,
+      "bytes_per_iteration": 524288
+    },
+    {
+      "kind": "runtime",
+      "metrics": [
+        {
+          "name": "ns_per_element",
+          "value": 0.054200172,
+          "unit": "ns/element",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "effective_gib_per_second",
+          "value": 34.366037,
+          "unit": "GiB/s",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "min_ns_per_element",
+          "value": 0.054121017,
+          "unit": "ns/element",
+          "aggregation": "minimum",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "p95_ns_per_element",
+          "value": 0.054280281,
+          "unit": "ns/element",
+          "aggregation": "p95",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "mad_ns_per_element",
+          "value": 3.9101e-05,
+          "unit": "ns/element",
+          "aggregation": "median_absolute_deviation",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        }
+      ],
+      "measured_iterations": 1,
+      "elements": 1048576,
+      "bytes_per_iteration": 2097152
+    },
+    {
+      "kind": "runtime",
+      "metrics": [
+        {
+          "name": "ns_per_element",
+          "value": 0.054270029,
+          "unit": "ns/element",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "effective_gib_per_second",
+          "value": 34.321801,
+          "unit": "GiB/s",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "min_ns_per_element",
+          "value": 0.054250002,
+          "unit": "ns/element",
+          "aggregation": "minimum",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "p95_ns_per_element",
+          "value": 0.055621147,
+          "unit": "ns/element",
+          "aggregation": "p95",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "mad_ns_per_element",
+          "value": 1.0014e-05,
+          "unit": "ns/element",
+          "aggregation": "median_absolute_deviation",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        }
+      ],
+      "measured_iterations": 1,
+      "elements": 4194304,
+      "bytes_per_iteration": 8388608
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "benchmark-v2",
+      "path": "results/artifacts/2026-08-07-baseline/benchmark-v2.json",
+      "sha256": "f53e19a13d6f72a9de56c16b23876cd7216e95574ef24a7cc85424488cb89914",
+      "description": "Raw samples and toolchain metadata from the same baseline collection."
+    }
+  ],
+  "tags": [
+    "benchmark",
+    "baseline",
+    "rust",
+    "sad_u8",
+    "u8"
+  ],
+  "notes": "Measured locally on the Darwin arm64 baseline tier. Runtime values are from the preserved benchmark-v2 artifact; the six observations cover the configured size sweep."
+}

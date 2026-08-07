@@ -1,0 +1,394 @@
+{
+  "schema": "simd-lab-result-v1",
+  "id": "2026-08-07-baseline-cpp23-sad-u8-best-dispatch",
+  "created_at": "2026-08-07T03:28:39Z",
+  "provenance": {
+    "repository": "PlaneSight/rust-zig-cpp-simd-lab",
+    "commit": "ec63b51ecbd9f67b1f93d61f92f40dd1d771df67",
+    "branch": "main",
+    "workflow_run": null,
+    "source_files": [
+      "scripts/run_benchmarks.py",
+      "cpp/src/bench.cpp",
+      "cpp/src/kernels.cpp",
+      "cpp/include/kernels.hpp"
+    ]
+  },
+  "environment": {
+    "os": "Darwin 25.6.0",
+    "arch": "arm64",
+    "cpu": "arm",
+    "cpu_features": [],
+    "target": "aarch64-apple-darwin",
+    "runner": "local-macos",
+    "virtualized": null
+  },
+  "toolchain": {
+    "language": "cpp",
+    "compiler": "clang++",
+    "version": "Apple clang version 21.0.0 (clang-2100.1.1.101)",
+    "optimization": "release",
+    "flags": [
+      "cmake",
+      "-S",
+      "cpp",
+      "-B",
+      "build/cpp",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DSIMD_LAB_CPU=baseline"
+    ]
+  },
+  "experiment": {
+    "family": "reductions",
+    "kernel": "sad_u8",
+    "implementation": "runtime-dispatch",
+    "variant": "best-dispatch",
+    "data_type": "u8",
+    "lanes": 32,
+    "isa": null,
+    "semantics": "exact-integer",
+    "dataset": "deterministic-u8-v1",
+    "parameters": {
+      "target_tier": "baseline",
+      "sample_count": 15,
+      "warmup_samples": 3,
+      "size_count": 6
+    }
+  },
+  "observations": [
+    {
+      "kind": "runtime",
+      "metrics": [
+        {
+          "name": "ns_per_element",
+          "value": 0.293930054,
+          "unit": "ns/element",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "effective_gib_per_second",
+          "value": 6.33703538,
+          "unit": "GiB/s",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "min_ns_per_element",
+          "value": 0.208934784,
+          "unit": "ns/element",
+          "aggregation": "minimum",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "p95_ns_per_element",
+          "value": 0.414052963,
+          "unit": "ns/element",
+          "aggregation": "p95",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "mad_ns_per_element",
+          "value": 0.0422792435,
+          "unit": "ns/element",
+          "aggregation": "median_absolute_deviation",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        }
+      ],
+      "measured_iterations": 1024,
+      "elements": 1024,
+      "bytes_per_iteration": 2048
+    },
+    {
+      "kind": "runtime",
+      "metrics": [
+        {
+          "name": "ns_per_element",
+          "value": 0.192761421,
+          "unit": "ns/element",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "effective_gib_per_second",
+          "value": 9.66295609,
+          "unit": "GiB/s",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "min_ns_per_element",
+          "value": 0.129858017,
+          "unit": "ns/element",
+          "aggregation": "minimum",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "p95_ns_per_element",
+          "value": 0.304779053,
+          "unit": "ns/element",
+          "aggregation": "p95",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "mad_ns_per_element",
+          "value": 0.0376701355,
+          "unit": "ns/element",
+          "aggregation": "median_absolute_deviation",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        }
+      ],
+      "measured_iterations": 128,
+      "elements": 8192,
+      "bytes_per_iteration": 16384
+    },
+    {
+      "kind": "runtime",
+      "metrics": [
+        {
+          "name": "ns_per_element",
+          "value": 0.131607056,
+          "unit": "ns/element",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "effective_gib_per_second",
+          "value": 14.1530797,
+          "unit": "GiB/s",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "min_ns_per_element",
+          "value": 0.126680374,
+          "unit": "ns/element",
+          "aggregation": "minimum",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "p95_ns_per_element",
+          "value": 0.146348953,
+          "unit": "ns/element",
+          "aggregation": "p95",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "mad_ns_per_element",
+          "value": 0.00488758087,
+          "unit": "ns/element",
+          "aggregation": "median_absolute_deviation",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        }
+      ],
+      "measured_iterations": 16,
+      "elements": 65536,
+      "bytes_per_iteration": 131072
+    },
+    {
+      "kind": "runtime",
+      "metrics": [
+        {
+          "name": "ns_per_element",
+          "value": 0.126759529,
+          "unit": "ns/element",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "effective_gib_per_second",
+          "value": 14.6943205,
+          "unit": "GiB/s",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "min_ns_per_element",
+          "value": 0.126680374,
+          "unit": "ns/element",
+          "aggregation": "minimum",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "p95_ns_per_element",
+          "value": 0.136892319,
+          "unit": "ns/element",
+          "aggregation": "p95",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "mad_ns_per_element",
+          "value": 4.00543213e-05,
+          "unit": "ns/element",
+          "aggregation": "median_absolute_deviation",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        }
+      ],
+      "measured_iterations": 4,
+      "elements": 262144,
+      "bytes_per_iteration": 524288
+    },
+    {
+      "kind": "runtime",
+      "metrics": [
+        {
+          "name": "ns_per_element",
+          "value": 0.131527901,
+          "unit": "ns/element",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "effective_gib_per_second",
+          "value": 14.1615972,
+          "unit": "GiB/s",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "min_ns_per_element",
+          "value": 0.128706932,
+          "unit": "ns/element",
+          "aggregation": "minimum",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "p95_ns_per_element",
+          "value": 0.170986176,
+          "unit": "ns/element",
+          "aggregation": "p95",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "mad_ns_per_element",
+          "value": 0.00222587585,
+          "unit": "ns/element",
+          "aggregation": "median_absolute_deviation",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        }
+      ],
+      "measured_iterations": 1,
+      "elements": 1048576,
+      "bytes_per_iteration": 2097152
+    },
+    {
+      "kind": "runtime",
+      "metrics": [
+        {
+          "name": "ns_per_element",
+          "value": 0.126798868,
+          "unit": "ns/element",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "effective_gib_per_second",
+          "value": 14.6897616,
+          "unit": "GiB/s",
+          "aggregation": "median",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "min_ns_per_element",
+          "value": 0.126729488,
+          "unit": "ns/element",
+          "aggregation": "minimum",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "p95_ns_per_element",
+          "value": 0.130901575,
+          "unit": "ns/element",
+          "aggregation": "p95",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        },
+        {
+          "name": "mad_ns_per_element",
+          "value": 4.95910645e-05,
+          "unit": "ns/element",
+          "aggregation": "median_absolute_deviation",
+          "lower": null,
+          "upper": null,
+          "samples": 15
+        }
+      ],
+      "measured_iterations": 1,
+      "elements": 4194304,
+      "bytes_per_iteration": 8388608
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "benchmark-v2",
+      "path": "results/artifacts/2026-08-07-baseline/benchmark-v2.json",
+      "sha256": "f53e19a13d6f72a9de56c16b23876cd7216e95574ef24a7cc85424488cb89914",
+      "description": "Raw samples and toolchain metadata from the same baseline collection."
+    }
+  ],
+  "tags": [
+    "benchmark",
+    "baseline",
+    "cpp23",
+    "sad_u8",
+    "u8"
+  ],
+  "notes": "Measured locally on the Darwin arm64 baseline tier. Runtime values are from the preserved benchmark-v2 artifact; the six observations cover the configured size sweep."
+}
