@@ -34,7 +34,10 @@ jobs:
           cp schema/*.json _site/schema/
           if [ -d results/runs ]; then cp -R results/runs _site/results/; fi
           if [ -d results/artifacts ]; then cp -R results/artifacts _site/results/; fi
-      - uses: actions/configure-pages@v5
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
