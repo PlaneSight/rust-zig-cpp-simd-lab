@@ -15,7 +15,7 @@ The comparison should always separate language ergonomics, frontend lowering, op
 - [x] Treat architecture-specific code as a separate implementation tier.
 - [x] Track numerical-semantic differences explicitly.
 - [x] Prefer vector IR/intrinsics over inline assembly unless evidence shows a real compiler limitation.
-- [x] Maintain reviewed known-good codegen manifests and benchmark baselines.
+- [ ] Maintain reviewed known-good codegen manifests and benchmark baselines.
 - [x] Add regression thresholds only for high-signal metrics rather than exact assembly text.
 
 # 1. Type matrix

@@ -104,3 +104,22 @@ An x86 host with F16C is still required to execute the Rust/C++ edge corpus and
 compare signed zero, subnormal, infinity, NaN payload/sign, and rounding
 behavior. The existing hosted x86 codegen job does not run the semantic
 executables, so that item remains open.
+
+### ARM64 edge-observation matrix
+
+The current Apple M5 run compared Zig `ReleaseSafe` and `ReleaseFast`; both
+strategies emitted the same 23 output bits:
+
+| Semantic class | Corpus inputs | Observed output behavior |
+|---|---|---|
+| Signed zero | `0000`, `8000` | Both signs were preserved (`0000`, `8000`). |
+| Positive subnormal/normal boundary | `0001`, `03ff`, `0400` | Values remained unchanged. |
+| Negative subnormal | `8001` | The value remained unchanged. |
+| Finite values around `0.5` and `1.0` | `37ff`, `3800`, `3801`, `3bff`, `3c00`, `3c01` | All remained at their input half bit patterns. |
+| Positive/negative infinity | `7c00`, `fc00` | Positive infinity clamped to `4000`; negative infinity clamped to `b800`. |
+| Quiet NaN payload/sign cases | `7e01`, `7fff`, `fe01` | All selected the upper bound `4000`; payload and sign were not preserved by this clamp policy. |
+| Rounding-sensitive boundary | Values immediately around `0.5` and `1.0` | No rounding difference was observed; these inputs and outputs are exactly representable. |
+
+This matrix documents the native/promoted ARM64 result only. It is not a
+substitute for executing the Rust/C++ F16C paths on the user's x86 host, and it
+does not generalize NaN or rounding behavior to arbitrary FP16 arithmetic.
