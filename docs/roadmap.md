@@ -395,7 +395,7 @@ These are the bridge from microbenchmarks to realistic workloads.
 
 # 14. Hardware-counter analysis
 
-- [ ] Linux `perf stat` integration
+- [x] Linux `perf stat` integration
 - [ ] retired instructions
 - [ ] cycles
 - [ ] IPC
@@ -404,6 +404,7 @@ These are the bridge from microbenchmarks to realistic workloads.
 - [ ] vector instruction counts where counters permit
 - [ ] frontend/backend stall indicators on supported systems
 - [ ] optional platform equivalents for macOS/Windows where practical
+The Stage 9 perf item means Linux adapter plumbing and schema-v1 bundle emission only. It does not mark any individual PMU metric as measured: retired instructions, cycles, IPC, branches, cache events, vector events, and stall indicators remain unchecked. The adapter records process-scope evidence; a dedicated workload is required for per-row attribution, and the current all-row benchmark binaries cannot support per-row cycle claims.
 
 # 15. Static performance analysis
 
@@ -412,13 +413,14 @@ These are the bridge from microbenchmarks to realistic workloads.
 - [x] codegen manifest schema
 - [x] manifest diff tool
 - [x] loose regression policy
-- [ ] `llvm-mca` integration
+- [x] `llvm-mca` integration
 - [ ] uiCA integration for supported x86 chips
 - [ ] llvm-exegesis experiments for isolated instruction behavior if useful
 - [ ] code-size metrics per exported kernel
 - [ ] basic-block level instruction counts
 - [ ] estimated throughput / critical path
 - [ ] port-pressure reports
+The Stage 9 `llvm-mca` item means bounded-region adapter plumbing and schema-v1 analysis emission. It does not check the estimated-throughput/critical-path or port-pressure capability boxes above, and it does not make static estimates runtime evidence. uiCA and llvm-exegesis remain separate unchecked work.
 
 # 16. Compiler-analysis tooling
 
@@ -608,5 +610,19 @@ blend and `2*n` for convolution. Raw-pointer probes use length-last entry
 points, with Rust guarding `len == 0` before constructing slices. Generated
 cross-target manifests remain evidence until review; no ISA-specific path,
 generic signed coefficients, alpha blending, or benchmark baseline is claimed.
-9. integrate `perf` and `llvm-mca`;
+9. [x] integrate Linux `perf` and target-model-aware `llvm-mca` adapters with the common result writer;
 10. only then add inline-assembly reference implementations where the evidence says they are warranted.
+
+Stage 9 uses the existing `simd-lab-result-v1` envelope without changing
+`simd-lab-benchmark-v2` runtime rows or `simd-lab-codegen-v1` snapshot
+manifests. The shared CLI metadata is `--id --family --kernel
+--implementation --target --cpu`, with the optional identity, toolchain,
+parameter, artifact, and output options documented in the result-schema
+section. `scripts/collect_perf_stat.py` adds `--perf`, repeatable `--event`,
+`--repeat`, required `--scope {process-aggregate,dedicated-workload}`, and
+required `--raw-output`, followed by `-- COMMAND`. It emits observed
+`counters` only from Linux `perf stat` output. `scripts/analyze_mca.py` adds
+`--llvm-mca`, `--iterations`, repeatable `--mattr`, optional bounded-region
+selectors, and required `--raw-output` before the assembly path; it emits
+`analysis` backed by raw JSON. Neither adapter is an authoritative local
+baseline, and inline assembly remains an unchecked escalation tier.

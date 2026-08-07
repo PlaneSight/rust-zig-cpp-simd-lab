@@ -7,6 +7,12 @@ on:
       - 'results/**'
       - 'site/**'
       - 'scripts/build_results_catalog.py'
+      - 'scripts/result_bundle.py'
+      - 'scripts/collect_perf_stat.py'
+      - 'scripts/analyze_mca.py'
+      - 'scripts/validate_result_bundles.py'
+      - '.github/workflows/pages.yml'
+      - 'tests/**'
       - '.github/workflows/results-schema.yml'
   push:
     branches: [main]
@@ -15,17 +21,25 @@ on:
       - 'results/**'
       - 'site/**'
       - 'scripts/build_results_catalog.py'
-
+      - 'scripts/result_bundle.py'
+      - 'scripts/collect_perf_stat.py'
+      - 'scripts/analyze_mca.py'
+      - 'scripts/validate_result_bundles.py'
+      - '.github/workflows/pages.yml'
+      - 'tests/**'
+      - '.github/workflows/results-schema.yml'
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Parse schema and example
-        run: |
-          python3 -m json.tool schema/result-bundle-v1.schema.json >/dev/null
-          python3 -m json.tool schema/example-result-v1.json >/dev/null
+      - name: Install JSON Schema validator
+        run: python3 -m pip install --disable-pip-version-check jsonschema==4.25.1
+      - name: Validate schema and result bundles
+        run: python3 scripts/validate_result_bundles.py
       - name: Build catalog
         run: python3 scripts/build_results_catalog.py --out /tmp/catalog.json
+      - name: Run Python unit tests
+        run: python3 -m unittest discover -s tests -p 'test_*.py'
       - name: Parse generated catalog
         run: python3 -m json.tool /tmp/catalog.json >/dev/null

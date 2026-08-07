@@ -20,12 +20,52 @@ This document is the forward plan for the structured-results system and GitHub P
 - [ ] Convert codegen snapshot manifests into result bundles rather than a parallel schema.
 - [ ] Convert FP16 semantics reports into result bundles.
 - [ ] Convert codegen regression checks into analysis observations.
-- [ ] Add adapters for `perf stat`, `llvm-mca`, uiCA, compiler optimization remarks, and future profiler outputs.
-- [ ] Add a common result-writer helper where doing so does not contaminate benchmark timing.
+- [x] Add adapters for Linux `perf stat` and target-model-aware `llvm-mca`.
+- [ ] Add adapters for uiCA, compiler optimization remarks, and future profiler outputs.
+- [x] Add a common result-writer helper where doing so does not contaminate benchmark timing.
+
+Stage 9 adapter work does not migrate the benchmark producers: Rust, Zig, and
+C++ remain `simd-lab-benchmark-v2` producers, and codegen remains
+`simd-lab-codegen-v1`. The common writer in `scripts/result_bundle.py` exposes
+`add_result_arguments(parser)`, `artifact_record(path, kind, description)`,
+`build_result_bundle(args, observations, *, parameters=None, artifacts=None)`,
+`paths_alias(first, second)`,
+`validate_artifact_output_paths(raw_output, result_output, *, tool)`, and
+`write_result(document, args)`. Both adapters require
+`--id --family --kernel --implementation --target --cpu`; shared optional
+metadata is `--variant --data-type --lanes --isa --semantics --dataset`,
+repeatable `--parameter KEY=JSON`, `--source`, `--cpu-feature`,
+`--compiler-flag`, and `--tag`, plus `--runner`,
+`--virtualized {yes,no,unknown}`, `--language`, `--compiler`,
+`--compiler-version`, `--optimization`, `--notes`, `--output`, and `--pretty`.
+
+The adapter CLI shapes are:
+
+```text
+python3 scripts/collect_perf_stat.py [shared arguments] \
+  --perf perf --event cycles --event instructions --event branches \
+  --event branch-misses --repeat 5 \
+  --scope {process-aggregate,dedicated-workload} --raw-output RAW -- COMMAND [ARGS...]
+
+python3 scripts/analyze_mca.py [shared arguments] \
+  --llvm-mca llvm-mca --iterations 100 --mattr FEATURE ... \
+  [--start-label START --end-label END] [--region REGION] \
+  --raw-output RAW ASSEMBLY
+```
+
+The perf adapter is Linux-only and emits a v1 `counters` observation from
+`LC_ALL=C perf stat --json-output --no-big-num --output RAW --repeat N
+--event cycles,instructions,branches,branch-misses -- COMMAND`; it records the
+exact command, scope, events, and repeats in `experiment.parameters`. The mca
+adapter emits a v1 `analysis` observation and raw JSON artifact, with explicit
+version, triple/target, CPU, features, iterations, and command. Raw JSON never
+uses `results/runs`; a persisted bundle there requires its raw JSON under
+`results/artifacts`. Transient pairs may use explicit paths elsewhere.
+Unsupported or not-counted perf output is an error, never zero.
 
 ## 2. Schema hardening
 
-- [ ] Validate bundles with full JSON Schema validation in CI, not only envelope checks.
+- [x] Validate bundles with full JSON Schema validation in CI, not only envelope checks.
 - [ ] Add stable controlled vocabularies for language, architecture, ISA, data type, observation kind, and common metric names.
 - [ ] Define canonical units (`ns/element`, `cycles/element`, `GiB/s`, instructions, uops, bytes, etc.).
 - [ ] Add benchmark-protocol identity and version.
@@ -41,6 +81,11 @@ This document is the forward plan for the structured-results system and GitHub P
 - [ ] Add relationships between result bundles: baseline, candidate, supersedes, rerun-of, derived-from.
 - [ ] Define schema compatibility and deprecation rules.
 - [ ] Add migration tooling for future `simd-lab-result-v2+` versions.
+Stage 9 preserves the existing v1 shape: counter observations contain only
+`kind`, `metrics`, and optional `tool`, while analysis observations contain
+`kind`, `summary`, optional `severity`, and optional `evidence`. Scope,
+event/repeat metadata, commands, and raw tool output belong in
+`experiment.parameters` and `artifacts`; they are not new schema fields.
 
 ## 3. Result identity and reproducibility
 
@@ -118,6 +163,11 @@ This document is the forward plan for the structured-results system and GitHub P
 - [ ] Integrate uiCA/x86 analytical predictions where applicable.
 - [ ] Add target-specific idiom recognition summaries.
 
+The checked adapter is not a Pages/codegen-explorer integration. The
+`llvm-mca` report UI, uiCA predictions, throughput/latency displays, and all
+runtime/hardware-counter charts remain unchecked; static estimates remain
+clearly distinct from runtime evidence.
+
 ## 9. Numerical semantics explorer
 
 - [ ] Dedicated FP16 semantics page.
@@ -165,6 +215,11 @@ This document is the forward plan for the structured-results system and GitHub P
 - [ ] Validate all bundles before publishing Pages.
 - [ ] Refuse Pages deployment when authoritative result data is schema-invalid.
 - [ ] Generate PR preview artifacts/site bundles where practical.
+
+Stage 9 does not establish a trusted runner or an authoritative benchmark
+baseline. Current benchmark processes remain aggregate and contaminated by
+allocation, validation, warmup, and all rows; a dedicated workload is required
+for attribution, and no per-row cycles claim is valid from the shared binaries.
 
 ## 13. Pages UX
 
@@ -234,6 +289,12 @@ Only add these when the result corpus makes them worthwhile:
 8. Add structured automated regression findings.
 9. Establish trusted self-hosted performance runners.
 10. Build historical compiler/ISA trend views as data accumulates.
+
+Stage 9 is the adapter-only step described above: Linux `perf stat` observed
+counter sidecars, bounded llvm-mca static-analysis sidecars, and the common
+writer. It does not check the trusted-runner, chart, or UI boxes. See the
+[Linux `perf stat` manual](https://man7.org/linux/man-pages/man1/perf-stat.1.html)
+and the [LLVM 22.1 `llvm-mca` command guide](https://releases.llvm.org/22.1.0/docs/CommandGuide/llvm-mca.html).
 
 ## Definition of done for the results platform
 

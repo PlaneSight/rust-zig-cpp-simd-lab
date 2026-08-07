@@ -49,14 +49,20 @@ def summarize(path: Path, bundle: dict[str, Any]) -> dict[str, Any]:
     codegen = next((x for x in observations if x.get("kind") == "codegen"), None)
     semantics = next((x for x in observations if x.get("kind") == "semantics"), None)
     analyses = [x for x in observations if x.get("kind") == "analysis"]
+    counter_observations = [x for x in observations if x.get("kind") == "counters"]
     toolchain = bundle.get("toolchain") or {}
     experiment = bundle["experiment"]
     environment = bundle["environment"]
+    resolved_path = path.resolve()
+    try:
+        source = str(resolved_path.relative_to(ROOT)).replace("\\", "/")
+    except ValueError:
+        source = str(resolved_path).replace("\\", "/")
 
     return {
         "id": bundle["id"],
         "created_at": bundle["created_at"],
-        "source": str(path.relative_to(ROOT)).replace("\\", "/"),
+        "source": source,
         "commit": bundle["provenance"]["commit"],
         "language": toolchain.get("language"),
         "compiler": toolchain.get("compiler"),
@@ -75,6 +81,7 @@ def summarize(path: Path, bundle: dict[str, Any]) -> dict[str, Any]:
         "dataset": experiment.get("dataset"),
         "runtime": metric_map(observations, "runtime"),
         "counters": metric_map(observations, "counters"),
+        "counter_observations": counter_observations,
         "codegen": None if not codegen else {
             "instruction_count": codegen.get("instruction_count"),
             "vector_instruction_count": codegen.get("vector_instruction_count"),
@@ -91,6 +98,7 @@ def summarize(path: Path, bundle: dict[str, Any]) -> dict[str, Any]:
             "details_path": semantics.get("details_path"),
             "summary": semantics.get("summary"),
         },
+        "artifacts": bundle.get("artifacts", []),
         "analysis": analyses,
         "tags": bundle.get("tags", []),
         "notes": bundle.get("notes"),
@@ -119,7 +127,7 @@ def build(runs_dir: Path) -> dict[str, Any]:
             kinds["codegen"] += 1
         if row["semantics"]:
             kinds["semantics"] += 1
-        if row["counters"]:
+        if row["counter_observations"]:
             kinds["counters"] += 1
         if row["analysis"]:
             kinds["analysis"] += 1
@@ -131,7 +139,18 @@ def build(runs_dir: Path) -> dict[str, Any]:
         "errors": errors,
         "facets": {
             key: values(rows, key)
-            for key in ("language", "compiler", "target", "arch", "family", "kernel", "implementation", "data_type", "isa", "dataset")
+            for key in (
+                "language",
+                "compiler",
+                "target",
+                "arch",
+                "family",
+                "kernel",
+                "implementation",
+                "data_type",
+                "isa",
+                "dataset",
+            )
         },
         "observation_counts": dict(sorted(kinds.items())),
         "results": rows,

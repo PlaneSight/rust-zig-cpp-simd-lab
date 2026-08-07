@@ -8,6 +8,7 @@ on:
       - 'schema/**'
       - 'results/**'
       - 'scripts/build_results_catalog.py'
+      - 'scripts/validate_result_bundles.py'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -25,6 +26,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install JSON Schema validator
+        run: python3 -m pip install --disable-pip-version-check jsonschema==4.25.1
+      - name: Validate result bundles
+        run: python3 scripts/validate_result_bundles.py
       - name: Build result catalog
         run: python3 scripts/build_results_catalog.py
       - name: Assemble static site

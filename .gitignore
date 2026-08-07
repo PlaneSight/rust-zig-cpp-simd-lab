@@ -7,3 +7,5 @@ zig-out/
 *.obj
 *.exe
 .DS_Store
+__pycache__/
+*.py[cod]

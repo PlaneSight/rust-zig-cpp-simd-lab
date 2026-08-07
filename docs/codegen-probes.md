@@ -152,12 +152,19 @@ regression signals, not a performance model.
 
 For SAD, also inspect specifically for `vpsadbw` / `psadbw`, widening instructions, lane-crossing shuffles, and scalar extraction around reductions.
 
-For deeper analysis, pair codegen metrics with:
+For deeper analysis, keep evidence classes separate:
 
-- runtime ns/element and cycles/element;
-- `perf stat` retired instructions and hardware counters;
-- `llvm-mca` or uiCA throughput/port-pressure estimates where applicable;
-- generated IR when two languages feed LLVM but produce different machine code.
+- `simd-lab-benchmark-v2` wall-clock `ns/element` and bandwidth are runtime
+  measurements from the benchmark protocol;
+- Linux `perf stat` is observed PMU evidence from the separate collector, with
+  process aggregation unless a dedicated workload gives it an attribution
+  boundary;
+- `llvm-mca` throughput, latency, and resource-pressure values are static
+  model estimates, not hardware/runtime evidence;
+- generated IR and this analyzer's instruction counts remain codegen evidence.
+
+Do not turn a process aggregate into per-row cycles/element, and do not use a
+static estimate alone to justify inline assembly.
 
 ## Result discipline
 
@@ -173,3 +180,48 @@ Every recorded result should include:
 8. whether numerical semantics differ from the reference.
 
 The purpose is to distinguish language limitations, frontend lowering decisions, optimizer misses, backend limitations, and deliberate numerical tradeoffs rather than collapsing all of them into "language X is faster".
+
+## Stage 9 evidence adapters
+
+Both adapters use the shared result-bundle arguments (`--id --family --kernel
+--implementation --target --cpu` plus the optional metadata documented in
+`methodology.md`) and `scripts/result_bundle.py`. The perf surface is:
+
+```text
+python3 scripts/collect_perf_stat.py [shared arguments] \
+  --perf perf --event cycles --event instructions --event branches \
+  --event branch-misses --repeat 5 \
+  --scope {process-aggregate,dedicated-workload} --raw-output RAW -- COMMAND [ARGS...]
+```
+
+The collector is Linux-only and invokes
+`LC_ALL=C perf stat --json-output --no-big-num --output RAW --repeat N
+--event cycles,instructions,branches,branch-misses -- COMMAND`. It emits a v1
+`counters` observation with numeric metrics, stores the raw output as an
+artifact, and keeps the exact command, scope, events, and repeats in
+`experiment.parameters`. `<not supported>` and `<not counted>` are errors,
+never zero; permission, event, missing-tool, non-Linux, and workload failures
+must also fail clearly.
+
+The llvm-mca surface is:
+
+```text
+python3 scripts/analyze_mca.py [shared arguments] \
+  --llvm-mca llvm-mca --iterations 100 --mattr FEATURE ... \
+  [--start-label START --end-label END] [--region REGION] \
+  --raw-output RAW ASSEMBLY
+```
+
+The input must already contain matched, non-nested LLVM-MCA marker regions or
+be explicitly extracted with a paired start/end-label region; an unbounded
+multi-function file is never silently analyzed. `--target` and `--cpu` drive
+explicit `-mtriple` and `-mcpu`, while `--mattr` and `--iterations` are
+provenance. The parser selects one JSON `CodeRegions` entry and requires
+`SummaryView` and `ResourcePressureView`. The bundle contains a v1 `analysis`
+summary/evidence reference and an artifact for the raw JSON, with model numbers
+left in that JSON rather than counter/runtime fields. Record the exact
+llvm-mca version, command, triple, CPU, features, and iterations. No
+authoritative mca baseline is claimed.
+
+See the [Linux `perf stat` manual](https://man7.org/linux/man-pages/man1/perf-stat.1.html)
+and the [LLVM 22.1 `llvm-mca` command guide](https://releases.llvm.org/22.1.0/docs/CommandGuide/llvm-mca.html).

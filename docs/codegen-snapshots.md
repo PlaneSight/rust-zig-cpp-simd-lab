@@ -85,6 +85,37 @@ Snapshots are written under `results/codegen/`. Every manifest uses schema `simd
 
 Tracked x86 signals include FP16 conversions (`vcvtph2ps`, `vcvtps2ph`), SAD (`vpsadbw`/`psadbw`), widening moves (`vpmovzx*` / `vpmovsx*`), multiply-add idioms (`vpmaddwd`, `vpmaddubsw`, and VNNI `vpdp*` families), and vector multiply families. AArch64 signals include `uabd`, widening/reduction operations such as `uaddlp`/`uaddlv`/`uadalp`, integer widening/narrowing (`ushll`/`sshll`/`smull`/`umull`/`xtn`/`uqxtn`), integer-to-float conversion (`scvtf`/`ucvtf`), dot-product (`sdot`/`udot`/`usdot`), FP min/max and conversion operations. WebAssembly tracking recognizes the `v128`, integer-lane, floating-lane, widening multiply, and dot-product opcode families.
 
+### llvm-mca sidecars
+
+`simd-lab-codegen-v1` manifests remain compile/codegen evidence. They may
+contain whole-file instruction aggregates and must not be relabeled as
+per-row runtime or cycle evidence. A Stage 9 llvm-mca run is a separate
+`simd-lab-result-v1` bundle with an `analysis` observation and an artifact for
+the raw JSON; it does not alter the snapshot schema or create an authoritative
+mca baseline.
+
+The adapter surface is:
+
+```text
+python3 scripts/analyze_mca.py [shared arguments] \
+  --llvm-mca llvm-mca --iterations 100 --mattr FEATURE ... \
+  [--start-label START --end-label END] [--region REGION] \
+  --raw-output RAW ASSEMBLY
+```
+
+`--target` and `--cpu` must become explicit `-mtriple` and `-mcpu` settings.
+Record the exact llvm-mca version, triple, CPU, features, iteration count,
+command, and raw JSON artifact. Input must be bounded by matched, non-nested
+LLVM-MCA markers or by an explicitly extracted start/end-label region; the
+adapter must never analyze an unbounded multi-function assembly file by default.
+The JSON parser selects a
+single `CodeRegions` entry and requires `SummaryView` and
+`ResourcePressureView`. Its throughput, latency, and resource-pressure values
+are static model estimates, not runtime evidence or PMU counters, and are not
+alone sufficient to justify inline assembly.
+
+See the [LLVM 22.1 `llvm-mca` command guide](https://releases.llvm.org/22.1.0/docs/CommandGuide/llvm-mca.html).
+
 ## Questions the snapshots should answer
 
 ### u8 SAD

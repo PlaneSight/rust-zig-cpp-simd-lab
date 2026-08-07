@@ -175,7 +175,7 @@ cmake --build build/cpp -j
 ./build/cpp/simd_lab_cpp_bench
 ```
 
-CI compiles every benchmark target but does not treat shared GitHub-hosted runner timings as performance evidence.
+CI compiles every benchmark target but does not treat shared GitHub-hosted runner timings as performance evidence. The current benchmark binaries are process aggregates: allocation, correctness validation, warmup, and all benchmark rows contaminate a surrounding process-level counter run. They do not support a per-row cycles or cycles/element claim; a dedicated workload is required for attribution.
 
 ## Machine-readable collection
 
@@ -192,3 +192,52 @@ The collector emits `simd-lab-benchmark-v2`. Each result includes:
 - explicit skip records for unavailable ISA paths.
 
 The collector remains outside the language binaries so benchmark timing code stays dependency-free and the JSON contract can evolve without three serialization implementations.
+
+## Stage 9 evidence boundary
+
+The benchmark producer remains `simd-lab-benchmark-v2`; Stage 9 does not add
+counter fields to its rows or change its warmup, sampling, timing, or byte
+accounting protocol. Its `ns/element`, effective `GiB/s`, and raw samples are
+wall-clock runtime evidence. A process-level `perf stat` wrapper sees
+allocation, validation, warmup, and every row, so it is contaminated and cannot
+be filtered back into row-level cycles. Unsupported or not-counted events are
+errors, never zero.
+
+The separate Linux adapter uses the shared result-bundle arguments
+`--id --family --kernel --implementation --target --cpu` plus the optional
+identity, toolchain, parameter, and output metadata documented in
+`methodology.md`, and this exact surface:
+
+```text
+python3 scripts/collect_perf_stat.py [shared arguments] \
+  --perf perf --event cycles --event instructions --event branches \
+  --event branch-misses --repeat 5 \
+  --scope {process-aggregate,dedicated-workload} --raw-output RAW -- COMMAND [ARGS...]
+```
+
+It invokes `LC_ALL=C perf stat --json-output --no-big-num --output RAW
+--repeat N --event cycles,instructions,branches,branch-misses -- COMMAND` on
+Linux, emits a v1 `counters` observation, records `RAW` as an artifact, and
+stores command/scope/events/repeats in `experiment.parameters`. A
+`process-aggregate` result is descriptive only; a dedicated workload is
+required for attribution. No local perf run or authoritative PMU baseline is
+claimed.
+
+The static adapter uses the same shared arguments:
+
+```text
+python3 scripts/analyze_mca.py [shared arguments] \
+  --llvm-mca llvm-mca --iterations 100 --mattr FEATURE ... \
+  [--start-label START --end-label END] [--region REGION] \
+  --raw-output RAW ASSEMBLY
+```
+
+It requires matched, non-nested markers or an explicit start/end-label region,
+drives `-mtriple` and `-mcpu` from `--target` and `--cpu`, and records exact
+llvm-mca version, triple, CPU, features, iterations, command, and raw JSON.
+The v1 observation is `analysis`, not `counters` or `runtime`; model numbers
+remain in the raw artifact. Static estimates are not runtime evidence and are
+not alone sufficient to justify inline assembly.
+
+See the [Linux `perf stat` manual](https://man7.org/linux/man-pages/man1/perf-stat.1.html)
+and the [LLVM 22.1 `llvm-mca` command guide](https://releases.llvm.org/22.1.0/docs/CommandGuide/llvm-mca.html).
