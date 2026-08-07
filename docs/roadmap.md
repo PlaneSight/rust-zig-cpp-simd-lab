@@ -523,7 +523,7 @@ Potential candidates should emerge from evidence—for example repeated FP16 con
 - [x] x86 codegen artifact generation
 - [x] AArch64 codegen artifact generation
 - [x] wasm codegen artifact generation
-- [ ] run codegen regression policy against reviewed baselines
+- [x] run codegen regression policy against reviewed baselines
 - [ ] separate correctness CI from performance evidence
 - [ ] sanitizers for C++ where relevant
 - [ ] Miri/UB-focused Rust checks where relevant
@@ -611,7 +611,8 @@ points, with Rust guarding `len == 0` before constructing slices. Generated
 cross-target manifests remain evidence until review; no ISA-specific path,
 generic signed coefficients, alpha blending, or benchmark baseline is claimed.
 9. [x] integrate Linux `perf` and target-model-aware `llvm-mca` adapters with the common result writer;
-10. only then add inline-assembly reference implementations where the evidence says they are warranted.
+10. [x] run codegen regression policy against the reviewed x86-64-v3 baseline;
+11. only then add inline-assembly reference implementations where the evidence says they are warranted.
 
 Stage 9 uses the existing `simd-lab-result-v1` envelope without changing
 `simd-lab-benchmark-v2` runtime rows or `simd-lab-codegen-v1` snapshot
@@ -626,3 +627,13 @@ required `--raw-output`, followed by `-- COMMAND`. It emits observed
 selectors, and required `--raw-output` before the assembly path; it emits
 `analysis` backed by raw JSON. Neither adapter is an authoritative local
 baseline, and inline assembly remains an unchecked escalation tier.
+
+Stage 10 wires the existing loose codegen regression checker into the x86-64-v3
+snapshot job before artifact upload. It validates the v1 manifest and policy
+contracts, requires matching target profiles and non-empty metrics, fails closed
+on missing baseline probes or malformed input, and keeps broad instruction/vector
+limits plus high-signal SAD widening and FP16-conversion thresholds. Focused
+checker tests cover passing limits, instruction/vector/tracked-mnemonic failures,
+removed probes, empty metrics, and invalid schemas. The reviewed x86 evidence
+already shows compact `VPSADBW` and `VPADDUSB` paths; the FP16 conversion finding
+is incomplete across languages, so no inline-assembly reference is justified yet.

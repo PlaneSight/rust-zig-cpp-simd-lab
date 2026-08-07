@@ -79,6 +79,7 @@ jobs:
         with:
           version: 0.16.0
       - run: python3 scripts/generate_codegen_snapshots.py --target x86-64-v3
+      - run: python3 scripts/check_codegen_regressions.py results/codegen/known-good/manifest-x86-64-v3.json results/codegen/manifest-x86-64-v3.json --policy codegen-policy.json
       - uses: actions/upload-artifact@v4
         with:
           name: codegen-x86-64-v3
