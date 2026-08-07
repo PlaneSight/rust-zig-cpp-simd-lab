@@ -15,7 +15,7 @@ Each kernel runs at six element counts:
 | `1 << 20` | 4 MiB | shared cache / memory transition |
 | `1 << 22` | 16 MiB | shared cache or DRAM |
 
-The actual working set depends on the kernel and is emitted for every result. AXPY has three f32 arrays; squared error has two; SAD has two byte arrays; u8 saturating add has two byte inputs plus one byte output; FP16 clamp has four binary16 arrays; dot products have two input arrays; widening multiply has two input arrays plus one output array. Cache labels are therefore orientation points, not universal classifications.
+The actual working set depends on the kernel and is emitted for every result. AXPY has three f32 arrays; squared error has two; SAD has two byte arrays; u8 saturating add has two byte inputs plus one byte output; FP16 clamp has four binary16 arrays; dot products have two input arrays; widening multiply has two input arrays plus one output array. For `u32/i32 -> u64/i64` widening, that is 16 effective bytes per element. Cache labels are therefore orientation points, not universal classifications.
 
 For every kernel and size:
 
@@ -78,6 +78,16 @@ Stage 7 uses the same accounting for all three languages:
 - scalar and native-vector variants use identical working-set and effective
   traffic fields, so the implementation label does not change the bandwidth
   model.
+
+The new 32-bit widening rows use two 4-byte input streams and one 8-byte output
+stream, so their effective traffic is 16 bytes per element in every language.
+
+Saturating-add rows use the same model across all eight fixed-width integer
+types: two input streams and one output stream, or `3 * sizeof(T)` bytes per
+element. This is 3 bytes for `u8`/`i8`, 6 for `u16`/`i16`, 12 for
+`u32`/`i32`, and 24 for `u64`/`i64`. The scalar/autovec label changes the
+implementation under test, not the traffic contract.
+
 
 AXPY's 12-byte figure is not necessarily physical memory-bus traffic. A normal cached store can trigger a read-for-ownership/write-allocate transaction for `dst`, making a cold streaming pass closer to 16 bytes per element before eviction writeback details. If `dst` is already resident, the extra read may not reach DRAM; non-temporal stores would change the model again. Treat the reported figure as effective bandwidth and use hardware counters when making physical-bandwidth claims.
 

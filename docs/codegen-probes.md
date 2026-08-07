@@ -47,9 +47,21 @@ The key codegen question is whether generic vector IR recognizes the SAD idiom a
 Stage 7 adds standalone `dot` and `widen_mul` probes for Rust, Zig, and
 C++23. Each exports the scalar/autovec operation with raw pointer boundaries;
 the Zig probe additionally exports its explicit native-vector forms. Products
-are widened before multiplication, and dot reductions use the documented
+are widened before multiplication, including the 32-bit input forms
+`u32 * u32 -> u64` and `i32 * i32 -> i64`, and dot reductions use the documented
 `f64` or `i64` accumulators. These probes are codegen evidence only: runtime
 correctness is exercised by the language harnesses, not by the probe source.
+## Saturating-add probes
+
+The saturation probe exports the scalar/autovec operation for each fixed-width
+type: `u8`, `i8`, `u16`, `i16`, `u32`, `i32`, `u64`, and `i64`. Rust, Zig, and
+C++ use raw-pointer entry points with an explicit element count. The runtime
+harnesses, rather than these tiny probe functions, own independent
+correctness checks for extrema, cancellation, zero-length inputs, and scalar
+tails. Widened or checked scalar implementations are compared by semantics;
+the generated assembly is evidence of the compiler's lowering, not an exact
+instruction fixture.
+
 
 ## Generate assembly
 

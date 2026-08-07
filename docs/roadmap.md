@@ -23,13 +23,13 @@ The comparison should always separate language ergonomics, frontend lowering, op
 ## Integer types
 
 - [x] `u8`
-- [ ] `i8`
+- [x] `i8`
 - [x] `u16` probes
-- [ ] `i16`
-- [ ] `u32`
-- [ ] `i32`
-- [ ] selected `u64`
-- [ ] selected `i64`
+- [x] `i16`
+- [x] `u32`
+- [x] `i32`
+- [x] selected `u64`
+- [x] selected `i64`
 
 ## Floating-point types
 
@@ -92,10 +92,14 @@ For each useful kernel, aim for the following implementation tiers where the lan
 
 - [x] `u8` saturating-add codegen probes
 - [x] `u8` saturating-add runtime benchmarks
-- [ ] `u8` saturating subtract
-- [ ] `i8` saturating add/subtract
-- [ ] `u16` saturating add/subtract
-- [ ] `i16` saturating add/subtract
+- [x] `i8` saturating-add runtime/probe coverage
+- [x] `u16` saturating-add runtime/probe coverage
+- [x] `i16` saturating-add runtime/probe coverage
+- [x] `u32` saturating-add runtime/probe coverage
+- [x] `i32` saturating-add runtime/probe coverage
+- [x] `u64` saturating-add runtime/probe coverage
+- [x] `i64` saturating-add runtime/probe coverage
+- [ ] saturating subtract for the fixed-width matrix
 - [ ] explicit widening + clamp fallback implementations for comparison
 
 ## Shifts and bit operations
@@ -138,7 +142,7 @@ For each useful kernel, aim for the following implementation tiers where the lan
 
 - [x] `f32` dot product
 - [x] `f64` dot product
-- [x] `i16 * i16 -> i32` dot product
+- [x] `i16 * i16 -> i64` accumulation dot product
 - [x] `u8/i8` mixed signedness dot products
 - [ ] x86 `VPMADDWD` idioms
 - [ ] x86 VNNI / AVX-VNNI dot-product variants
@@ -152,6 +156,8 @@ For each useful kernel, aim for the following implementation tiers where the lan
 - [x] `i8 * i8 -> i16`
 - [x] `u16 * u16 -> u32`
 - [x] `i16 * i16 -> i32`
+- [x] `u32 * u32 -> u64`
+- [x] `i32 * i32 -> i64`
 - [ ] widening multiply-accumulate
 - [ ] pairwise multiply-add idioms
 - [ ] coefficient/filter kernels that reuse widened data
@@ -579,6 +585,14 @@ The most useful next sequence is:
 5. promote reviewed manifests to known-good baselines;
 6. add runtime saturating-add benchmarks;
 7. [x] add dot product and widening-multiply families
+
+Stage 7 evidence covers scalar/autovec Rust and C++ APIs, scalar plus
+`@Vector` Zig APIs, independent edge/pathological/random correctness checks,
+benchmark rows, and raw-pointer probes for the four dot products and six
+widening products. AArch64 NEON/FP16 cross-target manifests were generated and
+inspected for widening and floating reduction mnemonics. Dedicated VNNI,
+`sdot`/`udot`, `vpmadd*`, wasm dot, and widening multiply-accumulate variants
+remain intentionally unchecked.
 8. add blend and short-convolution kernels;
 9. integrate `perf` and `llvm-mca`;
 10. only then add inline-assembly reference implementations where the evidence says they are warranted.

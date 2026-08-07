@@ -167,6 +167,192 @@ pub fn main() !void {
         }
 
         {
+            const i8_a = try allocator.alloc(i8, n);
+            defer allocator.free(i8_a);
+            const i8_b = try allocator.alloc(i8, n);
+            defer allocator.free(i8_b);
+            const i8_reference = try allocator.alloc(i8, n);
+            defer allocator.free(i8_reference);
+            const i8_dst = try allocator.alloc(i8, n);
+            defer allocator.free(i8_dst);
+            const u16_a = try allocator.alloc(u16, n);
+            defer allocator.free(u16_a);
+            const u16_b = try allocator.alloc(u16, n);
+            defer allocator.free(u16_b);
+            const u16_reference = try allocator.alloc(u16, n);
+            defer allocator.free(u16_reference);
+            const u16_dst = try allocator.alloc(u16, n);
+            defer allocator.free(u16_dst);
+            const i16_a = try allocator.alloc(i16, n);
+            defer allocator.free(i16_a);
+            const i16_b = try allocator.alloc(i16, n);
+            defer allocator.free(i16_b);
+            const i16_reference = try allocator.alloc(i16, n);
+            defer allocator.free(i16_reference);
+            const i16_dst = try allocator.alloc(i16, n);
+            defer allocator.free(i16_dst);
+            const u32_a = try allocator.alloc(u32, n);
+            defer allocator.free(u32_a);
+            const u32_b = try allocator.alloc(u32, n);
+            defer allocator.free(u32_b);
+            const u32_reference = try allocator.alloc(u32, n);
+            defer allocator.free(u32_reference);
+            const u32_dst = try allocator.alloc(u32, n);
+            defer allocator.free(u32_dst);
+            const i32_a = try allocator.alloc(i32, n);
+            defer allocator.free(i32_a);
+            const i32_b = try allocator.alloc(i32, n);
+            defer allocator.free(i32_b);
+            const i32_reference = try allocator.alloc(i32, n);
+            defer allocator.free(i32_reference);
+            const i32_dst = try allocator.alloc(i32, n);
+            defer allocator.free(i32_dst);
+            const u64_a = try allocator.alloc(u64, n);
+            defer allocator.free(u64_a);
+            const u64_b = try allocator.alloc(u64, n);
+            defer allocator.free(u64_b);
+            const u64_reference = try allocator.alloc(u64, n);
+            defer allocator.free(u64_reference);
+            const u64_dst = try allocator.alloc(u64, n);
+            defer allocator.free(u64_dst);
+            const i64_a = try allocator.alloc(i64, n);
+            defer allocator.free(i64_a);
+            const i64_b = try allocator.alloc(i64, n);
+            defer allocator.free(i64_b);
+            const i64_reference = try allocator.alloc(i64, n);
+            defer allocator.free(i64_reference);
+            const i64_dst = try allocator.alloc(i64, n);
+            defer allocator.free(i64_dst);
+
+            const signed8 = [_]i8{ -128, -127, -1, 0, 1, 126, 127 };
+            const unsigned16 = [_]u16{ 0, 1, 32767, 32768, 65534, 65535, 65535 };
+            const signed16 = [_]i16{ -32768, -32767, -1, 0, 1, 32766, 32767 };
+            const unsigned32 = [_]u32{ 0, 1, 2147483647, 2147483648, 4294967294, 4294967295, 4294967295 };
+            const signed32 = [_]i32{ -2147483648, -2147483647, -1, 0, 1, 2147483646, 2147483647 };
+            const unsigned64 = [_]u64{
+                0,
+                1,
+                0x7fff_ffff_ffff_ffff,
+                0x8000_0000_0000_0000,
+                std.math.maxInt(u64) - 1,
+                std.math.maxInt(u64),
+                std.math.maxInt(u64),
+            };
+            const signed64 = [_]i64{
+                std.math.minInt(i64),
+                std.math.minInt(i64) + 1,
+                -1,
+                0,
+                1,
+                std.math.maxInt(i64) - 1,
+                std.math.maxInt(i64),
+            };
+            const pair_indices = [_]usize{ 1, 0, 6, 2, 3, 5, 6 };
+            for (i8_a, i8_b, 0..) |*a, *b, i| {
+                const lane = i % pair_indices.len;
+                a.* = signed8[lane];
+                b.* = signed8[pair_indices[lane]];
+            }
+            for (u16_a, u16_b, 0..) |*a, *b, i| {
+                const lane = i % pair_indices.len;
+                a.* = unsigned16[lane];
+                b.* = unsigned16[pair_indices[lane]];
+            }
+            for (i16_a, i16_b, 0..) |*a, *b, i| {
+                const lane = i % pair_indices.len;
+                a.* = signed16[lane];
+                b.* = signed16[pair_indices[lane]];
+            }
+            for (u32_a, u32_b, 0..) |*a, *b, i| {
+                const lane = i % pair_indices.len;
+                a.* = unsigned32[lane];
+                b.* = unsigned32[pair_indices[lane]];
+            }
+            for (i32_a, i32_b, 0..) |*a, *b, i| {
+                const lane = i % pair_indices.len;
+                a.* = signed32[lane];
+                b.* = signed32[pair_indices[lane]];
+            }
+            for (u64_a, u64_b, 0..) |*a, *b, i| {
+                const lane = i % pair_indices.len;
+                a.* = unsigned64[lane];
+                b.* = unsigned64[pair_indices[lane]];
+            }
+            for (i64_a, i64_b, 0..) |*a, *b, i| {
+                const lane = i % pair_indices.len;
+                a.* = signed64[lane];
+                b.* = signed64[pair_indices[lane]];
+            }
+
+            for (i8_reference, i8_a, i8_b) |*out, a, b| {
+                const sum: i16 = @as(i16, a) + @as(i16, b);
+                const min_value: i16 = @intCast(std.math.minInt(i8));
+                const max_value: i16 = @intCast(std.math.maxInt(i8));
+                out.* = if (sum < min_value) std.math.minInt(i8) else if (sum > max_value) std.math.maxInt(i8) else @intCast(sum);
+            }
+            for (u16_reference, u16_a, u16_b) |*out, a, b| {
+                const sum: u32 = @as(u32, a) + @as(u32, b);
+                out.* = if (sum > @as(u32, std.math.maxInt(u16))) std.math.maxInt(u16) else @intCast(sum);
+            }
+            for (i16_reference, i16_a, i16_b) |*out, a, b| {
+                const sum: i32 = @as(i32, a) + @as(i32, b);
+                const min_value: i32 = @intCast(std.math.minInt(i16));
+                const max_value: i32 = @intCast(std.math.maxInt(i16));
+                out.* = if (sum < min_value) std.math.minInt(i16) else if (sum > max_value) std.math.maxInt(i16) else @intCast(sum);
+            }
+            for (u32_reference, u32_a, u32_b) |*out, a, b| {
+                const sum: u64 = @as(u64, a) + @as(u64, b);
+                out.* = if (sum > @as(u64, std.math.maxInt(u32))) std.math.maxInt(u32) else @intCast(sum);
+            }
+            for (i32_reference, i32_a, i32_b) |*out, a, b| {
+                const sum: i64 = @as(i64, a) + @as(i64, b);
+                const min_value: i64 = @intCast(std.math.minInt(i32));
+                const max_value: i64 = @intCast(std.math.maxInt(i32));
+                out.* = if (sum < min_value) std.math.minInt(i32) else if (sum > max_value) std.math.maxInt(i32) else @intCast(sum);
+            }
+            for (u64_reference, u64_a, u64_b) |*out, a, b| {
+                const sum: u128 = @as(u128, a) + @as(u128, b);
+                out.* = if (sum > @as(u128, std.math.maxInt(u64))) std.math.maxInt(u64) else @intCast(sum);
+            }
+            for (i64_reference, i64_a, i64_b) |*out, a, b| {
+                const sum: i128 = @as(i128, a) + @as(i128, b);
+                const min_value: i128 = @intCast(std.math.minInt(i64));
+                const max_value: i128 = @intCast(std.math.maxInt(i64));
+                out.* = if (sum < min_value) std.math.minInt(i64) else if (sum > max_value) std.math.maxInt(i64) else @intCast(sum);
+            }
+
+            kernels.satAddI8Scalar(i8_dst, i8_a, i8_b);
+            std.debug.assert(std.mem.eql(i8, i8_reference, i8_dst));
+            kernels.satAddU16Scalar(u16_dst, u16_a, u16_b);
+            std.debug.assert(std.mem.eql(u16, u16_reference, u16_dst));
+            kernels.satAddI16Scalar(i16_dst, i16_a, i16_b);
+            std.debug.assert(std.mem.eql(i16, i16_reference, i16_dst));
+            kernels.satAddU32Scalar(u32_dst, u32_a, u32_b);
+            std.debug.assert(std.mem.eql(u32, u32_reference, u32_dst));
+            kernels.satAddI32Scalar(i32_dst, i32_a, i32_b);
+            std.debug.assert(std.mem.eql(i32, i32_reference, i32_dst));
+            kernels.satAddU64Scalar(u64_dst, u64_a, u64_b);
+            std.debug.assert(std.mem.eql(u64, u64_reference, u64_dst));
+            kernels.satAddI64Scalar(i64_dst, i64_a, i64_b);
+            std.debug.assert(std.mem.eql(i64, i64_reference, i64_dst));
+
+            var result = try measure(io, kernels.satAddI8Scalar, .{ i8_dst, i8_a, i8_b }, n);
+            report("sat-add-i8/scalar-autovec", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.satAddU16Scalar, .{ u16_dst, u16_a, u16_b }, n);
+            report("sat-add-u16/scalar-autovec", n, n * 6, n * 6, result);
+            result = try measure(io, kernels.satAddI16Scalar, .{ i16_dst, i16_a, i16_b }, n);
+            report("sat-add-i16/scalar-autovec", n, n * 6, n * 6, result);
+            result = try measure(io, kernels.satAddU32Scalar, .{ u32_dst, u32_a, u32_b }, n);
+            report("sat-add-u32/scalar-autovec", n, n * 12, n * 12, result);
+            result = try measure(io, kernels.satAddI32Scalar, .{ i32_dst, i32_a, i32_b }, n);
+            report("sat-add-i32/scalar-autovec", n, n * 12, n * 12, result);
+            result = try measure(io, kernels.satAddU64Scalar, .{ u64_dst, u64_a, u64_b }, n);
+            report("sat-add-u64/scalar-autovec", n, n * 24, n * 24, result);
+            result = try measure(io, kernels.satAddI64Scalar, .{ i64_dst, i64_a, i64_b }, n);
+            report("sat-add-i64/scalar-autovec", n, n * 24, n * 24, result);
+        }
+
+        {
             const a = try allocator.alloc(f64, n);
             defer allocator.free(a);
             const b = try allocator.alloc(f64, n);
@@ -194,6 +380,8 @@ pub fn main() !void {
             defer allocator.free(i16_b);
             const u8_a = try allocator.alloc(u8, n);
             defer allocator.free(u8_a);
+            const u8_b = try allocator.alloc(u8, n);
+            defer allocator.free(u8_b);
             const i8_a = try allocator.alloc(i8, n);
             defer allocator.free(i8_a);
             const i8_b = try allocator.alloc(i8, n);
@@ -210,10 +398,11 @@ pub fn main() !void {
             const signed16 = [_]i16{ -32768, -32767, -1, 0, 1, 32767 };
             const signed8 = [_]i8{ -128, -127, -1, 0, 1, 127 };
             const unsigned8 = [_]u8{ 0, 1, 127, 128, 254, 255 };
-            for (i16_a, i16_b, u8_a, i8_a, i8_b, 0..) |*ia, *ib, *ua, *sa, *sb, i| {
+            for (i16_a, i16_b, u8_a, u8_b, i8_a, i8_b, 0..) |*ia, *ib, *ua, *ub, *sa, *sb, i| {
                 ia.* = signed16[i % signed16.len];
                 ib.* = signed16[(i * 5 + 1) % signed16.len];
                 ua.* = unsigned8[i % unsigned8.len];
+                ub.* = unsigned8[(i * 5 + 1) % unsigned8.len];
                 sa.* = signed8[i % signed8.len];
                 sb.* = signed8[(i * 5 + 1) % signed8.len];
             }
@@ -225,8 +414,8 @@ pub fn main() !void {
             const dot_u8_i8_vector = kernels.dotU8I8Vector(u8_a, i8_b);
             std.debug.assert(dot_u8_i8_scalar == dot_u8_i8_vector);
 
-            kernels.widenMulU8U16Scalar(u8_u16_scalar, u8_a, u8_a);
-            kernels.widenMulU8U16Vector(u8_u16_vector, u8_a, u8_a);
+            kernels.widenMulU8U16Scalar(u8_u16_scalar, u8_a, u8_b);
+            kernels.widenMulU8U16Vector(u8_u16_vector, u8_a, u8_b);
             std.debug.assert(std.mem.eql(u16, u8_u16_scalar, u8_u16_vector));
             kernels.widenMulI8I16Scalar(i8_i16_scalar, i8_a, i8_b);
             kernels.widenMulI8I16Vector(i8_i16_vector, i8_a, i8_b);
@@ -240,9 +429,9 @@ pub fn main() !void {
             report("dot-u8-i8/scalar-i64", n, n * 2, n * 2, result);
             result = try measure(io, kernels.dotU8I8Vector, .{ u8_a, i8_b }, n);
             report("dot-u8-i8/native-vector-i64", n, n * 2, n * 2, result);
-            result = try measure(io, kernels.widenMulU8U16Scalar, .{ u8_u16_scalar, u8_a, u8_a }, n);
+            result = try measure(io, kernels.widenMulU8U16Scalar, .{ u8_u16_scalar, u8_a, u8_b }, n);
             report("widen-mul-u8-u16/scalar-autovec", n, n * 4, n * 4, result);
-            result = try measure(io, kernels.widenMulU8U16Vector, .{ u8_u16_vector, u8_a, u8_a }, n);
+            result = try measure(io, kernels.widenMulU8U16Vector, .{ u8_u16_vector, u8_a, u8_b }, n);
             report("widen-mul-u8-u16/native-vector", n, n * 4, n * 4, result);
             result = try measure(io, kernels.widenMulI8I16Scalar, .{ i8_i16_scalar, i8_a, i8_b }, n);
             report("widen-mul-i8-i16/scalar-autovec", n, n * 4, n * 4, result);
@@ -292,6 +481,50 @@ pub fn main() !void {
             report("widen-mul-i16-i32/scalar-autovec", n, n * 8, n * 8, result);
             result = try measure(io, kernels.widenMulI16I32Vector, .{ i16_i32_vector, i16_a, i16_b }, n);
             report("widen-mul-i16-i32/native-vector", n, n * 8, n * 8, result);
+        }
+
+        {
+            const u32_a = try allocator.alloc(u32, n);
+            defer allocator.free(u32_a);
+            const u32_b = try allocator.alloc(u32, n);
+            defer allocator.free(u32_b);
+            const i32_a = try allocator.alloc(i32, n);
+            defer allocator.free(i32_a);
+            const i32_b = try allocator.alloc(i32, n);
+            defer allocator.free(i32_b);
+            const u32_u64_scalar = try allocator.alloc(u64, n);
+            defer allocator.free(u32_u64_scalar);
+            const u32_u64_vector = try allocator.alloc(u64, n);
+            defer allocator.free(u32_u64_vector);
+            const i32_i64_scalar = try allocator.alloc(i64, n);
+            defer allocator.free(i32_i64_scalar);
+            const i32_i64_vector = try allocator.alloc(i64, n);
+            defer allocator.free(i32_i64_vector);
+
+            const unsigned32 = [_]u32{ 0, 1, 255, 256, 4294967294, 4294967295 };
+            const signed32 = [_]i32{ -2147483648, -2147483647, -1, 0, 1, 2147483647 };
+            for (u32_a, u32_b, i32_a, i32_b, 0..) |*ua, *ub, *ia, *ib, i| {
+                ua.* = unsigned32[i % unsigned32.len];
+                ub.* = unsigned32[(i * 5 + 1) % unsigned32.len];
+                ia.* = signed32[i % signed32.len];
+                ib.* = signed32[(i * 5 + 1) % signed32.len];
+            }
+
+            kernels.widenMulU32U64Scalar(u32_u64_scalar, u32_a, u32_b);
+            kernels.widenMulU32U64Vector(u32_u64_vector, u32_a, u32_b);
+            std.debug.assert(std.mem.eql(u64, u32_u64_scalar, u32_u64_vector));
+            kernels.widenMulI32I64Scalar(i32_i64_scalar, i32_a, i32_b);
+            kernels.widenMulI32I64Vector(i32_i64_vector, i32_a, i32_b);
+            std.debug.assert(std.mem.eql(i64, i32_i64_scalar, i32_i64_vector));
+
+            var result = try measure(io, kernels.widenMulU32U64Scalar, .{ u32_u64_scalar, u32_a, u32_b }, n);
+            report("widen-mul-u32-u64/scalar-autovec", n, n * 16, n * 16, result);
+            result = try measure(io, kernels.widenMulU32U64Vector, .{ u32_u64_vector, u32_a, u32_b }, n);
+            report("widen-mul-u32-u64/native-vector", n, n * 16, n * 16, result);
+            result = try measure(io, kernels.widenMulI32I64Scalar, .{ i32_i64_scalar, i32_a, i32_b }, n);
+            report("widen-mul-i32-i64/scalar-autovec", n, n * 16, n * 16, result);
+            result = try measure(io, kernels.widenMulI32I64Vector, .{ i32_i64_vector, i32_a, i32_b }, n);
+            report("widen-mul-i32-i64/native-vector", n, n * 16, n * 16, result);
         }
 
         {

@@ -46,6 +46,96 @@ pub fn sat_add_u8_scalar(dst: &mut [u8], a: &[u8], b: &[u8]) {
         *out = x.saturating_add(y);
     }
 }
+/// Adds signed bytes element-wise with saturation at the `i8` bounds.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_add_i8_scalar(dst: &mut [i8], a: &[i8], b: &[i8]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        *out = x.saturating_add(y);
+    }
+}
+
+/// Adds unsigned 16-bit integers element-wise with saturation at `u16::MAX`.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_add_u16_scalar(dst: &mut [u16], a: &[u16], b: &[u16]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        *out = x.saturating_add(y);
+    }
+}
+
+/// Adds signed 16-bit integers element-wise with saturation at the `i16` bounds.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_add_i16_scalar(dst: &mut [i16], a: &[i16], b: &[i16]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        *out = x.saturating_add(y);
+    }
+}
+
+/// Adds unsigned 32-bit integers element-wise with saturation at `u32::MAX`.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_add_u32_scalar(dst: &mut [u32], a: &[u32], b: &[u32]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        *out = x.saturating_add(y);
+    }
+}
+
+/// Adds signed 32-bit integers element-wise with saturation at the `i32` bounds.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_add_i32_scalar(dst: &mut [i32], a: &[i32], b: &[i32]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        *out = x.saturating_add(y);
+    }
+}
+
+/// Adds unsigned 64-bit integers element-wise with saturation at `u64::MAX`.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_add_u64_scalar(dst: &mut [u64], a: &[u64], b: &[u64]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        *out = x.saturating_add(y);
+    }
+}
+
+/// Adds signed 64-bit integers element-wise with saturation at the `i64` bounds.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_add_i64_scalar(dst: &mut [i64], a: &[i64], b: &[i64]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        *out = x.saturating_add(y);
+    }
+}
 /// Computes an f32 dot product with f64 products and accumulation.
 pub fn dot_f32_scalar(a: &[f32], b: &[f32]) -> f64 {
     assert_eq!(a.len(), b.len());
@@ -155,6 +245,33 @@ pub fn widen_mul_i16_i32_scalar(dst: &mut [i32], a: &[i16], b: &[i16]) {
     while i < dst.len() {
         let x = i32::from(a[i]);
         let y = i32::from(b[i]);
+        dst[i] = x * y;
+        i += 1;
+    }
+}
+/// Multiplies u32 pairs after widening each operand to u64.
+pub fn widen_mul_u32_u64_scalar(dst: &mut [u64], a: &[u32], b: &[u32]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    let mut i = 0;
+    while i < dst.len() {
+        let x = u64::from(a[i]);
+        let y = u64::from(b[i]);
+        dst[i] = x * y;
+        i += 1;
+    }
+}
+
+/// Multiplies i32 pairs after widening each operand to i64.
+pub fn widen_mul_i32_i64_scalar(dst: &mut [i64], a: &[i32], b: &[i32]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    let mut i = 0;
+    while i < dst.len() {
+        let x = i64::from(a[i]);
+        let y = i64::from(b[i]);
         dst[i] = x * y;
         i += 1;
     }
@@ -523,6 +640,26 @@ mod tests {
             let mut candidate_i16_i32 = vec![0_i32; len];
             widen_mul_i16_i32_scalar(&mut candidate_i16_i32, &a_i16_w, &b_i16_w);
             assert_eq!(candidate_i16_i32, expected_i16_i32);
+            let a_u32: Vec<u32> = (0..len).map(|i| [0, 1, 0x8000_0000, u32::MAX][i & 3]).collect();
+            let b_u32: Vec<u32> =
+                (0..len).map(|i| [u32::MAX, u32::MAX, 2, 1][i & 3]).collect();
+            let mut expected_u32_u64 = vec![0_u64; len];
+            for i in 0..len {
+                expected_u32_u64[i] = u64::from(a_u32[i]) * u64::from(b_u32[i]);
+            }
+            let mut candidate_u32_u64 = vec![0_u64; len];
+            widen_mul_u32_u64_scalar(&mut candidate_u32_u64, &a_u32, &b_u32);
+            assert_eq!(candidate_u32_u64, expected_u32_u64);
+
+            let a_i32: Vec<i32> = (0..len).map(|i| [i32::MIN, -1, 1, i32::MAX][i & 3]).collect();
+            let b_i32: Vec<i32> = (0..len).map(|i| [i32::MIN, 1, -1, 0][i & 3]).collect();
+            let mut expected_i32_i64 = vec![0_i64; len];
+            for i in 0..len {
+                expected_i32_i64[i] = i64::from(a_i32[i]) * i64::from(b_i32[i]);
+            }
+            let mut candidate_i32_i64 = vec![0_i64; len];
+            widen_mul_i32_i64_scalar(&mut candidate_i32_i64, &a_i32, &b_i32);
+            assert_eq!(candidate_i32_i64, expected_i32_i64);
         }
     }
 
@@ -612,6 +749,143 @@ mod tests {
             let mut candidate_i16_i32 = vec![0_i32; len];
             widen_mul_i16_i32_scalar(&mut candidate_i16_i32, &a_i16_w, &b_i16_w);
             assert_eq!(candidate_i16_i32, expected_i16_i32);
+            let a_u32_w: Vec<u32> = (0..len).map(|_| rng.next() as u32).collect();
+            let b_u32_w: Vec<u32> = (0..len).map(|_| rng.next() as u32).collect();
+            let mut expected_u32_u64 = vec![0_u64; len];
+            for i in 0..len {
+                expected_u32_u64[i] = u64::from(a_u32_w[i]) * u64::from(b_u32_w[i]);
+            }
+            let mut candidate_u32_u64 = vec![0_u64; len];
+            widen_mul_u32_u64_scalar(&mut candidate_u32_u64, &a_u32_w, &b_u32_w);
+            assert_eq!(candidate_u32_u64, expected_u32_u64);
+
+            let a_i32_w: Vec<i32> = (0..len).map(|_| rng.next() as i32).collect();
+            let b_i32_w: Vec<i32> = (0..len).map(|_| rng.next() as i32).collect();
+            let mut expected_i32_i64 = vec![0_i64; len];
+            for i in 0..len {
+                expected_i32_i64[i] = i64::from(a_i32_w[i]) * i64::from(b_i32_w[i]);
+            }
+            let mut candidate_i32_i64 = vec![0_i64; len];
+            widen_mul_i32_i64_scalar(&mut candidate_i32_i64, &a_i32_w, &b_i32_w);
+            assert_eq!(candidate_i32_i64, expected_i32_i64);
         }
+    }
+    #[test]
+    fn saturating_add_integer_apis_match_independent_widened_references() {
+        const LENGTHS: [usize; 20] = [
+            0, 1, 2, 3, 5, 7, 8, 9, 11, 13, 15, 16, 17, 19, 31, 32, 33, 63, 64, 65,
+        ];
+        let mut rng = XorShift64(0x4a21_8c73_d5e9_0b6f);
+
+        macro_rules! check_signed {
+            ($len:ident, $ty:ty, $wide:ty, $function:ident) => {{
+                let a: Vec<$ty> = (0..$len)
+                    .map(|i| match i {
+                        0 => <$ty>::MIN,
+                        1 => <$ty>::MIN + 1,
+                        2 => -1,
+                        3 => 0,
+                        4 => 1,
+                        5 => <$ty>::MAX - 1,
+                        6 => <$ty>::MAX,
+                        _ => rng.next() as $ty,
+                    })
+                    .collect();
+                let b: Vec<$ty> = (0..$len)
+                    .map(|i| match i {
+                        0 => <$ty>::MIN,
+                        1 => <$ty>::MAX,
+                        2 => <$ty>::MAX,
+                        3 => <$ty>::MIN,
+                        4 => -1,
+                        5 => 1,
+                        6 => <$ty>::MAX,
+                        _ => rng.next() as $ty,
+                    })
+                    .collect();
+                let expected: Vec<$ty> = a
+                    .iter()
+                    .zip(&b)
+                    .map(|(&x, &y)| {
+                        let sum = <$wide>::from(x) + <$wide>::from(y);
+                        sum.clamp(<$wide>::from(<$ty>::MIN), <$wide>::from(<$ty>::MAX)) as $ty
+                    })
+                    .collect();
+                let mut candidate = vec![0 as $ty; $len];
+                $function(&mut candidate, &a, &b);
+                assert_eq!(
+                    candidate,
+                    expected,
+                    "signed type {} len={}",
+                    stringify!($ty),
+                    $len
+                );
+            }};
+        }
+        macro_rules! check_unsigned {
+            ($len:ident, $ty:ty, $wide:ty, $function:ident) => {{
+                let a: Vec<$ty> = (0..$len)
+                    .map(|i| match i {
+                        0 => 0,
+                        1 => 1,
+                        2 => 2,
+                        3 => <$ty>::MAX / 2,
+                        4 => <$ty>::MAX - 1,
+                        5 => <$ty>::MAX,
+                        6 => <$ty>::MAX,
+                        _ => rng.next() as $ty,
+                    })
+                    .collect();
+                let b: Vec<$ty> = (0..$len)
+                    .map(|i| match i {
+                        0 => <$ty>::MAX,
+                        1 => <$ty>::MAX,
+                        2 => <$ty>::MAX,
+                        3 => 1,
+                        4 => 2,
+                        5 => <$ty>::MAX,
+                        6 => 0,
+                        _ => rng.next() as $ty,
+                    })
+                    .collect();
+                let expected: Vec<$ty> = a
+                    .iter()
+                    .zip(&b)
+                    .map(|(&x, &y)| {
+                        let sum = <$wide>::from(x) + <$wide>::from(y);
+                        sum.min(<$wide>::from(<$ty>::MAX)) as $ty
+                    })
+                    .collect();
+                let mut candidate = vec![0 as $ty; $len];
+                $function(&mut candidate, &a, &b);
+                assert_eq!(
+                    candidate,
+                    expected,
+                    "unsigned type {} len={}",
+                    stringify!($ty),
+                    $len
+                );
+            }};
+        }
+
+        for &len in &LENGTHS {
+            check_signed!(len, i8, i128, sat_add_i8_scalar);
+            check_unsigned!(len, u16, u128, sat_add_u16_scalar);
+            check_signed!(len, i16, i128, sat_add_i16_scalar);
+            check_unsigned!(len, u32, u128, sat_add_u32_scalar);
+            check_signed!(len, i32, i128, sat_add_i32_scalar);
+            check_unsigned!(len, u64, u128, sat_add_u64_scalar);
+            check_signed!(len, i64, i128, sat_add_i64_scalar);
+        }
+
+
+        let i64_a = [i64::MAX, i64::MIN, i64::MAX, i64::MIN, i64::MAX - 1, i64::MIN + 1];
+        let i64_b = [1_i64, -1, i64::MAX, i64::MIN, 1, -1];
+        let mut i64_dst = [0_i64; 6];
+        sat_add_i64_scalar(&mut i64_dst, &i64_a, &i64_b);
+        assert_eq!(
+            i64_dst,
+            [i64::MAX, i64::MIN, i64::MAX, i64::MIN, i64::MAX, i64::MIN]
+        );
     }
 }

@@ -8,6 +8,8 @@ using i32 = int;
 using u8 = unsigned char;
 using u16 = unsigned short;
 using u32 = unsigned int;
+using i64 = long long;
+using u64 = unsigned long long;
 using usize = __SIZE_TYPE__;
 
 extern "C" void widen_mul_u8_u16_scalar(
@@ -43,5 +45,22 @@ extern "C" void widen_mul_i16_i32_scalar(
         const i32 lhs = static_cast<i32>(a[i]);
         const i32 rhs = static_cast<i32>(b[i]);
         dst[i] = static_cast<i32>(lhs * rhs);
+    }
+}
+extern "C" void widen_mul_u32_u64_scalar(
+    u64* dst, const u32* a, const u32* b, usize len) {
+    for (usize i = 0; i < len; ++i) {
+        const u64 lhs = static_cast<u64>(a[i]);
+        const u64 rhs = static_cast<u64>(b[i]);
+        dst[i] = lhs * rhs;
+    }
+}
+
+extern "C" void widen_mul_i32_i64_scalar(
+    i64* dst, const i32* a, const i32* b, usize len) {
+    for (usize i = 0; i < len; ++i) {
+        const i64 lhs = static_cast<i64>(a[i]);
+        const i64 rhs = static_cast<i64>(b[i]);
+        dst[i] = lhs * rhs;
     }
 }

@@ -148,3 +148,77 @@ pub export fn widen_mul_i16_i32_vector(
         dst[i] = wide_a * wide_b;
     }
 }
+
+pub export fn widen_mul_u32_u64_scalar(
+    dst: [*]u64,
+    a: [*]const u32,
+    b: [*]const u32,
+    len: usize,
+) void {
+    var i: usize = 0;
+    while (i < len) : (i += 1) {
+        const wide_a: u64 = @intCast(a[i]);
+        const wide_b: u64 = @intCast(b[i]);
+        dst[i] = wide_a * wide_b;
+    }
+}
+
+pub export fn widen_mul_u32_u64_vector(
+    dst: [*]u64,
+    a: [*]const u32,
+    b: [*]const u32,
+    len: usize,
+) void {
+    const Input = @Vector(4, u32);
+    const Wide = @Vector(4, u64);
+    var i: usize = 0;
+    while (i + 4 <= len) : (i += 4) {
+        const va: Input = a[i..][0..4].*;
+        const vb: Input = b[i..][0..4].*;
+        const wide_a: Wide = @intCast(va);
+        const wide_b: Wide = @intCast(vb);
+        dst[i..][0..4].* = wide_a * wide_b;
+    }
+    while (i < len) : (i += 1) {
+        const wide_a: u64 = @intCast(a[i]);
+        const wide_b: u64 = @intCast(b[i]);
+        dst[i] = wide_a * wide_b;
+    }
+}
+
+pub export fn widen_mul_i32_i64_scalar(
+    dst: [*]i64,
+    a: [*]const i32,
+    b: [*]const i32,
+    len: usize,
+) void {
+    var i: usize = 0;
+    while (i < len) : (i += 1) {
+        const wide_a: i64 = @intCast(a[i]);
+        const wide_b: i64 = @intCast(b[i]);
+        dst[i] = wide_a * wide_b;
+    }
+}
+
+pub export fn widen_mul_i32_i64_vector(
+    dst: [*]i64,
+    a: [*]const i32,
+    b: [*]const i32,
+    len: usize,
+) void {
+    const Input = @Vector(4, i32);
+    const Wide = @Vector(4, i64);
+    var i: usize = 0;
+    while (i + 4 <= len) : (i += 4) {
+        const va: Input = a[i..][0..4].*;
+        const vb: Input = b[i..][0..4].*;
+        const wide_a: Wide = @intCast(va);
+        const wide_b: Wide = @intCast(vb);
+        dst[i..][0..4].* = wide_a * wide_b;
+    }
+    while (i < len) : (i += 1) {
+        const wide_a: i64 = @intCast(a[i]);
+        const wide_b: i64 = @intCast(b[i]);
+        dst[i] = wide_a * wide_b;
+    }
+}

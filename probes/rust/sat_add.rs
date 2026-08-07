@@ -10,6 +10,106 @@ pub extern "C" fn sat_add_u8_scalar(dst: *mut u8, a: *const u8, b: *const u8, le
     }
 }
 
+#[no_mangle]
+pub extern "C" fn sat_add_i8_scalar(dst: *mut i8, a: *const i8, b: *const i8, len: usize) {
+    let dst = unsafe { core::slice::from_raw_parts_mut(dst, len) };
+    let a = unsafe { core::slice::from_raw_parts(a, len) };
+    let b = unsafe { core::slice::from_raw_parts(b, len) };
+    for i in 0..len {
+        dst[i] = a[i].saturating_add(b[i]);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sat_add_u16_scalar(
+    dst: *mut u16,
+    a: *const u16,
+    b: *const u16,
+    len: usize,
+) {
+    let dst = unsafe { core::slice::from_raw_parts_mut(dst, len) };
+    let a = unsafe { core::slice::from_raw_parts(a, len) };
+    let b = unsafe { core::slice::from_raw_parts(b, len) };
+    for i in 0..len {
+        dst[i] = a[i].saturating_add(b[i]);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sat_add_i16_scalar(
+    dst: *mut i16,
+    a: *const i16,
+    b: *const i16,
+    len: usize,
+) {
+    let dst = unsafe { core::slice::from_raw_parts_mut(dst, len) };
+    let a = unsafe { core::slice::from_raw_parts(a, len) };
+    let b = unsafe { core::slice::from_raw_parts(b, len) };
+    for i in 0..len {
+        dst[i] = a[i].saturating_add(b[i]);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sat_add_u32_scalar(
+    dst: *mut u32,
+    a: *const u32,
+    b: *const u32,
+    len: usize,
+) {
+    let dst = unsafe { core::slice::from_raw_parts_mut(dst, len) };
+    let a = unsafe { core::slice::from_raw_parts(a, len) };
+    let b = unsafe { core::slice::from_raw_parts(b, len) };
+    for i in 0..len {
+        dst[i] = a[i].saturating_add(b[i]);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sat_add_i32_scalar(
+    dst: *mut i32,
+    a: *const i32,
+    b: *const i32,
+    len: usize,
+) {
+    let dst = unsafe { core::slice::from_raw_parts_mut(dst, len) };
+    let a = unsafe { core::slice::from_raw_parts(a, len) };
+    let b = unsafe { core::slice::from_raw_parts(b, len) };
+    for i in 0..len {
+        dst[i] = a[i].saturating_add(b[i]);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sat_add_u64_scalar(
+    dst: *mut u64,
+    a: *const u64,
+    b: *const u64,
+    len: usize,
+) {
+    let dst = unsafe { core::slice::from_raw_parts_mut(dst, len) };
+    let a = unsafe { core::slice::from_raw_parts(a, len) };
+    let b = unsafe { core::slice::from_raw_parts(b, len) };
+    for i in 0..len {
+        dst[i] = a[i].saturating_add(b[i]);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sat_add_i64_scalar(
+    dst: *mut i64,
+    a: *const i64,
+    b: *const i64,
+    len: usize,
+) {
+    let dst = unsafe { core::slice::from_raw_parts_mut(dst, len) };
+    let a = unsafe { core::slice::from_raw_parts(a, len) };
+    let b = unsafe { core::slice::from_raw_parts(b, len) };
+    for i in 0..len {
+        dst[i] = a[i].saturating_add(b[i]);
+    }
+}
+
 #[cfg(target_arch = "x86_64")]
 #[no_mangle]
 #[target_feature(enable = "avx2")]

@@ -67,3 +67,36 @@ pub extern "C" fn widen_mul_i16_i32_scalar(
         dst[i] = x * y;
     }
 }
+#[no_mangle]
+pub extern "C" fn widen_mul_u32_u64_scalar(
+    dst: *mut u64,
+    a: *const u32,
+    b: *const u32,
+    len: usize,
+) {
+    let dst = unsafe { core::slice::from_raw_parts_mut(dst, len) };
+    let a = unsafe { core::slice::from_raw_parts(a, len) };
+    let b = unsafe { core::slice::from_raw_parts(b, len) };
+    for i in 0..len {
+        let x = u64::from(a[i]);
+        let y = u64::from(b[i]);
+        dst[i] = x * y;
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn widen_mul_i32_i64_scalar(
+    dst: *mut i64,
+    a: *const i32,
+    b: *const i32,
+    len: usize,
+) {
+    let dst = unsafe { core::slice::from_raw_parts_mut(dst, len) };
+    let a = unsafe { core::slice::from_raw_parts(a, len) };
+    let b = unsafe { core::slice::from_raw_parts(b, len) };
+    for i in 0..len {
+        let x = i64::from(a[i]);
+        let y = i64::from(b[i]);
+        dst[i] = x * y;
+    }
+}

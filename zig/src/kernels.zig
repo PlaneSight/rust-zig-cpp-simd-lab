@@ -104,6 +104,55 @@ pub fn satAddU8Vector(dst: []u8, a: []const u8, b: []const u8) void {
         dst[i] = a[i] +| b[i];
     }
 }
+
+pub fn satAddI8Scalar(dst: []i8, a: []const i8, b: []const i8) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        out.* = x +| y;
+    }
+}
+
+pub fn satAddU16Scalar(dst: []u16, a: []const u16, b: []const u16) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        out.* = x +| y;
+    }
+}
+
+pub fn satAddI16Scalar(dst: []i16, a: []const i16, b: []const i16) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        out.* = x +| y;
+    }
+}
+
+pub fn satAddU32Scalar(dst: []u32, a: []const u32, b: []const u32) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        out.* = x +| y;
+    }
+}
+
+pub fn satAddI32Scalar(dst: []i32, a: []const i32, b: []const i32) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        out.* = x +| y;
+    }
+}
+
+pub fn satAddU64Scalar(dst: []u64, a: []const u64, b: []const u64) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        out.* = x +| y;
+    }
+}
+
+pub fn satAddI64Scalar(dst: []i64, a: []const i64, b: []const i64) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        out.* = x +| y;
+    }
+}
 pub fn dotF32Scalar(a: []const f32, b: []const f32) f64 {
     std.debug.assert(a.len == b.len);
     var sum: f64 = 0;
@@ -356,6 +405,66 @@ pub fn widenMulI16I32Vector(dst: []i32, a: []const i16, b: []const i16) void {
     }
 }
 
+pub fn widenMulU32U64Scalar(dst: []u64, a: []const u32, b: []const u32) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const wide_x: u64 = @intCast(x);
+        const wide_y: u64 = @intCast(y);
+        out.* = wide_x * wide_y;
+    }
+}
+
+pub fn widenMulU32U64Vector(dst: []u64, a: []const u32, b: []const u32) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    const Input = @Vector(4, u32);
+    const Wide = @Vector(4, u64);
+    var i: usize = 0;
+
+    while (i + 4 <= dst.len) : (i += 4) {
+        const va: Input = a[i..][0..4].*;
+        const vb: Input = b[i..][0..4].*;
+        const wide_a: Wide = @intCast(va);
+        const wide_b: Wide = @intCast(vb);
+        dst[i..][0..4].* = wide_a * wide_b;
+    }
+
+    while (i < dst.len) : (i += 1) {
+        const wide_x: u64 = @intCast(a[i]);
+        const wide_y: u64 = @intCast(b[i]);
+        dst[i] = wide_x * wide_y;
+    }
+}
+
+pub fn widenMulI32I64Scalar(dst: []i64, a: []const i32, b: []const i32) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        const wide_x: i64 = @intCast(x);
+        const wide_y: i64 = @intCast(y);
+        out.* = wide_x * wide_y;
+    }
+}
+
+pub fn widenMulI32I64Vector(dst: []i64, a: []const i32, b: []const i32) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    const Input = @Vector(4, i32);
+    const Wide = @Vector(4, i64);
+    var i: usize = 0;
+
+    while (i + 4 <= dst.len) : (i += 4) {
+        const va: Input = a[i..][0..4].*;
+        const vb: Input = b[i..][0..4].*;
+        const wide_a: Wide = @intCast(va);
+        const wide_b: Wide = @intCast(vb);
+        dst[i..][0..4].* = wide_a * wide_b;
+    }
+
+    while (i < dst.len) : (i += 1) {
+        const wide_x: i64 = @intCast(a[i]);
+        const wide_y: i64 = @intCast(b[i]);
+        dst[i] = wide_x * wide_y;
+    }
+}
+
 pub fn clampF16Native(dst: []f16, c: []const f16, lo: []const f16, hi: []const f16) void {
     std.debug.assert(dst.len == c.len and c.len == lo.len and lo.len == hi.len);
     const Vec = @Vector(16, f16);
@@ -527,6 +636,10 @@ test "dot products and widening multiplies match independent references" {
     var i8_b: [max_len]i8 = undefined;
     var u16_a: [max_len]u16 = undefined;
     var u16_b: [max_len]u16 = undefined;
+    var u32_a: [max_len]u32 = undefined;
+    var u32_b: [max_len]u32 = undefined;
+    var i32_a: [max_len]i32 = undefined;
+    var i32_b: [max_len]i32 = undefined;
 
     var expected_u16: [max_len]u16 = undefined;
     var scalar_u16: [max_len]u16 = undefined;
@@ -540,6 +653,13 @@ test "dot products and widening multiplies match independent references" {
     var expected_i32: [max_len]i32 = undefined;
     var scalar_i32: [max_len]i32 = undefined;
     var vector_i32: [max_len]i32 = undefined;
+    var expected_u64: [max_len]u64 = undefined;
+    var scalar_u64: [max_len]u64 = undefined;
+    var vector_u64: [max_len]u64 = undefined;
+    var expected_i64: [max_len]i64 = undefined;
+    var scalar_i64: [max_len]i64 = undefined;
+    var vector_i64: [max_len]i64 = undefined;
+
     const deterministic_lengths = [_]usize{ 0, 1, 7, 8, 9, 15, 16, 31, 32, 63, 64, 65, 127 };
     var lengths: [deterministic_lengths.len + 256]usize = undefined;
     for (deterministic_lengths, 0..) |length, index| {
@@ -554,6 +674,8 @@ test "dot products and widening multiplies match independent references" {
     const i8_extrema = [_]i8{ -128, -127, -1, 0, 1, 127 };
     const u8_extrema = [_]u8{ 0, 1, 127, 128, 254, 255 };
     const u16_extrema = [_]u16{ 0, 1, 255, 256, 65534, 65535 };
+    const i32_extrema = [_]i32{ -2147483648, -2147483647, -1, 0, 1, 2147483647 };
+    const u32_extrema = [_]u32{ 0, 1, 255, 256, 4294967294, 4294967295 };
 
     for (lengths, 0..) |len, trial| {
         for (0..len) |i| {
@@ -595,6 +717,10 @@ test "dot products and widening multiplies match independent references" {
                 u8_b[i] = u8_extrema[(extrema_lane * 5 + 1) % u8_extrema.len];
                 u16_a[i] = u16_extrema[extrema_lane];
                 u16_b[i] = u16_extrema[(extrema_lane * 5 + 1) % u16_extrema.len];
+                i32_a[i] = i32_extrema[extrema_lane];
+                i32_b[i] = i32_extrema[(extrema_lane * 5 + 1) % i32_extrema.len];
+                u32_a[i] = u32_extrema[extrema_lane];
+                u32_b[i] = u32_extrema[(extrema_lane * 5 + 1) % u32_extrema.len];
             } else {
                 i16_a[i] = @bitCast(@as(u16, @truncate(rng.next())));
                 i16_b[i] = @bitCast(@as(u16, @truncate(rng.next())));
@@ -604,6 +730,10 @@ test "dot products and widening multiplies match independent references" {
                 u8_b[i] = @truncate(rng.next());
                 u16_a[i] = @truncate(rng.next());
                 u16_b[i] = @truncate(rng.next());
+                i32_a[i] = @bitCast(@as(u32, @truncate(rng.next())));
+                i32_b[i] = @bitCast(@as(u32, @truncate(rng.next())));
+                u32_a[i] = @truncate(rng.next());
+                u32_b[i] = @truncate(rng.next());
             }
         }
         var expected_dot_f32: f64 = 0;
@@ -682,5 +812,203 @@ test "dot products and widening multiplies match independent references" {
         widenMulI16I32Vector(vector_i32[0..len], i16_a[0..len], i16_b[0..len]);
         try std.testing.expectEqualSlices(i32, expected_i32[0..len], scalar_i32[0..len]);
         try std.testing.expectEqualSlices(i32, expected_i32[0..len], vector_i32[0..len]);
+
+        for (expected_u64[0..len], u32_a[0..len], u32_b[0..len]) |*out, x, y| {
+            const wide_x: u64 = @intCast(x);
+            const wide_y: u64 = @intCast(y);
+            out.* = wide_x * wide_y;
+        }
+        widenMulU32U64Scalar(scalar_u64[0..len], u32_a[0..len], u32_b[0..len]);
+        widenMulU32U64Vector(vector_u64[0..len], u32_a[0..len], u32_b[0..len]);
+        try std.testing.expectEqualSlices(u64, expected_u64[0..len], scalar_u64[0..len]);
+        try std.testing.expectEqualSlices(u64, expected_u64[0..len], vector_u64[0..len]);
+
+        for (expected_i64[0..len], i32_a[0..len], i32_b[0..len]) |*out, x, y| {
+            const wide_x: i64 = @intCast(x);
+            const wide_y: i64 = @intCast(y);
+            out.* = wide_x * wide_y;
+        }
+        widenMulI32I64Scalar(scalar_i64[0..len], i32_a[0..len], i32_b[0..len]);
+        widenMulI32I64Vector(vector_i64[0..len], i32_a[0..len], i32_b[0..len]);
+        try std.testing.expectEqualSlices(i64, expected_i64[0..len], scalar_i64[0..len]);
+        try std.testing.expectEqualSlices(i64, expected_i64[0..len], vector_i64[0..len]);
+    }
+}
+
+test "saturating add scalar paths match widened checked references" {
+    const max_len = 2049;
+    var u8_a: [max_len]u8 = undefined;
+    var u8_b: [max_len]u8 = undefined;
+    var u8_expected: [max_len]u8 = undefined;
+    var u8_candidate: [max_len]u8 = undefined;
+    var i8_a: [max_len]i8 = undefined;
+    var i8_b: [max_len]i8 = undefined;
+    var i8_expected: [max_len]i8 = undefined;
+    var i8_candidate: [max_len]i8 = undefined;
+    var u16_a: [max_len]u16 = undefined;
+    var u16_b: [max_len]u16 = undefined;
+    var u16_expected: [max_len]u16 = undefined;
+    var u16_candidate: [max_len]u16 = undefined;
+    var i16_a: [max_len]i16 = undefined;
+    var i16_b: [max_len]i16 = undefined;
+    var i16_expected: [max_len]i16 = undefined;
+    var i16_candidate: [max_len]i16 = undefined;
+    var u32_a: [max_len]u32 = undefined;
+    var u32_b: [max_len]u32 = undefined;
+    var u32_expected: [max_len]u32 = undefined;
+    var u32_candidate: [max_len]u32 = undefined;
+    var i32_a: [max_len]i32 = undefined;
+    var i32_b: [max_len]i32 = undefined;
+    var i32_expected: [max_len]i32 = undefined;
+    var i32_candidate: [max_len]i32 = undefined;
+    var u64_a: [max_len]u64 = undefined;
+    var u64_b: [max_len]u64 = undefined;
+    var u64_expected: [max_len]u64 = undefined;
+    var u64_candidate: [max_len]u64 = undefined;
+    var i64_a: [max_len]i64 = undefined;
+    var i64_b: [max_len]i64 = undefined;
+    var i64_expected: [max_len]i64 = undefined;
+    var i64_candidate: [max_len]i64 = undefined;
+
+    const deterministic_lengths = [_]usize{
+        0, 1, 2, 3, 7, 8, 9, 15, 16, 17, 31, 32, 33,
+        63, 64, 65, 127, 128, 129, 255, 256, 257, 511,
+        1023, 1024, 2048, 2049,
+    };
+    var lengths: [deterministic_lengths.len + 256]usize = undefined;
+    for (deterministic_lengths, 0..) |length, index| {
+        lengths[index] = length;
+    }
+    var rng = XorShift64{ .state = 0x4a1d_83c7_6e20_b5f9 };
+    for (lengths[deterministic_lengths.len..], 0..) |*length, trial| {
+        length.* = if (trial < 64) trial else @intCast(rng.next() % (max_len + 1));
+    }
+
+    const u8_extrema = [_]u8{ 0, 1, 127, 128, 254, 255, 255 };
+    const i8_extrema = [_]i8{ -128, -127, -1, 0, 1, 126, 127 };
+    const u16_extrema = [_]u16{ 0, 1, 32767, 32768, 65534, 65535, 65535 };
+    const i16_extrema = [_]i16{ -32768, -32767, -1, 0, 1, 32766, 32767 };
+    const u32_extrema = [_]u32{ 0, 1, 2147483647, 2147483648, 4294967294, 4294967295, 4294967295 };
+    const i32_extrema = [_]i32{ -2147483648, -2147483647, -1, 0, 1, 2147483646, 2147483647 };
+    const u64_extrema = [_]u64{
+        0,
+        1,
+        0x7fff_ffff_ffff_ffff,
+        0x8000_0000_0000_0000,
+        std.math.maxInt(u64) - 1,
+        std.math.maxInt(u64),
+        std.math.maxInt(u64),
+    };
+    const i64_extrema = [_]i64{
+        std.math.minInt(i64),
+        std.math.minInt(i64) + 1,
+        -1,
+        0,
+        1,
+        std.math.maxInt(i64) - 1,
+        std.math.maxInt(i64),
+    };
+
+    const pair_indices = [_]usize{ 1, 0, 6, 2, 3, 5, 6 };
+
+    for (lengths, 0..) |len, trial| {
+        for (0..len) |i| {
+            const lane = (i + trial) % 11;
+            if (lane < 7) {
+                const pair = pair_indices[lane];
+                u8_a[i] = u8_extrema[lane];
+                u8_b[i] = u8_extrema[pair];
+                i8_a[i] = i8_extrema[lane];
+                i8_b[i] = i8_extrema[pair];
+                u16_a[i] = u16_extrema[lane];
+                u16_b[i] = u16_extrema[pair];
+                i16_a[i] = i16_extrema[lane];
+                i16_b[i] = i16_extrema[pair];
+                u32_a[i] = u32_extrema[lane];
+                u32_b[i] = u32_extrema[pair];
+                i32_a[i] = i32_extrema[lane];
+                i32_b[i] = i32_extrema[pair];
+                u64_a[i] = u64_extrema[lane];
+                u64_b[i] = u64_extrema[pair];
+                i64_a[i] = i64_extrema[lane];
+                i64_b[i] = i64_extrema[pair];
+            } else {
+                u8_a[i] = @truncate(rng.next());
+                u8_b[i] = @truncate(rng.next());
+                i8_a[i] = @bitCast(@as(u8, @truncate(rng.next())));
+                i8_b[i] = @bitCast(@as(u8, @truncate(rng.next())));
+                u16_a[i] = @truncate(rng.next());
+                u16_b[i] = @truncate(rng.next());
+                i16_a[i] = @bitCast(@as(u16, @truncate(rng.next())));
+                i16_b[i] = @bitCast(@as(u16, @truncate(rng.next())));
+                u32_a[i] = @truncate(rng.next());
+                u32_b[i] = @truncate(rng.next());
+                i32_a[i] = @bitCast(@as(u32, @truncate(rng.next())));
+                i32_b[i] = @bitCast(@as(u32, @truncate(rng.next())));
+                u64_a[i] = rng.next();
+                u64_b[i] = rng.next();
+                i64_a[i] = @bitCast(rng.next());
+                i64_b[i] = @bitCast(rng.next());
+            }
+        }
+
+        for (u8_expected[0..len], u8_a[0..len], u8_b[0..len]) |*out, x, y| {
+            const sum: u16 = @as(u16, x) + @as(u16, y);
+            out.* = if (sum > @as(u16, std.math.maxInt(u8))) std.math.maxInt(u8) else @intCast(sum);
+        }
+        for (i8_expected[0..len], i8_a[0..len], i8_b[0..len]) |*out, x, y| {
+            const sum: i16 = @as(i16, x) + @as(i16, y);
+            const min_value: i16 = @intCast(std.math.minInt(i8));
+            const max_value: i16 = @intCast(std.math.maxInt(i8));
+            out.* = if (sum < min_value) std.math.minInt(i8) else if (sum > max_value) std.math.maxInt(i8) else @intCast(sum);
+        }
+        for (u16_expected[0..len], u16_a[0..len], u16_b[0..len]) |*out, x, y| {
+            const sum: u32 = @as(u32, x) + @as(u32, y);
+            out.* = if (sum > @as(u32, std.math.maxInt(u16))) std.math.maxInt(u16) else @intCast(sum);
+        }
+        for (i16_expected[0..len], i16_a[0..len], i16_b[0..len]) |*out, x, y| {
+            const sum: i32 = @as(i32, x) + @as(i32, y);
+            const min_value: i32 = @intCast(std.math.minInt(i16));
+            const max_value: i32 = @intCast(std.math.maxInt(i16));
+            out.* = if (sum < min_value) std.math.minInt(i16) else if (sum > max_value) std.math.maxInt(i16) else @intCast(sum);
+        }
+        for (u32_expected[0..len], u32_a[0..len], u32_b[0..len]) |*out, x, y| {
+            const sum: u64 = @as(u64, x) + @as(u64, y);
+            out.* = if (sum > @as(u64, std.math.maxInt(u32))) std.math.maxInt(u32) else @intCast(sum);
+        }
+        for (i32_expected[0..len], i32_a[0..len], i32_b[0..len]) |*out, x, y| {
+            const sum: i64 = @as(i64, x) + @as(i64, y);
+            const min_value: i64 = @intCast(std.math.minInt(i32));
+            const max_value: i64 = @intCast(std.math.maxInt(i32));
+            out.* = if (sum < min_value) std.math.minInt(i32) else if (sum > max_value) std.math.maxInt(i32) else @intCast(sum);
+        }
+        for (u64_expected[0..len], u64_a[0..len], u64_b[0..len]) |*out, x, y| {
+            const sum: u128 = @as(u128, x) + @as(u128, y);
+            out.* = if (sum > @as(u128, std.math.maxInt(u64))) std.math.maxInt(u64) else @intCast(sum);
+        }
+        for (i64_expected[0..len], i64_a[0..len], i64_b[0..len]) |*out, x, y| {
+            const sum: i128 = @as(i128, x) + @as(i128, y);
+            const min_value: i128 = @intCast(std.math.minInt(i64));
+            const max_value: i128 = @intCast(std.math.maxInt(i64));
+            out.* = if (sum < min_value) std.math.minInt(i64) else if (sum > max_value) std.math.maxInt(i64) else @intCast(sum);
+        }
+
+        satAddU8Scalar(u8_candidate[0..len], u8_a[0..len], u8_b[0..len]);
+        satAddI8Scalar(i8_candidate[0..len], i8_a[0..len], i8_b[0..len]);
+        satAddU16Scalar(u16_candidate[0..len], u16_a[0..len], u16_b[0..len]);
+        satAddI16Scalar(i16_candidate[0..len], i16_a[0..len], i16_b[0..len]);
+        satAddU32Scalar(u32_candidate[0..len], u32_a[0..len], u32_b[0..len]);
+        satAddI32Scalar(i32_candidate[0..len], i32_a[0..len], i32_b[0..len]);
+        satAddU64Scalar(u64_candidate[0..len], u64_a[0..len], u64_b[0..len]);
+        satAddI64Scalar(i64_candidate[0..len], i64_a[0..len], i64_b[0..len]);
+
+        try std.testing.expectEqualSlices(u8, u8_expected[0..len], u8_candidate[0..len]);
+        try std.testing.expectEqualSlices(i8, i8_expected[0..len], i8_candidate[0..len]);
+        try std.testing.expectEqualSlices(u16, u16_expected[0..len], u16_candidate[0..len]);
+        try std.testing.expectEqualSlices(i16, i16_expected[0..len], i16_candidate[0..len]);
+        try std.testing.expectEqualSlices(u32, u32_expected[0..len], u32_candidate[0..len]);
+        try std.testing.expectEqualSlices(i32, i32_expected[0..len], i32_candidate[0..len]);
+        try std.testing.expectEqualSlices(u64, u64_expected[0..len], u64_candidate[0..len]);
+        try std.testing.expectEqualSlices(i64, i64_expected[0..len], i64_candidate[0..len]);
     }
 }

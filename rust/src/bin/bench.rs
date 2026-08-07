@@ -2,8 +2,128 @@ use simd_lab_rust::{
     axpy_scalar, dispatch_tier, dot_f32_scalar, dot_f64_scalar, dot_i16_scalar, dot_u8_i8_scalar,
     f16c::clamp_f16c, sad_u8_best, sad_u8_scalar, sat_add_u8_best, sat_add_u8_dispatch_tier,
     sat_add_u8_scalar, squared_error_best, squared_error_scalar, widen_mul_i16_i32_scalar,
-    widen_mul_i8_i16_scalar, widen_mul_u16_u32_scalar, widen_mul_u8_u16_scalar,
+    widen_mul_i32_i64_scalar, widen_mul_i8_i16_scalar, widen_mul_u16_u32_scalar,
+    widen_mul_u32_u64_scalar, widen_mul_u8_u16_scalar,
 };
+use simd_lab_rust::{
+    sat_add_i16_scalar, sat_add_i32_scalar, sat_add_i64_scalar, sat_add_i8_scalar,
+    sat_add_u16_scalar, sat_add_u32_scalar, sat_add_u64_scalar,
+};
+const SAT_ADD_VALIDATION_LENGTHS: [usize; 14] =
+    [0, 1, 7, 8, 9, 15, 16, 17, 31, 32, 63, 64, 65, 127];
+const SAT_ADD_I8_A: [i8; 8] = [i8::MIN, i8::MAX, i8::MIN + 1, i8::MAX - 1, -1, 0, 37, -73];
+const SAT_ADD_I8_B: [i8; 8] = [i8::MIN, i8::MAX, i8::MAX, i8::MIN, 1, -1, -44, 68];
+const SAT_ADD_U16_A: [u16; 8] = [
+    0,
+    u16::MAX,
+    1,
+    u16::MAX - 1,
+    0x1234,
+    0x8000,
+    0xdead,
+    0x55aa,
+];
+const SAT_ADD_U16_B: [u16; 8] = [
+    u16::MAX,
+    u16::MAX,
+    1,
+    u16::MAX,
+    0xedcb,
+    0x7fff,
+    0x1234,
+    0xaa55,
+];
+const SAT_ADD_I16_A: [i16; 8] = [
+    i16::MIN,
+    i16::MAX,
+    i16::MIN + 1,
+    i16::MAX - 1,
+    -1,
+    0,
+    12_345,
+    -23_456,
+];
+const SAT_ADD_I16_B: [i16; 8] = [i16::MIN, i16::MAX, i16::MAX, i16::MIN, 1, -1, -12_345, 23_456];
+const SAT_ADD_U32_A: [u32; 8] = [
+    0,
+    u32::MAX,
+    1,
+    u32::MAX - 1,
+    0x1234_5678,
+    0x8000_0000,
+    0xdead_beef,
+    0x55aa_55aa,
+];
+const SAT_ADD_U32_B: [u32; 8] = [
+    u32::MAX,
+    u32::MAX,
+    1,
+    u32::MAX,
+    0xedcb_a987,
+    0x7fff_ffff,
+    0x1234_5678,
+    0xaa55_aa55,
+];
+const SAT_ADD_I32_A: [i32; 8] = [
+    i32::MIN,
+    i32::MAX,
+    i32::MIN + 1,
+    i32::MAX - 1,
+    -1,
+    0,
+    0x1234_5678,
+    -0x2345_6789,
+];
+const SAT_ADD_I32_B: [i32; 8] = [
+    i32::MIN,
+    i32::MAX,
+    i32::MAX,
+    i32::MIN,
+    1,
+    -1,
+    -0x1234_5678,
+    0x2345_6789,
+];
+const SAT_ADD_U64_A: [u64; 8] = [
+    0,
+    u64::MAX,
+    1,
+    u64::MAX - 1,
+    0x1234_5678_9abc_def0,
+    0x8000_0000_0000_0000,
+    0xdead_beef_cafe_babe,
+    0x55aa_55aa_aa55_55aa,
+];
+const SAT_ADD_U64_B: [u64; 8] = [
+    u64::MAX,
+    u64::MAX,
+    1,
+    u64::MAX,
+    0xedcb_a987_6543_210f,
+    0x7fff_ffff_ffff_ffff,
+    0x1234_5678_9abc_def0,
+    0xaa55_aa55_55aa_aa55,
+];
+const SAT_ADD_I64_A: [i64; 8] = [
+    i64::MIN,
+    i64::MAX,
+    i64::MIN + 1,
+    i64::MAX - 1,
+    -1,
+    0,
+    0x1234_5678_9abc_def0,
+    -0x2345_6789_abcd_ef01,
+];
+const SAT_ADD_I64_B: [i64; 8] = [
+    i64::MIN,
+    i64::MAX,
+    i64::MAX,
+    i64::MIN,
+    1,
+    -1,
+    -0x1234_5678_9abc_def0,
+    0x2345_6789_abcd_ef01,
+];
 use std::hint::black_box;
 use std::time::Instant;
 
@@ -191,14 +311,42 @@ fn main() {
                 .sum();
             assert_eq!(dot_u8_i8_scalar(&a, &i8_b), expected_mixed_dot);
 
+            let sat_i8_a: Vec<i8> = (0..n).map(|i| SAT_ADD_I8_A[i & 7]).collect();
+            let sat_i8_b: Vec<i8> = (0..n).map(|i| SAT_ADD_I8_B[i & 7]).collect();
+            let sat_u16_a: Vec<u16> = (0..n).map(|i| SAT_ADD_U16_A[i & 7]).collect();
+            let sat_u16_b: Vec<u16> = (0..n).map(|i| SAT_ADD_U16_B[i & 7]).collect();
+            let sat_i16_a: Vec<i16> = (0..n).map(|i| SAT_ADD_I16_A[i & 7]).collect();
+            let sat_i16_b: Vec<i16> = (0..n).map(|i| SAT_ADD_I16_B[i & 7]).collect();
+            let sat_u32_a: Vec<u32> = (0..n).map(|i| SAT_ADD_U32_A[i & 7]).collect();
+            let sat_u32_b: Vec<u32> = (0..n).map(|i| SAT_ADD_U32_B[i & 7]).collect();
+            let sat_i32_a: Vec<i32> = (0..n).map(|i| SAT_ADD_I32_A[i & 7]).collect();
+            let sat_i32_b: Vec<i32> = (0..n).map(|i| SAT_ADD_I32_B[i & 7]).collect();
+            let sat_u64_a: Vec<u64> = (0..n).map(|i| SAT_ADD_U64_A[i & 7]).collect();
+            let sat_u64_b: Vec<u64> = (0..n).map(|i| SAT_ADD_U64_B[i & 7]).collect();
+            let sat_i64_a: Vec<i64> = (0..n).map(|i| SAT_ADD_I64_A[i & 7]).collect();
+            let sat_i64_b: Vec<i64> = (0..n).map(|i| SAT_ADD_I64_B[i & 7]).collect();
+            let mut sat_i8_dst = vec![0_i8; n];
+            let mut sat_u16_dst = vec![0_u16; n];
+            let mut sat_i16_dst = vec![0_i16; n];
+            let mut sat_u32_dst = vec![0_u32; n];
+            let mut sat_i32_dst = vec![0_i32; n];
+            let mut sat_u64_dst = vec![0_u64; n];
+            let mut sat_i64_dst = vec![0_i64; n];
+
             let u16_a: Vec<u16> = (0..n).map(|i| (i as u16).wrapping_mul(257)).collect();
             let u16_b: Vec<u16> = (0..n).map(|i| (i as u16).wrapping_mul(13)).collect();
+            let u32_a: Vec<u32> = (0..n).map(|i| (i as u32).wrapping_mul(65_537)).collect();
+            let u32_b: Vec<u32> = (0..n).map(|i| (i as u32).wrapping_mul(257)).collect();
+            let i32_widen_a: Vec<i32> = (0..n).map(|i| (i as i32).wrapping_mul(65_537)).collect();
+            let i32_widen_b: Vec<i32> = (0..n).map(|i| (i as i32).wrapping_mul(257)).collect();
             let i16_widen_a = i16_a.clone();
             let i16_widen_b = i16_b.clone();
             let mut u16_dst = vec![0_u16; n];
             let mut i16_dst = vec![0_i16; n];
             let mut u32_dst = vec![0_u32; n];
             let mut i32_dst = vec![0_i32; n];
+            let mut u64_dst = vec![0_u64; n];
+            let mut i64_dst = vec![0_i64; n];
             let u16_expected: Vec<u16> = a
                 .iter()
                 .zip(&b)
@@ -219,10 +367,24 @@ fn main() {
                 .zip(&i16_widen_b)
                 .map(|(&lhs, &rhs)| i32::from(lhs) * i32::from(rhs))
                 .collect();
+            let u64_expected: Vec<u64> = u32_a
+                .iter()
+                .zip(&u32_b)
+                .map(|(&lhs, &rhs)| u64::from(lhs) * u64::from(rhs))
+                .collect();
+            let i64_expected: Vec<i64> = i32_widen_a
+                .iter()
+                .zip(&i32_widen_b)
+                .map(|(&lhs, &rhs)| i64::from(lhs) * i64::from(rhs))
+                .collect();
             widen_mul_u8_u16_scalar(&mut u16_dst, &a, &b);
             widen_mul_i8_i16_scalar(&mut i16_dst, &i8_b, &i8_b);
             widen_mul_u16_u32_scalar(&mut u32_dst, &u16_a, &u16_b);
             widen_mul_i16_i32_scalar(&mut i32_dst, &i16_widen_a, &i16_widen_b);
+            widen_mul_u32_u64_scalar(&mut u64_dst, &u32_a, &u32_b);
+            widen_mul_i32_i64_scalar(&mut i64_dst, &i32_widen_a, &i32_widen_b);
+            assert_eq!(u64_dst, u64_expected);
+            assert_eq!(i64_dst, i64_expected);
             assert_eq!(u16_dst, u16_expected);
             assert_eq!(i16_dst, i16_expected);
             assert_eq!(u32_dst, u32_expected);
@@ -248,6 +410,197 @@ fn main() {
                 black_box(&sat_dst);
             });
             report("sat-add-u8/best-dispatch", n, n * 3, n * 3, &measurement);
+            {
+                for &len in &SAT_ADD_VALIDATION_LENGTHS {
+                    let a: Vec<i8> = (0..len).map(|i| SAT_ADD_I8_A[i & 7]).collect();
+                    let b: Vec<i8> = (0..len).map(|i| SAT_ADD_I8_B[i & 7]).collect();
+                    let expected: Vec<i8> = a
+                        .iter()
+                        .zip(&b)
+                        .map(|(&x, &y)| {
+                            (i16::from(x) + i16::from(y))
+                                .clamp(i16::from(i8::MIN), i16::from(i8::MAX))
+                                as i8
+                        })
+                        .collect();
+                    let mut candidate = vec![0_i8; len];
+                    sat_add_i8_scalar(&mut candidate, &a, &b);
+                    assert_eq!(candidate, expected, "sat-add-i8 len={len}");
+                }
+                let measurement = measure(n, || {
+                    sat_add_i8_scalar(
+                        black_box(&mut sat_i8_dst),
+                        black_box(&sat_i8_a),
+                        black_box(&sat_i8_b),
+                    );
+                    black_box(&sat_i8_dst);
+                });
+                report("sat-add-i8/scalar-autovec", n, n * 3, n * 3, &measurement);
+            }
+
+            {
+                for &len in &SAT_ADD_VALIDATION_LENGTHS {
+                    let a: Vec<u16> = (0..len).map(|i| SAT_ADD_U16_A[i & 7]).collect();
+                    let b: Vec<u16> = (0..len).map(|i| SAT_ADD_U16_B[i & 7]).collect();
+                    let expected: Vec<u16> = a
+                        .iter()
+                        .zip(&b)
+                        .map(|(&x, &y)| {
+                            (u32::from(x) + u32::from(y)).min(u32::from(u16::MAX)) as u16
+                        })
+                        .collect();
+                    let mut candidate = vec![0_u16; len];
+                    sat_add_u16_scalar(&mut candidate, &a, &b);
+                    assert_eq!(candidate, expected, "sat-add-u16 len={len}");
+                }
+                let measurement = measure(n, || {
+                    sat_add_u16_scalar(
+                        black_box(&mut sat_u16_dst),
+                        black_box(&sat_u16_a),
+                        black_box(&sat_u16_b),
+                    );
+                    black_box(&sat_u16_dst);
+                });
+                report("sat-add-u16/scalar-autovec", n, n * 6, n * 6, &measurement);
+            }
+
+            {
+                for &len in &SAT_ADD_VALIDATION_LENGTHS {
+                    let a: Vec<i16> = (0..len).map(|i| SAT_ADD_I16_A[i & 7]).collect();
+                    let b: Vec<i16> = (0..len).map(|i| SAT_ADD_I16_B[i & 7]).collect();
+                    let expected: Vec<i16> = a
+                        .iter()
+                        .zip(&b)
+                        .map(|(&x, &y)| {
+                            (i32::from(x) + i32::from(y))
+                                .clamp(i32::from(i16::MIN), i32::from(i16::MAX))
+                                as i16
+                        })
+                        .collect();
+                    let mut candidate = vec![0_i16; len];
+                    sat_add_i16_scalar(&mut candidate, &a, &b);
+                    assert_eq!(candidate, expected, "sat-add-i16 len={len}");
+                }
+                let measurement = measure(n, || {
+                    sat_add_i16_scalar(
+                        black_box(&mut sat_i16_dst),
+                        black_box(&sat_i16_a),
+                        black_box(&sat_i16_b),
+                    );
+                    black_box(&sat_i16_dst);
+                });
+                report("sat-add-i16/scalar-autovec", n, n * 6, n * 6, &measurement);
+            }
+
+            {
+                for &len in &SAT_ADD_VALIDATION_LENGTHS {
+                    let a: Vec<u32> = (0..len).map(|i| SAT_ADD_U32_A[i & 7]).collect();
+                    let b: Vec<u32> = (0..len).map(|i| SAT_ADD_U32_B[i & 7]).collect();
+                    let expected: Vec<u32> = a
+                        .iter()
+                        .zip(&b)
+                        .map(|(&x, &y)| {
+                            (u64::from(x) + u64::from(y)).min(u64::from(u32::MAX)) as u32
+                        })
+                        .collect();
+                    let mut candidate = vec![0_u32; len];
+                    sat_add_u32_scalar(&mut candidate, &a, &b);
+                    assert_eq!(candidate, expected, "sat-add-u32 len={len}");
+                }
+                let measurement = measure(n, || {
+                    sat_add_u32_scalar(
+                        black_box(&mut sat_u32_dst),
+                        black_box(&sat_u32_a),
+                        black_box(&sat_u32_b),
+                    );
+                    black_box(&sat_u32_dst);
+                });
+                report("sat-add-u32/scalar-autovec", n, n * 12, n * 12, &measurement);
+            }
+
+            {
+                for &len in &SAT_ADD_VALIDATION_LENGTHS {
+                    let a: Vec<i32> = (0..len).map(|i| SAT_ADD_I32_A[i & 7]).collect();
+                    let b: Vec<i32> = (0..len).map(|i| SAT_ADD_I32_B[i & 7]).collect();
+                    let expected: Vec<i32> = a
+                        .iter()
+                        .zip(&b)
+                        .map(|(&x, &y)| {
+                            (i64::from(x) + i64::from(y))
+                                .clamp(i64::from(i32::MIN), i64::from(i32::MAX))
+                                as i32
+                        })
+                        .collect();
+                    let mut candidate = vec![0_i32; len];
+                    sat_add_i32_scalar(&mut candidate, &a, &b);
+                    assert_eq!(candidate, expected, "sat-add-i32 len={len}");
+                }
+                let measurement = measure(n, || {
+                    sat_add_i32_scalar(
+                        black_box(&mut sat_i32_dst),
+                        black_box(&sat_i32_a),
+                        black_box(&sat_i32_b),
+                    );
+                    black_box(&sat_i32_dst);
+                });
+                report("sat-add-i32/scalar-autovec", n, n * 12, n * 12, &measurement);
+            }
+
+            {
+                for &len in &SAT_ADD_VALIDATION_LENGTHS {
+                    let a: Vec<u64> = (0..len).map(|i| SAT_ADD_U64_A[i & 7]).collect();
+                    let b: Vec<u64> = (0..len).map(|i| SAT_ADD_U64_B[i & 7]).collect();
+                    let expected: Vec<u64> = a
+                        .iter()
+                        .zip(&b)
+                        .map(|(&x, &y)| {
+                            (u128::from(x) + u128::from(y)).min(u128::from(u64::MAX)) as u64
+                        })
+                        .collect();
+                    let mut candidate = vec![0_u64; len];
+                    sat_add_u64_scalar(&mut candidate, &a, &b);
+                    assert_eq!(candidate, expected, "sat-add-u64 len={len}");
+                }
+                let measurement = measure(n, || {
+                    sat_add_u64_scalar(
+                        black_box(&mut sat_u64_dst),
+                        black_box(&sat_u64_a),
+                        black_box(&sat_u64_b),
+                    );
+                    black_box(&sat_u64_dst);
+                });
+                report("sat-add-u64/scalar-autovec", n, n * 24, n * 24, &measurement);
+            }
+
+            {
+                for &len in &SAT_ADD_VALIDATION_LENGTHS {
+                    let a: Vec<i64> = (0..len).map(|i| SAT_ADD_I64_A[i & 7]).collect();
+                    let b: Vec<i64> = (0..len).map(|i| SAT_ADD_I64_B[i & 7]).collect();
+                    // Widen before addition so i64 extrema test saturation, not wrapping.
+                    let expected: Vec<i64> = a
+                        .iter()
+                        .zip(&b)
+                        .map(|(&x, &y)| {
+                            (i128::from(x) + i128::from(y))
+                                .clamp(i128::from(i64::MIN), i128::from(i64::MAX))
+                                as i64
+                        })
+                        .collect();
+                    let mut candidate = vec![0_i64; len];
+                    sat_add_i64_scalar(&mut candidate, &a, &b);
+                    assert_eq!(candidate, expected, "sat-add-i64 len={len}");
+                }
+                let measurement = measure(n, || {
+                    sat_add_i64_scalar(
+                        black_box(&mut sat_i64_dst),
+                        black_box(&sat_i64_a),
+                        black_box(&sat_i64_b),
+                    );
+                    black_box(&sat_i64_dst);
+                });
+                report("sat-add-i64/scalar-autovec", n, n * 24, n * 24, &measurement);
+            }
+
             let measurement = measure(n, || {
                 black_box(dot_i16_scalar(black_box(&i16_a), black_box(&i16_b)));
             });
@@ -315,6 +668,37 @@ fn main() {
                 n,
                 n * 8,
                 n * 8,
+                &measurement,
+            );
+            let measurement = measure(n, || {
+                widen_mul_u32_u64_scalar(
+                    black_box(&mut u64_dst),
+                    black_box(&u32_a),
+                    black_box(&u32_b),
+                );
+                black_box(&u64_dst);
+            });
+            report(
+                "widen-mul-u32-u64/scalar-autovec",
+                n,
+                n * 16,
+                n * 16,
+                &measurement,
+            );
+
+            let measurement = measure(n, || {
+                widen_mul_i32_i64_scalar(
+                    black_box(&mut i64_dst),
+                    black_box(&i32_widen_a),
+                    black_box(&i32_widen_b),
+                );
+                black_box(&i64_dst);
+            });
+            report(
+                "widen-mul-i32-i64/scalar-autovec",
+                n,
+                n * 16,
+                n * 16,
                 &measurement,
             );
         }

@@ -48,10 +48,28 @@ Every kernel starts with a scalar reference and should be implemented with equiv
 | Blend | lerp / weighted blend | representative video/image arithmetic |
 | Squared error | `(a-b)^2` reduction | MSE/PSNR-style workload |
 | Convolution | short 3/5/7/8-tap kernels | realistic multiply-accumulate pressure |
+## Saturating-add family
+
+The fixed-width saturation family computes each output from the mathematical
+sum of two equal-length input streams:
+
+| Input type | Output type | Boundary behavior |
+|---|---|---|
+| `u8`, `u16`, `u32`, `u64` | same unsigned type | clamp sums above `MAX` to `MAX` |
+| `i8`, `i16`, `i32`, `i64` | same signed type | clamp sums below `MIN` or above `MAX` |
+
+Rust and Zig use their defined saturating-add operations in the scalar
+baseline. C++ widens operands where the next integer width is sufficient and
+uses checked boundary comparisons for `u64` and `i64`, so no signed
+intermediate can overflow. All three languages assert equal buffer lengths,
+leave zero-length inputs valid, and process arbitrary lengths without a
+separate tail contract. Runtime rows use two input streams plus one output
+stream, with traffic of `3 * sizeof(T)` bytes per element.
+
 
 ## Dot-product and widening-multiply family
 
-The Stage 7 integer family keeps products in their mathematical widened
+The integer widening family keeps products in their mathematical widened
 storage type before writing results:
 
 | Operation | Output contract | Reduction contract |
@@ -60,6 +78,8 @@ storage type before writing results:
 | `i8 * i8 -> i16` | one widened product per lane | none |
 | `u16 * u16 -> u32` | one widened product per lane | none |
 | `i16 * i16 -> i32` | one widened product per lane | none |
+| `u32 * u32 -> u64` | one widened product per lane | none |
+| `i32 * i32 -> i64` | one widened product per lane | none |
 | `f32` dot | none | cast each input to `f64`, multiply, sum in `f64` |
 | `f64` dot | none | multiply and sum in `f64` |
 | `i16 * i16` dot | none | widen each product and sum in `i64` |

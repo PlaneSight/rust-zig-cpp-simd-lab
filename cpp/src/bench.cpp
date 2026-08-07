@@ -8,8 +8,10 @@
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <iterator>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -25,6 +27,25 @@ constexpr std::array<std::uint16_t, 8> half_values{
 volatile double sink = 0.0;
 volatile std::uint64_t sink_u64 = 0;
 volatile std::int64_t sink_i64 = 0;
+
+template <typename T>
+T sat_add_reference(T lhs, T rhs) noexcept {
+    static_assert(std::is_integral_v<T>);
+    if constexpr (std::is_unsigned_v<T>) {
+        constexpr T max_value = std::numeric_limits<T>::max();
+        return lhs > static_cast<T>(max_value - rhs)
+                   ? max_value
+                   : static_cast<T>(lhs + rhs);
+    } else {
+        constexpr T min_value = std::numeric_limits<T>::min();
+        constexpr T max_value = std::numeric_limits<T>::max();
+        if ((rhs > 0 && lhs > static_cast<T>(max_value - rhs)) ||
+            (rhs < 0 && lhs < static_cast<T>(min_value - rhs))) {
+            return rhs > 0 ? max_value : min_value;
+        }
+        return static_cast<T>(lhs + rhs);
+    }
+}
 
 struct Measurement {
     std::size_t iterations_per_sample;
@@ -106,6 +127,33 @@ void report(std::string_view name, std::size_t n,
     }
     std::cout << '\n';
 }
+
+template <typename T, typename F>
+bool run_sat_add_case(std::string_view name, std::size_t n,
+                      const std::vector<T>& a, const std::vector<T>& b,
+                      F function, std::size_t bytes_per_element) {
+    std::vector<T> expected(n), dst(n);
+    for (std::size_t i = 0; i < n; ++i) {
+        expected[i] = sat_add_reference(a[i], b[i]);
+    }
+    function(dst, a, b);
+    if (dst != expected) {
+        std::cerr << name << " validation failed\n";
+        return false;
+    }
+
+    const auto result = measure(n, [&] {
+        function(dst, a, b);
+        if constexpr (std::is_signed_v<T>) {
+            sink_i64 = static_cast<std::int64_t>(dst[n - 1]);
+        } else {
+            sink_u64 = static_cast<std::uint64_t>(dst[n - 1]);
+        }
+    });
+    report(name, n, n * bytes_per_element, n * bytes_per_element, result);
+    return true;
+}
+
 } // namespace
 
 int main() {
@@ -179,6 +227,10 @@ int main() {
             std::vector<std::uint8_t> u8_a(n), u8_b(n);
             std::vector<std::int8_t> i8_a(n), i8_b(n);
             std::vector<std::uint16_t> u16_a(n), u16_b(n);
+            std::vector<std::uint32_t> u32_a(n), u32_b(n);
+            std::vector<std::int32_t> i32_a(n), i32_b(n);
+            std::vector<std::uint64_t> u64_a(n), u64_b(n);
+            std::vector<std::int64_t> i64_a(n), i64_b(n);
             for (std::size_t i = 0; i < n; ++i) {
                 f32_a[i] = static_cast<float>(i % 257) * 0.03125F - 4.0F;
                 f32_b[i] = static_cast<float>(i % 193) * 0.015625F - 1.5F;
@@ -198,6 +250,18 @@ int main() {
                     (i * 257 + 19) & 0xffff);
                 u16_b[i] = static_cast<std::uint16_t>(
                     (i * 131 + 37) & 0xffff);
+                u32_a[i] = static_cast<std::uint32_t>(
+                    i * 2654435761ULL + 17U);
+                u32_b[i] = static_cast<std::uint32_t>(
+                    i * 2246822519ULL + 31U);
+                i32_a[i] = static_cast<std::int32_t>(
+                    static_cast<std::int64_t>(i % 2000001) - 1000000);
+                i32_b[i] = static_cast<std::int32_t>(
+                    static_cast<std::int64_t>(i % 1600001) - 800000);
+                u64_a[i] = i * 11400714819323198485ULL + 23U;
+                u64_b[i] = i * 7046029254386353131ULL + 41U;
+                i64_a[i] = static_cast<std::int64_t>(i % 2000001) - 1000000;
+                i64_b[i] = static_cast<std::int64_t>(i % 1600001) - 800000;
             }
 
             double f32_reference = 0.0;
@@ -232,6 +296,10 @@ int main() {
             std::vector<std::int16_t> i8_reference(n), i8_dst(n);
             std::vector<std::uint32_t> u16_reference(n), u16_dst(n);
             std::vector<std::int32_t> i16_product_reference(n), i16_dst(n);
+            std::vector<std::uint64_t> u32_product_reference(n),
+                u32_product_dst(n);
+            std::vector<std::int64_t> i32_product_reference(n),
+                i32_product_dst(n);
             for (std::size_t i = 0; i < n; ++i) {
                 const auto u8_lhs = static_cast<std::uint16_t>(u8_a[i]);
                 const auto u8_rhs = static_cast<std::uint16_t>(u8_b[i]);
@@ -247,6 +315,12 @@ int main() {
                 const auto i16_lhs = static_cast<std::int32_t>(i16_a[i]);
                 const auto i16_rhs = static_cast<std::int32_t>(i16_b[i]);
                 i16_product_reference[i] = i16_lhs * i16_rhs;
+                const auto u32_lhs = static_cast<std::uint64_t>(u32_a[i]);
+                const auto u32_rhs = static_cast<std::uint64_t>(u32_b[i]);
+                u32_product_reference[i] = u32_lhs * u32_rhs;
+                const auto i32_lhs = static_cast<std::int64_t>(i32_a[i]);
+                const auto i32_rhs = static_cast<std::int64_t>(i32_b[i]);
+                i32_product_reference[i] = i32_lhs * i32_rhs;
             }
             simd_lab::widen_mul_u8_u16_scalar(u8_dst, u8_a, u8_b);
             simd_lab::widen_mul_i8_i16_scalar(i8_dst, i8_a, i8_b);
@@ -254,8 +328,15 @@ int main() {
                 u16_dst, u16_a, u16_b);
             simd_lab::widen_mul_i16_i32_scalar(
                 i16_dst, i16_a, i16_b);
+            simd_lab::widen_mul_u32_u64_scalar(
+                u32_product_dst, u32_a, u32_b);
+            simd_lab::widen_mul_i32_i64_scalar(
+                i32_product_dst, i32_a, i32_b);
             if (u8_dst != u8_reference || i8_dst != i8_reference ||
-                u16_dst != u16_reference || i16_dst != i16_product_reference) {
+                u16_dst != u16_reference ||
+                i16_dst != i16_product_reference ||
+                u32_product_dst != u32_product_reference ||
+                i32_product_dst != i32_product_reference) {
                 std::cerr << "widening-multiply validation failed\n";
                 return 1;
             }
@@ -302,6 +383,44 @@ int main() {
             });
             report("widen-mul-i16-i32/scalar-autovec", n, n * 8, n * 8,
                    result);
+            result = measure(n, [&] {
+                simd_lab::widen_mul_u32_u64_scalar(
+                    u32_product_dst, u32_a, u32_b);
+                sink_u64 = u32_product_dst[n - 1];
+            });
+            report("widen-mul-u32-u64/scalar-autovec", n, n * 16, n * 16,
+                   result);
+            result = measure(n, [&] {
+                simd_lab::widen_mul_i32_i64_scalar(
+                    i32_product_dst, i32_a, i32_b);
+                sink_i64 = i32_product_dst[n - 1];
+            });
+            report("widen-mul-i32-i64/scalar-autovec", n, n * 16, n * 16,
+                   result);
+            if (!run_sat_add_case("sat-add-i8/scalar-autovec", n, i8_a, i8_b,
+                                  simd_lab::sat_add_i8_scalar,
+                                  sizeof(std::int8_t) * 3) ||
+                !run_sat_add_case("sat-add-u16/scalar-autovec", n, u16_a, u16_b,
+                                  simd_lab::sat_add_u16_scalar,
+                                  sizeof(std::uint16_t) * 3) ||
+                !run_sat_add_case("sat-add-i16/scalar-autovec", n, i16_a, i16_b,
+                                  simd_lab::sat_add_i16_scalar,
+                                  sizeof(std::int16_t) * 3) ||
+                !run_sat_add_case("sat-add-u32/scalar-autovec", n, u32_a, u32_b,
+                                  simd_lab::sat_add_u32_scalar,
+                                  sizeof(std::uint32_t) * 3) ||
+                !run_sat_add_case("sat-add-i32/scalar-autovec", n, i32_a, i32_b,
+                                  simd_lab::sat_add_i32_scalar,
+                                  sizeof(std::int32_t) * 3) ||
+                !run_sat_add_case("sat-add-u64/scalar-autovec", n, u64_a, u64_b,
+                                  simd_lab::sat_add_u64_scalar,
+                                  sizeof(std::uint64_t) * 3) ||
+                !run_sat_add_case("sat-add-i64/scalar-autovec", n, i64_a, i64_b,
+                                  simd_lab::sat_add_i64_scalar,
+                                  sizeof(std::int64_t) * 3)) {
+                return 1;
+            }
+
         }
 
         {

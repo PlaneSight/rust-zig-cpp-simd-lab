@@ -34,6 +34,11 @@ Profiles:
 - `wasm-simd128`: WebAssembly SIMD128 lowering.
 
 The C++ cross-target SAD source deliberately avoids standard-library and ISA headers so Clang can compile it without a target sysroot. The `_Float16` C++ probe is explicitly a **Clang extension experiment**, not a C++23 portable facility. Stable Rust is currently omitted from the portable cross-target vector comparison because `std::simd` remains outside the stable language surface used by this repository; architecture-specific Rust probes can be added separately when useful.
+On an AArch64 Darwin host, the installed Apple Clang may reject x86
+`-march=x86-64*` values; that is a toolchain limitation rather than evidence
+that an x86 lowering exists or does not exist. Keep x86 claims tied to the
+reviewed CI manifest, and use the AArch64 profiles above for locally generated
+Stage 7 evidence.
 
 ## Output
 
