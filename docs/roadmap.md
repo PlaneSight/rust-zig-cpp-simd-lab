@@ -543,7 +543,7 @@ Potential candidates should emerge from evidence—for example repeated FP16 con
 - [ ] per-ISA implementation notes
 - [ ] compiler pathology case studies
 - [x] "how to reproduce" pages for important findings ([`docs/reproducing-findings.md`](reproducing-findings.md))
-- [ ] glossary for autovec, portable SIMD, intrinsics, ISA, vector width, reduction, saturation, widening, FMA, F16C, etc.
+- [x] glossary for autovec, portable SIMD, intrinsics, ISA, vector width, reduction, saturation, widening, FMA, F16C, etc.
 - [x] contributor guide for adding a new kernel fairly ([`CONTRIBUTING.md`](../CONTRIBUTING.md))
 
 # 24. Candidate case studies
@@ -656,3 +656,5 @@ were all available with 23 outputs each and zero divergences. The local
 ARM64 ReleaseSafe/ReleaseFast agreement remains fast-mode evidence, while
 the reviewed conversion counts remain compile/codegen evidence rather than
 runtime throughput claims.
+
+The canonical glossary ([`docs/glossary.md`](glossary.md)) now covers the roadmap terminology and distinguishes source, codegen, static, and runtime evidence, including numerical semantics.

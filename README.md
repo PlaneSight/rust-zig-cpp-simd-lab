@@ -59,6 +59,7 @@ The clamp work includes:
 
 - [`docs/roadmap.md`](docs/roadmap.md) — authoritative backlog and completion
   criteria.
+- [`docs/glossary.md`](docs/glossary.md) — canonical project terminology reference.
 - [`docs/reproducing-findings.md`](docs/reproducing-findings.md) — commands,
   metadata requirements, and evidence boundaries for existing findings.
 - [`docs/methodology.md`](docs/methodology.md) — correctness, benchmark, and
