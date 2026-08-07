@@ -51,7 +51,8 @@ function codegenTable(rows) {
   const shown = rows.filter(r => r.codegen);
   const body = shown.map(r => {
     const tracked = Object.entries(r.codegen.tracked_mnemonics || {}).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([k,v])=>`${esc(k)}:${v}`).join(' · ');
-    return `<tr>${baseCells(r)}<td class="metric">${r.codegen.instruction_count ?? '—'}</td><td class="metric">${r.codegen.vector_instruction_count ?? '—'}</td><td>${tracked || '—'}</td><td>${r.codegen.assembly_path ? `<code>${esc(r.codegen.assembly_path)}</code>` : '—'}</td></tr>`;
+    const assembly = r.codegen.assembly_path ? `<a href="${esc(r.codegen.assembly_path)}" target="_blank" rel="noopener noreferrer"><code>${esc(r.codegen.assembly_path)}</code></a>` : '—';
+    return `<tr>${baseCells(r)}<td class="metric">${r.codegen.instruction_count ?? '—'}</td><td class="metric">${r.codegen.vector_instruction_count ?? '—'}</td><td>${tracked || '—'}</td><td>${assembly}</td></tr>`;
   }).join('');
   return {count: shown.length, html:`<thead><tr><th>Kernel</th><th>Lang</th><th>Implementation</th><th>ISA/target</th><th>Type</th><th>Instructions</th><th>Vector insns</th><th>Tracked mnemonics</th><th>Assembly</th></tr></thead><tbody>${body}</tbody>`};
 }

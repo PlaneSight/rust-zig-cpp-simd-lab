@@ -1,0 +1,418 @@
+	.text
+	.intel_syntax noprefix
+	.file	"sat_add.cpp"
+	.section	.rodata.cst4,"aM",@progbits,4
+	.p2align	2, 0x0                          # -- Begin function sat_add_u8_scalar
+.LCPI0_0:
+	.long	255                             # 0xff
+	.text
+	.globl	sat_add_u8_scalar
+	.p2align	4, 0x90
+	.type	sat_add_u8_scalar,@function
+sat_add_u8_scalar:                      # @sat_add_u8_scalar
+	.cfi_startproc
+# %bb.0:
+	test	rcx, rcx
+	je	.LBB0_21
+# %bb.1:
+	push	rbx
+	.cfi_def_cfa_offset 16
+	.cfi_offset rbx, -16
+	cmp	rcx, 16
+	jae	.LBB0_3
+# %bb.2:
+	xor	eax, eax
+.LBB0_14:
+	mov	r9, rcx
+	mov	r8, rax
+	and	r9, 3
+	je	.LBB0_17
+# %bb.15:
+	mov	r10d, 255
+	mov	r8, rax
+	.p2align	4, 0x90
+.LBB0_16:                               # =>This Inner Loop Header: Depth=1
+	movzx	r11d, byte ptr [rsi + r8]
+	movzx	ebx, byte ptr [rdx + r8]
+	add	ebx, r11d
+	cmp	ebx, 255
+	cmovae	ebx, r10d
+	mov	byte ptr [rdi + r8], bl
+	inc	r8
+	dec	r9
+	jne	.LBB0_16
+.LBB0_17:
+	sub	rax, rcx
+	cmp	rax, -4
+	ja	.LBB0_20
+# %bb.18:
+	mov	eax, 255
+	.p2align	4, 0x90
+.LBB0_19:                               # =>This Inner Loop Header: Depth=1
+	movzx	r9d, byte ptr [rsi + r8]
+	movzx	r10d, byte ptr [rdx + r8]
+	add	r10d, r9d
+	cmp	r10d, 255
+	cmovae	r10d, eax
+	mov	byte ptr [rdi + r8], r10b
+	movzx	r9d, byte ptr [rsi + r8 + 1]
+	movzx	r10d, byte ptr [rdx + r8 + 1]
+	add	r10d, r9d
+	cmp	r10d, 255
+	cmovae	r10d, eax
+	mov	byte ptr [rdi + r8 + 1], r10b
+	movzx	r9d, byte ptr [rsi + r8 + 2]
+	movzx	r10d, byte ptr [rdx + r8 + 2]
+	add	r10d, r9d
+	cmp	r10d, 255
+	cmovae	r10d, eax
+	mov	byte ptr [rdi + r8 + 2], r10b
+	movzx	r9d, byte ptr [rsi + r8 + 3]
+	movzx	r10d, byte ptr [rdx + r8 + 3]
+	add	r10d, r9d
+	cmp	r10d, 255
+	cmovae	r10d, eax
+	mov	byte ptr [rdi + r8 + 3], r10b
+	add	r8, 4
+	cmp	rcx, r8
+	jne	.LBB0_19
+.LBB0_20:
+	pop	rbx
+	.cfi_def_cfa_offset 8
+	.cfi_restore rbx
+.LBB0_21:
+	vzeroupper
+	ret
+.LBB0_3:
+	.cfi_def_cfa_offset 16
+	.cfi_offset rbx, -16
+	mov	r8, rdi
+	sub	r8, rsi
+	xor	eax, eax
+	cmp	r8, 32
+	jb	.LBB0_14
+# %bb.4:
+	mov	r8, rdi
+	sub	r8, rdx
+	cmp	r8, 32
+	jb	.LBB0_14
+# %bb.5:
+	cmp	rcx, 32
+	jae	.LBB0_7
+# %bb.6:
+	xor	eax, eax
+.LBB0_11:
+	mov	r8, rax
+	mov	rax, rcx
+	and	rax, -16
+	vpbroadcastd	ymm0, dword ptr [rip + .LCPI0_0] # ymm0 = [255,255,255,255,255,255,255,255]
+	.p2align	4, 0x90
+.LBB0_12:                               # =>This Inner Loop Header: Depth=1
+	vpmovzxbd	ymm1, qword ptr [rsi + r8 + 8] # ymm1 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm2, qword ptr [rsi + r8] # ymm2 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm3, qword ptr [rdx + r8 + 8] # ymm3 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm4, qword ptr [rdx + r8] # ymm4 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpaddd	ymm1, ymm3, ymm1
+	vpaddd	ymm2, ymm4, ymm2
+	vpminud	ymm1, ymm1, ymm0
+	vpminud	ymm2, ymm2, ymm0
+	vpackusdw	ymm1, ymm2, ymm1
+	vextracti128	xmm2, ymm1, 1
+	vpackuswb	xmm1, xmm1, xmm2
+	vpshufd	xmm1, xmm1, 216                 # xmm1 = xmm1[0,2,1,3]
+	vmovdqu	xmmword ptr [rdi + r8], xmm1
+	add	r8, 16
+	cmp	rax, r8
+	jne	.LBB0_12
+# %bb.13:
+	cmp	rax, rcx
+	jne	.LBB0_14
+	jmp	.LBB0_20
+.LBB0_7:
+	mov	rax, rcx
+	and	rax, -32
+	xor	r8d, r8d
+	vpbroadcastd	ymm0, dword ptr [rip + .LCPI0_0] # ymm0 = [255,255,255,255,255,255,255,255]
+	.p2align	4, 0x90
+.LBB0_8:                                # =>This Inner Loop Header: Depth=1
+	vpmovzxbd	ymm1, qword ptr [rsi + r8 + 8] # ymm1 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm2, qword ptr [rsi + r8] # ymm2 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm3, qword ptr [rsi + r8 + 24] # ymm3 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm4, qword ptr [rsi + r8 + 16] # ymm4 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm5, qword ptr [rdx + r8 + 8] # ymm5 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpaddd	ymm1, ymm5, ymm1
+	vpmovzxbd	ymm5, qword ptr [rdx + r8] # ymm5 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpaddd	ymm2, ymm5, ymm2
+	vpmovzxbd	ymm5, qword ptr [rdx + r8 + 24] # ymm5 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm6, qword ptr [rdx + r8 + 16] # ymm6 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpaddd	ymm3, ymm5, ymm3
+	vpaddd	ymm4, ymm6, ymm4
+	vpminud	ymm1, ymm1, ymm0
+	vpminud	ymm2, ymm2, ymm0
+	vpackusdw	ymm1, ymm2, ymm1
+	vpminud	ymm2, ymm3, ymm0
+	vpminud	ymm3, ymm4, ymm0
+	vpackusdw	ymm2, ymm3, ymm2
+	vpermq	ymm2, ymm2, 216                 # ymm2 = ymm2[0,2,1,3]
+	vpermq	ymm1, ymm1, 216                 # ymm1 = ymm1[0,2,1,3]
+	vpackuswb	ymm1, ymm1, ymm2
+	vpermq	ymm1, ymm1, 216                 # ymm1 = ymm1[0,2,1,3]
+	vmovdqu	ymmword ptr [rdi + r8], ymm1
+	add	r8, 32
+	cmp	rax, r8
+	jne	.LBB0_8
+# %bb.9:
+	cmp	rax, rcx
+	je	.LBB0_20
+# %bb.10:
+	test	cl, 16
+	je	.LBB0_14
+	jmp	.LBB0_11
+.Lfunc_end0:
+	.size	sat_add_u8_scalar, .Lfunc_end0-sat_add_u8_scalar
+	.cfi_endproc
+                                        # -- End function
+	.section	.rodata.cst4,"aM",@progbits,4
+	.p2align	2, 0x0                          # -- Begin function sat_add_u8_avx2
+.LCPI1_0:
+	.long	255                             # 0xff
+	.text
+	.globl	sat_add_u8_avx2
+	.p2align	4, 0x90
+	.type	sat_add_u8_avx2,@function
+sat_add_u8_avx2:                        # @sat_add_u8_avx2
+	.cfi_startproc
+# %bb.0:
+	cmp	rcx, 32
+	jae	.LBB1_2
+# %bb.1:
+	xor	r8d, r8d
+	jmp	.LBB1_8
+.LBB1_2:
+	lea	r8, [rcx - 32]
+	mov	r9, r8
+	shr	r9, 5
+	inc	r9
+	mov	eax, r9d
+	and	eax, 3
+	cmp	r8, 96
+	jae	.LBB1_31
+# %bb.3:
+	mov	r9d, 32
+	xor	r8d, r8d
+	test	rax, rax
+	jne	.LBB1_6
+	jmp	.LBB1_8
+.LBB1_31:
+	and	r9, -4
+	xor	r8d, r8d
+	.p2align	4, 0x90
+.LBB1_32:                               # =>This Inner Loop Header: Depth=1
+	vmovdqu	ymm0, ymmword ptr [rsi + r8]
+	vpaddusb	ymm0, ymm0, ymmword ptr [rdx + r8]
+	vmovdqu	ymmword ptr [rdi + r8], ymm0
+	vmovdqu	ymm0, ymmword ptr [rsi + r8 + 32]
+	vpaddusb	ymm0, ymm0, ymmword ptr [rdx + r8 + 32]
+	vmovdqu	ymmword ptr [rdi + r8 + 32], ymm0
+	vmovdqu	ymm0, ymmword ptr [rsi + r8 + 64]
+	vpaddusb	ymm0, ymm0, ymmword ptr [rdx + r8 + 64]
+	vmovdqu	ymmword ptr [rdi + r8 + 64], ymm0
+	vmovdqu	ymm0, ymmword ptr [rsi + r8 + 96]
+	vpaddusb	ymm0, ymm0, ymmword ptr [rdx + r8 + 96]
+	vmovdqu	ymmword ptr [rdi + r8 + 96], ymm0
+	sub	r8, -128
+	add	r9, -4
+	jne	.LBB1_32
+# %bb.4:
+	lea	r9, [r8 + 32]
+	test	rax, rax
+	je	.LBB1_8
+	.p2align	4, 0x90
+.LBB1_6:                                # =>This Inner Loop Header: Depth=1
+	vmovdqu	ymm0, ymmword ptr [rsi + r8]
+	vpaddusb	ymm0, ymm0, ymmword ptr [rdx + r8]
+	vmovdqu	ymmword ptr [rdi + r8], ymm0
+	mov	r8, r9
+	add	r9, 32
+	dec	rax
+	jne	.LBB1_6
+# %bb.7:
+	add	r9, -32
+	mov	r8, r9
+.LBB1_8:
+	mov	rax, rcx
+	sub	rax, r8
+	jbe	.LBB1_18
+# %bb.9:
+	push	rbx
+	.cfi_def_cfa_offset 16
+	.cfi_offset rbx, -16
+	cmp	rax, 16
+	jae	.LBB1_10
+.LBB1_24:
+	mov	rax, r8
+.LBB1_25:
+	mov	r9d, ecx
+	sub	r9d, eax
+	mov	r8, rax
+	and	r9d, 3
+	je	.LBB1_28
+# %bb.26:
+	mov	r10d, 255
+	mov	r8, rax
+	.p2align	4, 0x90
+.LBB1_27:                               # =>This Inner Loop Header: Depth=1
+	movzx	r11d, byte ptr [rsi + r8]
+	movzx	ebx, byte ptr [rdx + r8]
+	add	ebx, r11d
+	cmp	ebx, 255
+	cmovae	ebx, r10d
+	mov	byte ptr [rdi + r8], bl
+	inc	r8
+	dec	r9
+	jne	.LBB1_27
+.LBB1_28:
+	sub	rax, rcx
+	cmp	rax, -4
+	ja	.LBB1_17
+# %bb.29:
+	mov	eax, 255
+	.p2align	4, 0x90
+.LBB1_30:                               # =>This Inner Loop Header: Depth=1
+	movzx	r9d, byte ptr [rsi + r8]
+	movzx	r10d, byte ptr [rdx + r8]
+	add	r10d, r9d
+	cmp	r10d, 255
+	cmovae	r10d, eax
+	mov	byte ptr [rdi + r8], r10b
+	movzx	r9d, byte ptr [rsi + r8 + 1]
+	movzx	r10d, byte ptr [rdx + r8 + 1]
+	add	r10d, r9d
+	cmp	r10d, 255
+	cmovae	r10d, eax
+	mov	byte ptr [rdi + r8 + 1], r10b
+	movzx	r9d, byte ptr [rsi + r8 + 2]
+	movzx	r10d, byte ptr [rdx + r8 + 2]
+	add	r10d, r9d
+	cmp	r10d, 255
+	cmovae	r10d, eax
+	mov	byte ptr [rdi + r8 + 2], r10b
+	movzx	r9d, byte ptr [rsi + r8 + 3]
+	movzx	r10d, byte ptr [rdx + r8 + 3]
+	add	r10d, r9d
+	cmp	r10d, 255
+	cmovae	r10d, eax
+	mov	byte ptr [rdi + r8 + 3], r10b
+	add	r8, 4
+	cmp	rcx, r8
+	jne	.LBB1_30
+.LBB1_17:
+	pop	rbx
+	.cfi_def_cfa_offset 8
+	.cfi_restore rbx
+.LBB1_18:
+	vzeroupper
+	ret
+.LBB1_10:
+	.cfi_def_cfa_offset 16
+	.cfi_offset rbx, -16
+	mov	r9, rdi
+	sub	r9, rsi
+	cmp	r9, 32
+	jb	.LBB1_24
+# %bb.11:
+	mov	r9, rdi
+	sub	r9, rdx
+	cmp	r9, 32
+	jb	.LBB1_24
+# %bb.12:
+	cmp	rax, 32
+	jae	.LBB1_19
+# %bb.13:
+	xor	r9d, r9d
+	jmp	.LBB1_14
+.LBB1_19:
+	mov	r10d, ecx
+	and	r10d, 31
+	mov	r9, rax
+	sub	r9, r10
+	mov	r11, rcx
+	and	r11, -32
+	vpbroadcastd	ymm0, dword ptr [rip + .LCPI1_0] # ymm0 = [255,255,255,255,255,255,255,255]
+	mov	rbx, r8
+	.p2align	4, 0x90
+.LBB1_20:                               # =>This Inner Loop Header: Depth=1
+	vpmovzxbd	ymm1, qword ptr [rsi + rbx + 8] # ymm1 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm2, qword ptr [rsi + rbx] # ymm2 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm3, qword ptr [rsi + rbx + 24] # ymm3 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm4, qword ptr [rsi + rbx + 16] # ymm4 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm5, qword ptr [rdx + rbx + 8] # ymm5 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpaddd	ymm1, ymm5, ymm1
+	vpmovzxbd	ymm5, qword ptr [rdx + rbx] # ymm5 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpaddd	ymm2, ymm5, ymm2
+	vpmovzxbd	ymm5, qword ptr [rdx + rbx + 24] # ymm5 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm6, qword ptr [rdx + rbx + 16] # ymm6 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpaddd	ymm3, ymm5, ymm3
+	vpaddd	ymm4, ymm6, ymm4
+	vpminud	ymm1, ymm1, ymm0
+	vpminud	ymm2, ymm2, ymm0
+	vpackusdw	ymm1, ymm2, ymm1
+	vpminud	ymm2, ymm3, ymm0
+	vpminud	ymm3, ymm4, ymm0
+	vpackusdw	ymm2, ymm3, ymm2
+	vpermq	ymm2, ymm2, 216                 # ymm2 = ymm2[0,2,1,3]
+	vpermq	ymm1, ymm1, 216                 # ymm1 = ymm1[0,2,1,3]
+	vpackuswb	ymm1, ymm1, ymm2
+	vpermq	ymm1, ymm1, 216                 # ymm1 = ymm1[0,2,1,3]
+	vmovdqu	ymmword ptr [rdi + rbx], ymm1
+	add	rbx, 32
+	cmp	r11, rbx
+	jne	.LBB1_20
+# %bb.21:
+	test	r10, r10
+	je	.LBB1_17
+# %bb.22:
+	cmp	r10d, 16
+	jae	.LBB1_14
+# %bb.23:
+	add	r8, r9
+	jmp	.LBB1_24
+.LBB1_14:
+	mov	r10d, ecx
+	and	r10d, 15
+	sub	rax, r10
+	add	rax, r8
+	mov	r11, rcx
+	and	r11, -16
+	add	r9, r8
+	vpbroadcastd	ymm0, dword ptr [rip + .LCPI1_0] # ymm0 = [255,255,255,255,255,255,255,255]
+	.p2align	4, 0x90
+.LBB1_15:                               # =>This Inner Loop Header: Depth=1
+	vpmovzxbd	ymm1, qword ptr [rsi + r9 + 8] # ymm1 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm2, qword ptr [rsi + r9] # ymm2 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm3, qword ptr [rdx + r9 + 8] # ymm3 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpmovzxbd	ymm4, qword ptr [rdx + r9] # ymm4 = mem[0],zero,zero,zero,mem[1],zero,zero,zero,mem[2],zero,zero,zero,mem[3],zero,zero,zero,mem[4],zero,zero,zero,mem[5],zero,zero,zero,mem[6],zero,zero,zero,mem[7],zero,zero,zero
+	vpaddd	ymm1, ymm3, ymm1
+	vpaddd	ymm2, ymm4, ymm2
+	vpminud	ymm1, ymm1, ymm0
+	vpminud	ymm2, ymm2, ymm0
+	vpackusdw	ymm1, ymm2, ymm1
+	vextracti128	xmm2, ymm1, 1
+	vpackuswb	xmm1, xmm1, xmm2
+	vpshufd	xmm1, xmm1, 216                 # xmm1 = xmm1[0,2,1,3]
+	vmovdqu	xmmword ptr [rdi + r9], xmm1
+	add	r9, 16
+	cmp	r11, r9
+	jne	.LBB1_15
+# %bb.16:
+	test	r10, r10
+	jne	.LBB1_25
+	jmp	.LBB1_17
+.Lfunc_end1:
+	.size	sat_add_u8_avx2, .Lfunc_end1-sat_add_u8_avx2
+	.cfi_endproc
+                                        # -- End function
+	.section	".linker-options","e",@llvm_linker_options
+	.ident	"Ubuntu clang version 18.1.3 (1ubuntu1)"
+	.section	".note.GNU-stack","",@progbits
+	.addrsig

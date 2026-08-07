@@ -1,0 +1,273 @@
+	.file	"sad.d7cc205d41b00119-cgu.0"
+	.section	.text.sad_u8_avx2,"ax",@progbits
+	.globl	sad_u8_avx2
+	.p2align	4
+	.type	sad_u8_avx2,@function
+sad_u8_avx2:
+	.cfi_startproc
+	cmpq	$32, %rdx
+	jae	.LBB0_18
+	xorl	%eax, %eax
+	xorl	%r8d, %r8d
+	movq	%rdx, %rcx
+	subq	%r8, %rcx
+	ja	.LBB0_4
+	jmp	.LBB0_10
+.LBB0_18:
+	vpxor	%xmm0, %xmm0, %xmm0
+	xorl	%r8d, %r8d
+	.p2align	4
+.LBB0_19:
+	movq	%r8, %rax
+	vmovdqu	(%rdi,%r8), %ymm1
+	vpsadbw	(%rsi,%r8), %ymm1, %ymm1
+	vpaddq	%ymm0, %ymm1, %ymm0
+	addq	$32, %r8
+	addq	$64, %rax
+	cmpq	%rdx, %rax
+	jbe	.LBB0_19
+	vextracti128	$1, %ymm0, %xmm1
+	vpaddq	%xmm1, %xmm0, %xmm0
+	vpshufd	$238, %xmm0, %xmm1
+	vpaddq	%xmm1, %xmm0, %xmm0
+	vmovq	%xmm0, %rax
+	movq	%rdx, %rcx
+	subq	%r8, %rcx
+	jbe	.LBB0_10
+.LBB0_4:
+	cmpq	$4, %rcx
+	jae	.LBB0_5
+.LBB0_16:
+	movq	%r8, %rcx
+	jmp	.LBB0_17
+.LBB0_5:
+	cmpq	$16, %rcx
+	jae	.LBB0_11
+	xorl	%r9d, %r9d
+	jmp	.LBB0_7
+.LBB0_11:
+	movl	%edx, %r10d
+	andl	$15, %r10d
+	movq	%rcx, %r9
+	subq	%r10, %r9
+	vmovq	%rax, %xmm0
+	movq	%rdx, %rax
+	andq	$-16, %rax
+	vpxor	%xmm1, %xmm1, %xmm1
+	movq	%r8, %r11
+	vpxor	%xmm2, %xmm2, %xmm2
+	vpxor	%xmm3, %xmm3, %xmm3
+	.p2align	4
+.LBB0_12:
+	vmovd	(%rdi,%r11), %xmm4
+	vmovd	4(%rdi,%r11), %xmm5
+	vmovd	8(%rdi,%r11), %xmm6
+	vmovd	12(%rdi,%r11), %xmm7
+	vmovd	(%rsi,%r11), %xmm8
+	vmovd	4(%rsi,%r11), %xmm9
+	vmovd	8(%rsi,%r11), %xmm10
+	vmovd	12(%rsi,%r11), %xmm11
+	vpminub	%xmm4, %xmm8, %xmm12
+	vpmaxub	%xmm4, %xmm8, %xmm4
+	vpsubb	%xmm12, %xmm4, %xmm4
+	vpminub	%xmm5, %xmm9, %xmm8
+	vpmaxub	%xmm5, %xmm9, %xmm5
+	vpsubb	%xmm8, %xmm5, %xmm5
+	vpminub	%xmm6, %xmm10, %xmm8
+	vpmaxub	%xmm6, %xmm10, %xmm6
+	vpsubb	%xmm8, %xmm6, %xmm6
+	vpminub	%xmm7, %xmm11, %xmm8
+	vpmaxub	%xmm7, %xmm11, %xmm7
+	vpsubb	%xmm8, %xmm7, %xmm7
+	vpmovzxbq	%xmm4, %ymm4
+	vpaddq	%ymm4, %ymm0, %ymm0
+	vpmovzxbq	%xmm5, %ymm4
+	vpaddq	%ymm4, %ymm1, %ymm1
+	vpmovzxbq	%xmm6, %ymm4
+	vpaddq	%ymm4, %ymm2, %ymm2
+	vpmovzxbq	%xmm7, %ymm4
+	vpaddq	%ymm4, %ymm3, %ymm3
+	addq	$16, %r11
+	cmpq	%r11, %rax
+	jne	.LBB0_12
+	vpaddq	%ymm0, %ymm1, %ymm0
+	vpaddq	%ymm0, %ymm2, %ymm0
+	vpaddq	%ymm0, %ymm3, %ymm0
+	vextracti128	$1, %ymm0, %xmm1
+	vpaddq	%xmm1, %xmm0, %xmm0
+	vpshufd	$238, %xmm0, %xmm1
+	vpaddq	%xmm1, %xmm0, %xmm0
+	vmovq	%xmm0, %rax
+	testq	%r10, %r10
+	je	.LBB0_10
+	cmpl	$4, %r10d
+	jb	.LBB0_15
+.LBB0_7:
+	movl	%edx, %r10d
+	andl	$3, %r10d
+	subq	%r10, %rcx
+	addq	%r8, %rcx
+	vmovq	%rax, %xmm0
+	addq	%r8, %r9
+	.p2align	4
+.LBB0_8:
+	vmovd	(%rdi,%r9), %xmm1
+	vmovd	(%rsi,%r9), %xmm2
+	vpminub	%xmm2, %xmm1, %xmm3
+	vpmaxub	%xmm2, %xmm1, %xmm1
+	vpsubb	%xmm3, %xmm1, %xmm1
+	vpmovzxbq	%xmm1, %ymm1
+	vpaddq	%ymm1, %ymm0, %ymm0
+	addq	$4, %r9
+	cmpq	%r9, %rcx
+	jne	.LBB0_8
+	vextracti128	$1, %ymm0, %xmm1
+	vpaddq	%xmm1, %xmm0, %xmm0
+	vpshufd	$238, %xmm0, %xmm1
+	vpaddq	%xmm1, %xmm0, %xmm0
+	vmovq	%xmm0, %rax
+	testq	%r10, %r10
+	je	.LBB0_10
+	.p2align	4
+.LBB0_17:
+	movzbl	(%rdi,%rcx), %r8d
+	movzbl	(%rsi,%rcx), %r9d
+	movl	%r8d, %r10d
+	subl	%r9d, %r10d
+	subl	%r8d, %r9d
+	cmovbl	%r10d, %r9d
+	movzbl	%r9b, %r8d
+	addq	%r8, %rax
+	incq	%rcx
+	cmpq	%rcx, %rdx
+	jne	.LBB0_17
+.LBB0_10:
+	vzeroupper
+	retq
+.LBB0_15:
+	addq	%r9, %r8
+	jmp	.LBB0_16
+.Lfunc_end0:
+	.size	sad_u8_avx2, .Lfunc_end0-sad_u8_avx2
+	.cfi_endproc
+
+	.section	.text.sad_u8_scalar,"ax",@progbits
+	.globl	sad_u8_scalar
+	.p2align	4
+	.type	sad_u8_scalar,@function
+sad_u8_scalar:
+	.cfi_startproc
+	testq	%rdx, %rdx
+	je	.LBB1_1
+	cmpq	$4, %rdx
+	jae	.LBB1_5
+	xorl	%eax, %eax
+	xorl	%ecx, %ecx
+	jmp	.LBB1_4
+.LBB1_1:
+	xorl	%eax, %eax
+	retq
+.LBB1_5:
+	cmpq	$16, %rdx
+	jae	.LBB1_7
+	xorl	%ecx, %ecx
+	xorl	%eax, %eax
+	jmp	.LBB1_11
+.LBB1_7:
+	movq	%rdx, %rcx
+	andq	$-16, %rcx
+	vpxor	%xmm0, %xmm0, %xmm0
+	xorl	%eax, %eax
+	vpxor	%xmm1, %xmm1, %xmm1
+	vpxor	%xmm2, %xmm2, %xmm2
+	vpxor	%xmm3, %xmm3, %xmm3
+	.p2align	4
+.LBB1_8:
+	vmovd	(%rdi,%rax), %xmm4
+	vmovd	4(%rdi,%rax), %xmm5
+	vmovd	8(%rdi,%rax), %xmm6
+	vmovd	12(%rdi,%rax), %xmm7
+	vmovd	(%rsi,%rax), %xmm8
+	vmovd	4(%rsi,%rax), %xmm9
+	vmovd	8(%rsi,%rax), %xmm10
+	vmovd	12(%rsi,%rax), %xmm11
+	vpminub	%xmm4, %xmm8, %xmm12
+	vpmaxub	%xmm4, %xmm8, %xmm4
+	vpsubb	%xmm12, %xmm4, %xmm4
+	vpminub	%xmm5, %xmm9, %xmm8
+	vpmaxub	%xmm5, %xmm9, %xmm5
+	vpsubb	%xmm8, %xmm5, %xmm5
+	vpminub	%xmm6, %xmm10, %xmm8
+	vpmaxub	%xmm6, %xmm10, %xmm6
+	vpsubb	%xmm8, %xmm6, %xmm6
+	vpminub	%xmm7, %xmm11, %xmm8
+	vpmaxub	%xmm7, %xmm11, %xmm7
+	vpsubb	%xmm8, %xmm7, %xmm7
+	vpmovzxbq	%xmm4, %ymm4
+	vpaddq	%ymm4, %ymm0, %ymm0
+	vpmovzxbq	%xmm5, %ymm4
+	vpaddq	%ymm4, %ymm1, %ymm1
+	vpmovzxbq	%xmm6, %ymm4
+	vpaddq	%ymm4, %ymm2, %ymm2
+	vpmovzxbq	%xmm7, %ymm4
+	vpaddq	%ymm4, %ymm3, %ymm3
+	addq	$16, %rax
+	cmpq	%rax, %rcx
+	jne	.LBB1_8
+	vpaddq	%ymm0, %ymm1, %ymm0
+	vpaddq	%ymm0, %ymm2, %ymm0
+	vpaddq	%ymm0, %ymm3, %ymm0
+	vextracti128	$1, %ymm0, %xmm1
+	vpaddq	%xmm1, %xmm0, %xmm0
+	vpshufd	$238, %xmm0, %xmm1
+	vpaddq	%xmm1, %xmm0, %xmm0
+	vmovq	%xmm0, %rax
+	cmpq	%rcx, %rdx
+	je	.LBB1_15
+	testb	$12, %dl
+	je	.LBB1_4
+.LBB1_11:
+	movq	%rcx, %r8
+	movq	%rdx, %rcx
+	andq	$-4, %rcx
+	vmovq	%rax, %xmm0
+	.p2align	4
+.LBB1_12:
+	vmovd	(%rdi,%r8), %xmm1
+	vmovd	(%rsi,%r8), %xmm2
+	vpminub	%xmm2, %xmm1, %xmm3
+	vpmaxub	%xmm2, %xmm1, %xmm1
+	vpsubb	%xmm3, %xmm1, %xmm1
+	vpmovzxbq	%xmm1, %ymm1
+	vpaddq	%ymm1, %ymm0, %ymm0
+	addq	$4, %r8
+	cmpq	%r8, %rcx
+	jne	.LBB1_12
+	vextracti128	$1, %ymm0, %xmm1
+	vpaddq	%xmm1, %xmm0, %xmm0
+	vpshufd	$238, %xmm0, %xmm1
+	vpaddq	%xmm1, %xmm0, %xmm0
+	vmovq	%xmm0, %rax
+	jmp	.LBB1_14
+.LBB1_4:
+	movzbl	(%rdi,%rcx), %r8d
+	movzbl	(%rsi,%rcx), %r9d
+	movl	%r8d, %r10d
+	subl	%r9d, %r10d
+	subl	%r8d, %r9d
+	cmovbl	%r10d, %r9d
+	incq	%rcx
+	movzbl	%r9b, %r8d
+	addq	%r8, %rax
+.LBB1_14:
+	cmpq	%rcx, %rdx
+	jne	.LBB1_4
+.LBB1_15:
+	vzeroupper
+	retq
+.Lfunc_end1:
+	.size	sad_u8_scalar, .Lfunc_end1-sad_u8_scalar
+	.cfi_endproc
+
+	.ident	"rustc version 1.97.1 (8bab26f4f 2026-07-14)"
+	.section	".note.GNU-stack","",@progbits

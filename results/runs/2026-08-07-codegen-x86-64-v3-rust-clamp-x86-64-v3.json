@@ -91,7 +91,7 @@
         "vmovsd": 1,
         "vmovss": 1
       },
-      "assembly_path": "results/codegen/known-good/manifest-x86-64-v3.json#metrics/rust-clamp-x86-64-v3.s",
+      "assembly_path": "results/artifacts/2026-08-07-codegen-x86-64-v3/rust-clamp-x86-64-v3.s.txt",
       "ir_path": null
     },
     {
@@ -109,6 +109,12 @@
       "path": "results/codegen/known-good/manifest-x86-64-v3.json",
       "sha256": "10c75969d6bc5d62cf1e62c1892d242387b83c2e7d5cd275a843c0eab68ff0b2",
       "description": "Reviewed x86-64-v3 manifest containing the aggregate metrics referenced by this bundle."
+    },
+    {
+      "kind": "assembly",
+      "path": "results/artifacts/2026-08-07-codegen-x86-64-v3/rust-clamp-x86-64-v3.s.txt",
+      "sha256": "124016d9a66ea0e1143e9fa44f048fe1c5d0253ab1808ada9596e75a13901998",
+      "description": "Reviewed x86-64-v3 assembly rendered as browser-readable plain text."
     }
   ],
   "tags": [
@@ -117,5 +123,5 @@
     "rust",
     "clamp"
   ],
-  "notes": "Metrics are whole-file aggregates for rust-clamp-x86-64-v3.s; the human review records steady-state and tail interpretation separately."
+  "notes": "Browser-visible assembly is preserved as plain text. Metrics are whole-file aggregates for rust-clamp-x86-64-v3.s; the human review records steady-state and tail interpretation separately."
 }

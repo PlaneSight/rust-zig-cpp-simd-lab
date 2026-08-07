@@ -90,7 +90,7 @@
         "vpaddusb": 11,
         "xorl": 7
       },
-      "assembly_path": "results/codegen/known-good/manifest-x86-64-v3.json#metrics/rust-sat_add-x86-64-v3.s",
+      "assembly_path": "results/artifacts/2026-08-07-codegen-x86-64-v3/rust-sat_add-x86-64-v3.s.txt",
       "ir_path": null
     },
     {
@@ -109,6 +109,12 @@
       "path": "results/codegen/known-good/manifest-x86-64-v3.json",
       "sha256": "10c75969d6bc5d62cf1e62c1892d242387b83c2e7d5cd275a843c0eab68ff0b2",
       "description": "Reviewed x86-64-v3 manifest containing the aggregate metrics referenced by this bundle."
+    },
+    {
+      "kind": "assembly",
+      "path": "results/artifacts/2026-08-07-codegen-x86-64-v3/rust-sat_add-x86-64-v3.s.txt",
+      "sha256": "169419260a8f5cba42de5221068463b90058d627f3c768cbb28f31f88e3e38f2",
+      "description": "Reviewed x86-64-v3 assembly rendered as browser-readable plain text."
     }
   ],
   "tags": [
@@ -117,5 +123,5 @@
     "rust",
     "sat_add"
   ],
-  "notes": "Metrics are whole-file aggregates for rust-sat_add-x86-64-v3.s; the human review records steady-state and tail interpretation separately."
+  "notes": "Browser-visible assembly is preserved as plain text. Metrics are whole-file aggregates for rust-sat_add-x86-64-v3.s; the human review records steady-state and tail interpretation separately."
 }

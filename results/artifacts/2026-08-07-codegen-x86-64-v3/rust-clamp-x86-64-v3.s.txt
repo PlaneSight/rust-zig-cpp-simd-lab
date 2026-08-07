@@ -1,0 +1,221 @@
+	.file	"clamp.b585b7f842711fe4-cgu.0"
+	.section	.text.clamp_f32,"ax",@progbits
+	.globl	clamp_f32
+	.p2align	4
+	.type	clamp_f32,@function
+clamp_f32:
+	.cfi_startproc
+	vmovss	8(%rsp), %xmm8
+	vminss	%xmm2, %xmm1, %xmm9
+	vcmpunordss	%xmm9, %xmm9, %xmm10
+	vblendvps	%xmm10, %xmm1, %xmm9, %xmm9
+	vminss	%xmm3, %xmm9, %xmm10
+	vcmpunordss	%xmm10, %xmm10, %xmm11
+	vblendvps	%xmm11, %xmm9, %xmm10, %xmm9
+	vminss	%xmm4, %xmm9, %xmm10
+	vcmpunordss	%xmm10, %xmm10, %xmm11
+	vblendvps	%xmm11, %xmm9, %xmm10, %xmm9
+	vminss	%xmm5, %xmm9, %xmm10
+	vcmpunordss	%xmm10, %xmm10, %xmm11
+	vblendvps	%xmm11, %xmm9, %xmm10, %xmm9
+	vminss	%xmm6, %xmm9, %xmm10
+	vcmpunordss	%xmm10, %xmm10, %xmm11
+	vblendvps	%xmm11, %xmm9, %xmm10, %xmm9
+	vminss	%xmm7, %xmm9, %xmm10
+	vcmpunordss	%xmm10, %xmm10, %xmm11
+	vblendvps	%xmm11, %xmm9, %xmm10, %xmm9
+	vminss	%xmm8, %xmm9, %xmm10
+	vcmpunordss	%xmm10, %xmm10, %xmm11
+	vblendvps	%xmm11, %xmm9, %xmm10, %xmm9
+	vmaxss	%xmm2, %xmm1, %xmm2
+	vcmpunordss	%xmm2, %xmm2, %xmm10
+	vblendvps	%xmm10, %xmm1, %xmm2, %xmm1
+	vmaxss	%xmm3, %xmm1, %xmm2
+	vcmpunordss	%xmm2, %xmm2, %xmm3
+	vblendvps	%xmm3, %xmm1, %xmm2, %xmm1
+	vmaxss	%xmm4, %xmm1, %xmm2
+	vcmpunordss	%xmm2, %xmm2, %xmm3
+	vblendvps	%xmm3, %xmm1, %xmm2, %xmm1
+	vmaxss	%xmm5, %xmm1, %xmm2
+	vcmpunordss	%xmm2, %xmm2, %xmm3
+	vblendvps	%xmm3, %xmm1, %xmm2, %xmm1
+	vmaxss	%xmm6, %xmm1, %xmm2
+	vcmpunordss	%xmm2, %xmm2, %xmm3
+	vblendvps	%xmm3, %xmm1, %xmm2, %xmm1
+	vmaxss	%xmm7, %xmm1, %xmm2
+	vcmpunordss	%xmm2, %xmm2, %xmm3
+	vblendvps	%xmm3, %xmm1, %xmm2, %xmm1
+	vmaxss	%xmm8, %xmm1, %xmm2
+	vcmpunordss	%xmm2, %xmm2, %xmm3
+	vblendvps	%xmm3, %xmm1, %xmm2, %xmm1
+	vmaxss	%xmm9, %xmm0, %xmm2
+	vcmpunordss	%xmm2, %xmm2, %xmm3
+	vblendvps	%xmm3, %xmm0, %xmm2, %xmm0
+	vminss	%xmm1, %xmm0, %xmm1
+	vcmpunordss	%xmm1, %xmm1, %xmm2
+	vblendvps	%xmm2, %xmm0, %xmm1, %xmm0
+	retq
+.Lfunc_end0:
+	.size	clamp_f32, .Lfunc_end0-clamp_f32
+	.cfi_endproc
+
+	.section	.text.clamp_f64,"ax",@progbits
+	.globl	clamp_f64
+	.p2align	4
+	.type	clamp_f64,@function
+clamp_f64:
+	.cfi_startproc
+	vmovsd	8(%rsp), %xmm8
+	vminsd	%xmm2, %xmm1, %xmm9
+	vcmpunordsd	%xmm9, %xmm9, %xmm10
+	vblendvpd	%xmm10, %xmm1, %xmm9, %xmm9
+	vminsd	%xmm3, %xmm9, %xmm10
+	vcmpunordsd	%xmm10, %xmm10, %xmm11
+	vblendvpd	%xmm11, %xmm9, %xmm10, %xmm9
+	vminsd	%xmm4, %xmm9, %xmm10
+	vcmpunordsd	%xmm10, %xmm10, %xmm11
+	vblendvpd	%xmm11, %xmm9, %xmm10, %xmm9
+	vminsd	%xmm5, %xmm9, %xmm10
+	vcmpunordsd	%xmm10, %xmm10, %xmm11
+	vblendvpd	%xmm11, %xmm9, %xmm10, %xmm9
+	vminsd	%xmm6, %xmm9, %xmm10
+	vcmpunordsd	%xmm10, %xmm10, %xmm11
+	vblendvpd	%xmm11, %xmm9, %xmm10, %xmm9
+	vminsd	%xmm7, %xmm9, %xmm10
+	vcmpunordsd	%xmm10, %xmm10, %xmm11
+	vblendvpd	%xmm11, %xmm9, %xmm10, %xmm9
+	vminsd	%xmm8, %xmm9, %xmm10
+	vcmpunordsd	%xmm10, %xmm10, %xmm11
+	vblendvpd	%xmm11, %xmm9, %xmm10, %xmm9
+	vmaxsd	%xmm2, %xmm1, %xmm2
+	vcmpunordsd	%xmm2, %xmm2, %xmm10
+	vblendvpd	%xmm10, %xmm1, %xmm2, %xmm1
+	vmaxsd	%xmm3, %xmm1, %xmm2
+	vcmpunordsd	%xmm2, %xmm2, %xmm3
+	vblendvpd	%xmm3, %xmm1, %xmm2, %xmm1
+	vmaxsd	%xmm4, %xmm1, %xmm2
+	vcmpunordsd	%xmm2, %xmm2, %xmm3
+	vblendvpd	%xmm3, %xmm1, %xmm2, %xmm1
+	vmaxsd	%xmm5, %xmm1, %xmm2
+	vcmpunordsd	%xmm2, %xmm2, %xmm3
+	vblendvpd	%xmm3, %xmm1, %xmm2, %xmm1
+	vmaxsd	%xmm6, %xmm1, %xmm2
+	vcmpunordsd	%xmm2, %xmm2, %xmm3
+	vblendvpd	%xmm3, %xmm1, %xmm2, %xmm1
+	vmaxsd	%xmm7, %xmm1, %xmm2
+	vcmpunordsd	%xmm2, %xmm2, %xmm3
+	vblendvpd	%xmm3, %xmm1, %xmm2, %xmm1
+	vmaxsd	%xmm8, %xmm1, %xmm2
+	vcmpunordsd	%xmm2, %xmm2, %xmm3
+	vblendvpd	%xmm3, %xmm1, %xmm2, %xmm1
+	vmaxsd	%xmm9, %xmm0, %xmm2
+	vcmpunordsd	%xmm2, %xmm2, %xmm3
+	vblendvpd	%xmm3, %xmm0, %xmm2, %xmm0
+	vminsd	%xmm1, %xmm0, %xmm1
+	vcmpunordsd	%xmm1, %xmm1, %xmm2
+	vblendvpd	%xmm2, %xmm0, %xmm1, %xmm0
+	retq
+.Lfunc_end1:
+	.size	clamp_f64, .Lfunc_end1-clamp_f64
+	.cfi_endproc
+
+	.section	.text.clamp_u16,"ax",@progbits
+	.globl	clamp_u16
+	.p2align	4
+	.type	clamp_u16,@function
+clamp_u16:
+	.cfi_startproc
+	cmpw	%si, %dx
+	movl	%esi, %eax
+	cmovbl	%edx, %eax
+	cmoval	%edx, %esi
+	cmpw	%ax, %cx
+	cmovbl	%ecx, %eax
+	cmpw	%ax, %r8w
+	cmovbl	%r8d, %eax
+	movl	24(%rsp), %edx
+	cmpw	%ax, %r9w
+	cmovbl	%r9d, %eax
+	movl	8(%rsp), %r10d
+	cmpw	%ax, %r10w
+	cmovbl	%r10d, %eax
+	movl	16(%rsp), %r11d
+	cmpw	%ax, %r11w
+	cmovbl	%r11d, %eax
+	cmpw	%ax, %dx
+	cmovbl	%edx, %eax
+	cmpw	%si, %cx
+	cmoval	%ecx, %esi
+	cmpw	%si, %r8w
+	cmoval	%r8d, %esi
+	cmpw	%si, %r9w
+	cmoval	%r9d, %esi
+	cmpw	%si, %r10w
+	cmoval	%r10d, %esi
+	cmpw	%si, %r11w
+	cmoval	%r11d, %esi
+	cmpw	%si, %dx
+	cmoval	%edx, %esi
+	cmpw	%ax, %di
+	jae	.LBB2_1
+	retq
+.LBB2_1:
+	cmpw	%si, %di
+	cmovbl	%edi, %esi
+	movl	%esi, %eax
+	retq
+.Lfunc_end2:
+	.size	clamp_u16, .Lfunc_end2-clamp_u16
+	.cfi_endproc
+
+	.section	.text.clamp_u8,"ax",@progbits
+	.globl	clamp_u8
+	.p2align	4
+	.type	clamp_u8,@function
+clamp_u8:
+	.cfi_startproc
+	cmpb	%sil, %dl
+	movl	%esi, %eax
+	cmovbl	%edx, %eax
+	cmoval	%edx, %esi
+	cmpb	%al, %cl
+	cmovbl	%ecx, %eax
+	cmpb	%al, %r8b
+	cmovbl	%r8d, %eax
+	movl	24(%rsp), %edx
+	cmpb	%al, %r9b
+	cmovbl	%r9d, %eax
+	movl	8(%rsp), %r10d
+	cmpb	%al, %r10b
+	cmovbl	%r10d, %eax
+	movl	16(%rsp), %r11d
+	cmpb	%al, %r11b
+	cmovbl	%r11d, %eax
+	cmpb	%al, %dl
+	cmovbl	%edx, %eax
+	cmpb	%sil, %cl
+	cmoval	%ecx, %esi
+	cmpb	%sil, %r8b
+	cmoval	%r8d, %esi
+	cmpb	%sil, %r9b
+	cmoval	%r9d, %esi
+	cmpb	%sil, %r10b
+	cmoval	%r10d, %esi
+	cmpb	%sil, %r11b
+	cmoval	%r11d, %esi
+	cmpb	%sil, %dl
+	cmoval	%edx, %esi
+	cmpb	%al, %dil
+	jb	.LBB3_2
+	movzbl	%dil, %eax
+	movzbl	%sil, %ecx
+	cmpb	%cl, %dil
+	cmovael	%ecx, %eax
+.LBB3_2:
+	retq
+.Lfunc_end3:
+	.size	clamp_u8, .Lfunc_end3-clamp_u8
+	.cfi_endproc
+
+	.ident	"rustc version 1.97.1 (8bab26f4f 2026-07-14)"
+	.section	".note.GNU-stack","",@progbits

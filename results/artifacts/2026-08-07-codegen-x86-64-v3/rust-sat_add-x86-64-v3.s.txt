@@ -1,0 +1,289 @@
+	.file	"sat_add.b1006972785f343d-cgu.0"
+	.section	.text.sat_add_u8_avx2,"ax",@progbits
+	.globl	sat_add_u8_avx2
+	.p2align	4
+	.type	sat_add_u8_avx2,@function
+sat_add_u8_avx2:
+	.cfi_startproc
+	cmpq	$32, %rcx
+	jae	.LBB0_23
+	xorl	%r8d, %r8d
+	jmp	.LBB0_2
+.LBB0_23:
+	xorl	%eax, %eax
+	.p2align	4
+.LBB0_24:
+	vmovdqu	(%rsi,%rax), %ymm0
+	vpaddusb	(%rdx,%rax), %ymm0, %ymm0
+	vmovdqu	%ymm0, (%rdi,%rax)
+	leaq	32(%rax), %r8
+	addq	$64, %rax
+	cmpq	%rcx, %rax
+	movq	%r8, %rax
+	jbe	.LBB0_24
+.LBB0_2:
+	movq	%rcx, %rax
+	subq	%r8, %rax
+	jbe	.LBB0_10
+	cmpq	$8, %rax
+	jb	.LBB0_16
+	movq	%rdi, %r9
+	subq	%rsi, %r9
+	cmpq	$128, %r9
+	setb	%r9b
+	movq	%rdi, %r10
+	subq	%rdx, %r10
+	cmpq	$128, %r10
+	setb	%r10b
+	orb	%r9b, %r10b
+	je	.LBB0_5
+.LBB0_16:
+	movq	%r8, %rax
+.LBB0_17:
+	movl	%ecx, %r9d
+	subl	%eax, %r9d
+	movq	%rax, %r8
+	andl	$3, %r9d
+	je	.LBB0_20
+	movl	$255, %r10d
+	movq	%rax, %r8
+	.p2align	4
+.LBB0_19:
+	movzbl	(%rsi,%r8), %r11d
+	addb	(%rdx,%r8), %r11b
+	movzbl	%r11b, %r11d
+	cmovbl	%r10d, %r11d
+	movb	%r11b, (%rdi,%r8)
+	incq	%r8
+	decq	%r9
+	jne	.LBB0_19
+.LBB0_20:
+	subq	%rcx, %rax
+	cmpq	$-4, %rax
+	ja	.LBB0_10
+	movl	$255, %eax
+	.p2align	4
+.LBB0_22:
+	movzbl	(%rsi,%r8), %r9d
+	addb	(%rdx,%r8), %r9b
+	movzbl	%r9b, %r9d
+	cmovbl	%eax, %r9d
+	movb	%r9b, (%rdi,%r8)
+	movzbl	1(%rsi,%r8), %r9d
+	addb	1(%rdx,%r8), %r9b
+	movzbl	%r9b, %r9d
+	cmovbl	%eax, %r9d
+	movb	%r9b, 1(%rdi,%r8)
+	movzbl	2(%rsi,%r8), %r9d
+	addb	2(%rdx,%r8), %r9b
+	movzbl	%r9b, %r9d
+	cmovbl	%eax, %r9d
+	movb	%r9b, 2(%rdi,%r8)
+	movzbl	3(%rsi,%r8), %r9d
+	addb	3(%rdx,%r8), %r9b
+	movzbl	%r9b, %r9d
+	cmovbl	%eax, %r9d
+	movb	%r9b, 3(%rdi,%r8)
+	addq	$4, %r8
+	cmpq	%r8, %rcx
+	jne	.LBB0_22
+.LBB0_10:
+	vzeroupper
+	retq
+.LBB0_5:
+	cmpq	$128, %rax
+	jae	.LBB0_11
+	xorl	%r9d, %r9d
+	jmp	.LBB0_7
+.LBB0_11:
+	pushq	%r14
+	.cfi_def_cfa_offset 16
+	pushq	%rbx
+	.cfi_def_cfa_offset 24
+	.cfi_offset %rbx, -24
+	.cfi_offset %r14, -16
+	movq	%rax, %r9
+	andq	$-128, %r9
+	leaq	(%rdi,%r8), %r10
+	addq	$96, %r10
+	leaq	(%rdx,%r8), %r11
+	addq	$96, %r11
+	leaq	(%rsi,%r8), %rbx
+	addq	$96, %rbx
+	xorl	%r14d, %r14d
+	.p2align	4
+.LBB0_12:
+	vmovdqu	-96(%rbx,%r14), %ymm0
+	vmovdqu	-64(%rbx,%r14), %ymm1
+	vmovdqu	-32(%rbx,%r14), %ymm2
+	vmovdqu	(%rbx,%r14), %ymm3
+	vpaddusb	-96(%r11,%r14), %ymm0, %ymm0
+	vpaddusb	-64(%r11,%r14), %ymm1, %ymm1
+	vpaddusb	-32(%r11,%r14), %ymm2, %ymm2
+	vpaddusb	(%r11,%r14), %ymm3, %ymm3
+	vmovdqu	%ymm0, -96(%r10,%r14)
+	vmovdqu	%ymm1, -64(%r10,%r14)
+	vmovdqu	%ymm2, -32(%r10,%r14)
+	vmovdqu	%ymm3, (%r10,%r14)
+	subq	$-128, %r14
+	cmpq	%r14, %r9
+	jne	.LBB0_12
+	cmpq	%r9, %rax
+	popq	%rbx
+	.cfi_def_cfa_offset 16
+	popq	%r14
+	.cfi_def_cfa_offset 8
+	.cfi_restore %rbx
+	.cfi_restore %r14
+	je	.LBB0_10
+	testb	$120, %al
+	je	.LBB0_15
+.LBB0_7:
+	movl	%ecx, %r10d
+	andl	$7, %r10d
+	subq	%r10, %rax
+	addq	%r8, %rax
+	addq	%r8, %r9
+	.p2align	4
+.LBB0_8:
+	vmovq	(%rsi,%r9), %xmm0
+	vmovq	(%rdx,%r9), %xmm1
+	vpaddusb	%xmm1, %xmm0, %xmm0
+	vmovq	%xmm0, (%rdi,%r9)
+	addq	$8, %r9
+	cmpq	%r9, %rax
+	jne	.LBB0_8
+	testq	%r10, %r10
+	jne	.LBB0_17
+	jmp	.LBB0_10
+.LBB0_15:
+	addq	%r9, %r8
+	jmp	.LBB0_16
+.Lfunc_end0:
+	.size	sat_add_u8_avx2, .Lfunc_end0-sat_add_u8_avx2
+	.cfi_endproc
+
+	.section	.text.sat_add_u8_scalar,"ax",@progbits
+	.globl	sat_add_u8_scalar
+	.p2align	4
+	.type	sat_add_u8_scalar,@function
+sat_add_u8_scalar:
+	.cfi_startproc
+	testq	%rcx, %rcx
+	je	.LBB1_20
+	cmpq	$8, %rcx
+	jb	.LBB1_2
+	movq	%rdi, %rax
+	subq	%rsi, %rax
+	cmpq	$128, %rax
+	setb	%al
+	movq	%rdi, %r8
+	subq	%rdx, %r8
+	cmpq	$128, %r8
+	setb	%r8b
+	orb	%al, %r8b
+	je	.LBB1_5
+.LBB1_2:
+	xorl	%eax, %eax
+.LBB1_14:
+	movq	%rcx, %r9
+	movq	%rax, %r8
+	andq	$3, %r9
+	je	.LBB1_17
+	movl	$255, %r10d
+	movq	%rax, %r8
+	.p2align	4
+.LBB1_16:
+	movzbl	(%rsi,%r8), %r11d
+	addb	(%rdx,%r8), %r11b
+	movzbl	%r11b, %r11d
+	cmovbl	%r10d, %r11d
+	movb	%r11b, (%rdi,%r8)
+	incq	%r8
+	decq	%r9
+	jne	.LBB1_16
+.LBB1_17:
+	subq	%rcx, %rax
+	cmpq	$-4, %rax
+	ja	.LBB1_20
+	movl	$255, %eax
+	.p2align	4
+.LBB1_19:
+	movzbl	(%rsi,%r8), %r9d
+	addb	(%rdx,%r8), %r9b
+	movzbl	%r9b, %r9d
+	cmovbl	%eax, %r9d
+	movb	%r9b, (%rdi,%r8)
+	movzbl	1(%rsi,%r8), %r9d
+	addb	1(%rdx,%r8), %r9b
+	movzbl	%r9b, %r9d
+	cmovbl	%eax, %r9d
+	movb	%r9b, 1(%rdi,%r8)
+	movzbl	2(%rsi,%r8), %r9d
+	addb	2(%rdx,%r8), %r9b
+	movzbl	%r9b, %r9d
+	cmovbl	%eax, %r9d
+	movb	%r9b, 2(%rdi,%r8)
+	movzbl	3(%rsi,%r8), %r9d
+	addb	3(%rdx,%r8), %r9b
+	movzbl	%r9b, %r9d
+	cmovbl	%eax, %r9d
+	movb	%r9b, 3(%rdi,%r8)
+	addq	$4, %r8
+	cmpq	%r8, %rcx
+	jne	.LBB1_19
+.LBB1_20:
+	vzeroupper
+	retq
+.LBB1_5:
+	cmpq	$128, %rcx
+	jae	.LBB1_7
+	xorl	%eax, %eax
+	jmp	.LBB1_11
+.LBB1_7:
+	movq	%rcx, %rax
+	andq	$-128, %rax
+	xorl	%r8d, %r8d
+	.p2align	4
+.LBB1_8:
+	vmovdqu	(%rsi,%r8), %ymm0
+	vmovdqu	32(%rsi,%r8), %ymm1
+	vmovdqu	64(%rsi,%r8), %ymm2
+	vmovdqu	96(%rsi,%r8), %ymm3
+	vpaddusb	(%rdx,%r8), %ymm0, %ymm0
+	vpaddusb	32(%rdx,%r8), %ymm1, %ymm1
+	vpaddusb	64(%rdx,%r8), %ymm2, %ymm2
+	vpaddusb	96(%rdx,%r8), %ymm3, %ymm3
+	vmovdqu	%ymm0, (%rdi,%r8)
+	vmovdqu	%ymm1, 32(%rdi,%r8)
+	vmovdqu	%ymm2, 64(%rdi,%r8)
+	vmovdqu	%ymm3, 96(%rdi,%r8)
+	subq	$-128, %r8
+	cmpq	%r8, %rax
+	jne	.LBB1_8
+	cmpq	%rax, %rcx
+	je	.LBB1_20
+	testb	$120, %cl
+	je	.LBB1_14
+.LBB1_11:
+	movq	%rax, %r8
+	movq	%rcx, %rax
+	andq	$-8, %rax
+	.p2align	4
+.LBB1_12:
+	vmovq	(%rsi,%r8), %xmm0
+	vmovq	(%rdx,%r8), %xmm1
+	vpaddusb	%xmm1, %xmm0, %xmm0
+	vmovq	%xmm0, (%rdi,%r8)
+	addq	$8, %r8
+	cmpq	%r8, %rax
+	jne	.LBB1_12
+	cmpq	%rax, %rcx
+	je	.LBB1_20
+	jmp	.LBB1_14
+.Lfunc_end1:
+	.size	sat_add_u8_scalar, .Lfunc_end1-sat_add_u8_scalar
+	.cfi_endproc
+
+	.ident	"rustc version 1.97.1 (8bab26f4f 2026-07-14)"
+	.section	".note.GNU-stack","",@progbits

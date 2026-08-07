@@ -93,7 +93,7 @@
         "vpsubd": 32,
         "xor": 12
       },
-      "assembly_path": "results/codegen/known-good/manifest-x86-64-v3.json#metrics/gcc-sad-x86-64-v3.s",
+      "assembly_path": "results/artifacts/2026-08-07-codegen-x86-64-v3/gcc-sad-x86-64-v3.s.txt",
       "ir_path": null
     },
     {
@@ -112,6 +112,12 @@
       "path": "results/codegen/known-good/manifest-x86-64-v3.json",
       "sha256": "10c75969d6bc5d62cf1e62c1892d242387b83c2e7d5cd275a843c0eab68ff0b2",
       "description": "Reviewed x86-64-v3 manifest containing the aggregate metrics referenced by this bundle."
+    },
+    {
+      "kind": "assembly",
+      "path": "results/artifacts/2026-08-07-codegen-x86-64-v3/gcc-sad-x86-64-v3.s.txt",
+      "sha256": "d95c36fa8729ed3b983439fa43f45e655b6f8f5f69d936c46ec16f94cf7df2bb",
+      "description": "Reviewed x86-64-v3 assembly rendered as browser-readable plain text."
     }
   ],
   "tags": [
@@ -120,5 +126,5 @@
     "gcc",
     "sad"
   ],
-  "notes": "Metrics are whole-file aggregates for gcc-sad-x86-64-v3.s; the human review records steady-state and tail interpretation separately."
+  "notes": "Browser-visible assembly is preserved as plain text. Metrics are whole-file aggregates for gcc-sad-x86-64-v3.s; the human review records steady-state and tail interpretation separately."
 }

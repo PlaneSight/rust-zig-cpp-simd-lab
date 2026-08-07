@@ -1,0 +1,1084 @@
+	.file	"sad.cpp"
+	.intel_syntax noprefix
+	.text
+	.p2align 4
+	.globl	sad_u8_scalar
+	.type	sad_u8_scalar, @function
+sad_u8_scalar:
+.LFB6459:
+	.cfi_startproc
+	endbr64
+	mov	rcx, rsi
+	mov	rsi, rdx
+	test	rdx, rdx
+	je	.L40
+	lea	rax, -1[rdx]
+	cmp	rax, 30
+	jbe	.L41
+	and	rdx, -32
+	xor	eax, eax
+	vpxor	xmm2, xmm2, xmm2
+	.p2align 4,,10
+	.p2align 3
+.L4:
+	vmovdqu	ymm5, YMMWORD PTR [rcx+rax]
+	vmovdqu	ymm13, YMMWORD PTR [rdi+rax]
+	add	rax, 32
+	vpmovzxbw	ymm1, xmm5
+	vpmovzxbw	ymm8, xmm13
+	vextracti128	xmm0, ymm5, 0x1
+	vextracti128	xmm14, ymm13, 0x1
+	vpsubusb	ymm13, ymm13, ymm5
+	vpxor	xmm5, xmm5, xmm5
+	vpcmpeqb	ymm13, ymm13, ymm5
+	vpmovzxwd	ymm4, xmm8
+	vpmovzxwd	ymm3, xmm1
+	vpmovzxbw	ymm0, xmm0
+	vpmovzxbw	ymm14, xmm14
+	vextracti128	xmm1, ymm1, 0x1
+	vextracti128	xmm8, ymm8, 0x1
+	vpmovzxwd	ymm15, xmm14
+	vpmovzxwd	ymm11, xmm1
+	vpcmpeqb	ymm13, ymm13, ymm5
+	vpmovzxwd	ymm8, xmm8
+	vpmovzxwd	ymm7, xmm0
+	vextracti128	xmm14, ymm14, 0x1
+	vextracti128	xmm0, ymm0, 0x1
+	vpsubd	ymm1, ymm11, ymm8
+	vpsubd	ymm10, ymm8, ymm11
+	vpmovzxwd	ymm14, xmm14
+	vpmovzxwd	ymm0, xmm0
+	vpmovsxbw	ymm11, xmm13
+	vpsubd	ymm6, ymm14, ymm0
+	vpsubd	ymm5, ymm0, ymm14
+	vpsubd	ymm12, ymm4, ymm3
+	vpmovsxwd	ymm14, xmm11
+	vpsubd	ymm3, ymm3, ymm4
+	vpsubd	ymm9, ymm15, ymm7
+	vpmovsxdq	ymm4, xmm12
+	vpsubd	ymm7, ymm7, ymm15
+	vextracti128	xmm0, ymm13, 0x1
+	vpmovsxdq	ymm15, xmm14
+	vpmovsxdq	ymm13, xmm3
+	vpblendvb	ymm13, ymm13, ymm4, ymm15
+	vextracti128	xmm14, ymm14, 0x1
+	vextracti128	xmm4, ymm3, 0x1
+	vextracti128	xmm12, ymm12, 0x1
+	vextracti128	xmm11, ymm11, 0x1
+	vpmovsxdq	ymm14, xmm14
+	vpmovsxdq	ymm12, xmm12
+	vpmovsxdq	ymm4, xmm4
+	vpmovsxwd	ymm11, xmm11
+	vpblendvb	ymm4, ymm4, ymm12, ymm14
+	vpmovsxdq	ymm3, xmm10
+	vpmovsxdq	ymm12, xmm1
+	vpaddq	ymm4, ymm4, ymm13
+	vpmovsxdq	ymm13, xmm11
+	vextracti128	xmm10, ymm10, 0x1
+	vpblendvb	ymm12, ymm12, ymm3, ymm13
+	vextracti128	xmm11, ymm11, 0x1
+	vextracti128	xmm3, ymm1, 0x1
+	vpmovsxdq	ymm10, xmm10
+	vpmovsxdq	ymm11, xmm11
+	vpmovsxdq	ymm3, xmm3
+	vpmovsxbw	ymm0, xmm0
+	vpblendvb	ymm3, ymm3, ymm10, ymm11
+	vpmovsxdq	ymm1, xmm9
+	vpmovsxwd	ymm8, xmm0
+	vpaddq	ymm3, ymm3, ymm12
+	vextracti128	xmm9, ymm9, 0x1
+	vpaddq	ymm3, ymm3, ymm4
+	vpmovsxdq	ymm10, xmm8
+	vpmovsxdq	ymm4, xmm7
+	vpblendvb	ymm4, ymm4, ymm1, ymm10
+	vextracti128	xmm8, ymm8, 0x1
+	vextracti128	xmm1, ymm7, 0x1
+	vpmovsxdq	ymm8, xmm8
+	vextracti128	xmm0, ymm0, 0x1
+	vpmovsxdq	ymm9, xmm9
+	vpmovsxdq	ymm1, xmm1
+	vpmovsxwd	ymm0, xmm0
+	vpmovsxdq	ymm7, xmm6
+	vpblendvb	ymm1, ymm1, ymm9, ymm8
+	vpmovsxdq	ymm8, xmm0
+	vextracti128	xmm0, ymm0, 0x1
+	vpaddq	ymm1, ymm1, ymm4
+	vpmovsxdq	ymm4, xmm5
+	vextracti128	xmm6, ymm6, 0x1
+	vpblendvb	ymm4, ymm4, ymm7, ymm8
+	vpmovsxdq	ymm6, xmm6
+	vpaddq	ymm1, ymm1, ymm4
+	vpaddq	ymm1, ymm1, ymm3
+	vpmovsxdq	ymm3, xmm0
+	vextracti128	xmm0, ymm5, 0x1
+	vpmovsxdq	ymm0, xmm0
+	vpblendvb	ymm0, ymm0, ymm6, ymm3
+	vpaddq	ymm2, ymm2, ymm0
+	vpaddq	ymm2, ymm2, ymm1
+	cmp	rdx, rax
+	jne	.L4
+	vmovdqa	xmm7, xmm2
+	vextracti128	xmm2, ymm2, 0x1
+	vpaddq	xmm7, xmm7, xmm2
+	vpsrldq	xmm0, xmm7, 8
+	vpaddq	xmm0, xmm7, xmm0
+	vmovq	rax, xmm0
+	cmp	rsi, rdx
+	je	.L49
+	vzeroupper
+.L3:
+	mov	r8, rsi
+	sub	r8, rdx
+	lea	r9, -1[r8]
+	cmp	r9, 14
+	jbe	.L7
+	vmovdqu	xmm15, XMMWORD PTR [rcx+rdx]
+	vmovdqu	xmm1, XMMWORD PTR [rdi+rdx]
+	mov	r9, r8
+	and	r9, -16
+	vpmovzxbw	xmm2, xmm15
+	vpmovzxbw	xmm4, xmm1
+	add	rdx, r9
+	and	r8d, 15
+	vpmovzxwd	xmm3, xmm2
+	vpsrldq	xmm2, xmm2, 8
+	vpmovzxwd	xmm14, xmm4
+	vpmovzxwd	xmm9, xmm2
+	vpsrldq	xmm11, xmm1, 8
+	vpxor	xmm2, xmm2, xmm2
+	vpsubusb	xmm1, xmm1, xmm15
+	vpsrldq	xmm0, xmm15, 8
+	vpmovzxbw	xmm11, xmm11
+	vpcmpeqb	xmm1, xmm1, xmm2
+	vpmovzxbw	xmm0, xmm0
+	vpmovzxwd	xmm13, xmm11
+	vpmovzxwd	xmm6, xmm0
+	vpsrldq	xmm11, xmm11, 8
+	vpsubd	xmm12, xmm14, xmm3
+	vpsrldq	xmm0, xmm0, 8
+	vpmovzxwd	xmm11, xmm11
+	vpsubd	xmm3, xmm3, xmm14
+	vpcmpeqb	xmm1, xmm1, xmm2
+	vpmovzxwd	xmm0, xmm0
+	vpsubd	xmm8, xmm13, xmm6
+	vpsubd	xmm5, xmm11, xmm0
+	vpsrldq	xmm4, xmm4, 8
+	vpsubd	xmm0, xmm0, xmm11
+	vpmovzxwd	xmm4, xmm4
+	vpsubd	xmm6, xmm6, xmm13
+	vpmovsxdq	xmm13, xmm3
+	vpmovsxbw	xmm11, xmm1
+	vpsubd	xmm2, xmm9, xmm4
+	vpsubd	xmm10, xmm4, xmm9
+	vpmovsxwd	xmm14, xmm11
+	vpsrldq	xmm11, xmm11, 8
+	vpmovsxdq	xmm4, xmm12
+	vpmovsxdq	xmm15, xmm14
+	vpsrldq	xmm12, xmm12, 8
+	vpmovsxwd	xmm11, xmm11
+	vpblendvb	xmm13, xmm13, xmm4, xmm15
+	vpsrldq	xmm14, xmm14, 8
+	vpmovsxdq	xmm12, xmm12
+	vpsrldq	xmm4, xmm3, 8
+	vpmovsxdq	xmm14, xmm14
+	vpmovsxdq	xmm3, xmm10
+	vpsrldq	xmm10, xmm10, 8
+	vpsrldq	xmm1, xmm1, 8
+	vpmovsxdq	xmm4, xmm4
+	vpblendvb	xmm4, xmm4, xmm12, xmm14
+	vpmovsxdq	xmm12, xmm2
+	vpmovsxdq	xmm10, xmm10
+	vpaddq	xmm4, xmm4, xmm13
+	vpmovsxdq	xmm13, xmm11
+	vpmovsxbw	xmm1, xmm1
+	vpblendvb	xmm12, xmm12, xmm3, xmm13
+	vpsrldq	xmm11, xmm11, 8
+	vpmovsxwd	xmm9, xmm1
+	vpsrldq	xmm3, xmm2, 8
+	vpmovsxdq	xmm11, xmm11
+	vpmovsxdq	xmm2, xmm8
+	vpsrldq	xmm8, xmm8, 8
+	vpsrldq	xmm1, xmm1, 8
+	vpmovsxdq	xmm3, xmm3
+	vpblendvb	xmm3, xmm3, xmm10, xmm11
+	vpmovsxdq	xmm10, xmm9
+	vpmovsxdq	xmm8, xmm8
+	vpaddq	xmm3, xmm3, xmm12
+	vpsrldq	xmm9, xmm9, 8
+	vpmovsxwd	xmm1, xmm1
+	vpaddq	xmm3, xmm3, xmm4
+	vpmovsxdq	xmm4, xmm6
+	vpmovsxdq	xmm9, xmm9
+	vpblendvb	xmm4, xmm4, xmm2, xmm10
+	vpsrldq	xmm2, xmm6, 8
+	vpmovsxdq	xmm6, xmm1
+	vpmovsxdq	xmm2, xmm2
+	vpsrldq	xmm1, xmm1, 8
+	vpblendvb	xmm2, xmm2, xmm8, xmm9
+	vpmovsxdq	xmm1, xmm1
+	vpaddq	xmm2, xmm2, xmm4
+	vpmovsxdq	xmm4, xmm5
+	vpaddq	xmm2, xmm2, xmm7
+	vpsrldq	xmm5, xmm5, 8
+	vpaddq	xmm2, xmm2, xmm3
+	vpmovsxdq	xmm3, xmm0
+	vpmovsxdq	xmm5, xmm5
+	vpsrldq	xmm0, xmm0, 8
+	vpblendvb	xmm3, xmm3, xmm4, xmm6
+	vpmovsxdq	xmm0, xmm0
+	vpblendvb	xmm0, xmm0, xmm5, xmm1
+	vpaddq	xmm0, xmm0, xmm3
+	vpaddq	xmm0, xmm0, xmm2
+	vpsrldq	xmm1, xmm0, 8
+	vpaddq	xmm0, xmm0, xmm1
+	vmovq	rax, xmm0
+	je	.L1
+.L7:
+	movzx	r11d, BYTE PTR [rdi+rdx]
+	movzx	r8d, BYTE PTR [rcx+rdx]
+	cmp	r8b, r11b
+	jb	.L50
+	sub	r8d, r11d
+	movsx	r8, r8d
+.L10:
+	add	rax, r8
+	lea	r8, 1[rdx]
+	cmp	r8, rsi
+	jnb	.L1
+	movzx	r9d, BYTE PTR 1[rdi+rdx]
+	movzx	r8d, BYTE PTR 1[rcx+rdx]
+	cmp	r8b, r9b
+	jnb	.L11
+	sub	r9d, r8d
+	movsx	r8, r9d
+.L12:
+	add	rax, r8
+	lea	r8, 2[rdx]
+	cmp	r8, rsi
+	jnb	.L1
+	movzx	r11d, BYTE PTR 2[rdi+rdx]
+	movzx	r8d, BYTE PTR 2[rcx+rdx]
+	cmp	r8b, r11b
+	jnb	.L13
+	sub	r11d, r8d
+	movsx	r8, r11d
+.L14:
+	add	rax, r8
+	lea	r8, 3[rdx]
+	cmp	r8, rsi
+	jnb	.L1
+	movzx	r11d, BYTE PTR 3[rdi+rdx]
+	movzx	r8d, BYTE PTR 3[rcx+rdx]
+	cmp	r8b, r11b
+	jnb	.L15
+	sub	r11d, r8d
+	movsx	r8, r11d
+.L16:
+	add	rax, r8
+	lea	r8, 4[rdx]
+	cmp	r8, rsi
+	jnb	.L1
+	movzx	r9d, BYTE PTR 4[rdi+rdx]
+	movzx	r8d, BYTE PTR 4[rcx+rdx]
+	cmp	r8b, r9b
+	jnb	.L17
+	sub	r9d, r8d
+	movsx	r8, r9d
+.L18:
+	add	rax, r8
+	lea	r8, 5[rdx]
+	cmp	r8, rsi
+	jnb	.L1
+	movzx	r9d, BYTE PTR 5[rdi+rdx]
+	movzx	r8d, BYTE PTR 5[rcx+rdx]
+	cmp	r8b, r9b
+	jnb	.L19
+	sub	r9d, r8d
+	movsx	r8, r9d
+.L20:
+	add	rax, r8
+	lea	r8, 6[rdx]
+	cmp	r8, rsi
+	jnb	.L1
+	movzx	r9d, BYTE PTR 6[rdi+rdx]
+	movzx	r8d, BYTE PTR 6[rcx+rdx]
+	cmp	r8b, r9b
+	jnb	.L21
+	sub	r9d, r8d
+	movsx	r8, r9d
+.L22:
+	add	rax, r8
+	lea	r8, 7[rdx]
+	cmp	r8, rsi
+	jnb	.L1
+	movzx	r11d, BYTE PTR 7[rdi+rdx]
+	movzx	r8d, BYTE PTR 7[rcx+rdx]
+	cmp	r8b, r11b
+	jb	.L51
+	sub	r8d, r11d
+	movsx	r8, r8d
+.L24:
+	add	rax, r8
+	lea	r8, 8[rdx]
+	cmp	r8, rsi
+	jnb	.L1
+	movzx	r11d, BYTE PTR 8[rdi+rdx]
+	movzx	r8d, BYTE PTR 8[rcx+rdx]
+	cmp	r8b, r11b
+	jnb	.L25
+	sub	r11d, r8d
+	movsx	r8, r11d
+.L26:
+	add	rax, r8
+	lea	r8, 9[rdx]
+	cmp	r8, rsi
+	jnb	.L1
+	movzx	r11d, BYTE PTR 9[rdi+rdx]
+	movzx	r8d, BYTE PTR 9[rcx+rdx]
+	cmp	r8b, r11b
+	jnb	.L27
+	sub	r11d, r8d
+	movsx	r8, r11d
+.L28:
+	add	rax, r8
+	lea	r8, 10[rdx]
+	cmp	r8, rsi
+	jnb	.L1
+	movzx	r9d, BYTE PTR 10[rdi+rdx]
+	movzx	r8d, BYTE PTR 10[rcx+rdx]
+	cmp	r8b, r9b
+	jnb	.L29
+	sub	r9d, r8d
+	movsx	r8, r9d
+.L30:
+	add	rax, r8
+	lea	r8, 11[rdx]
+	cmp	r8, rsi
+	jnb	.L1
+	movzx	r9d, BYTE PTR 11[rdi+rdx]
+	movzx	r8d, BYTE PTR 11[rcx+rdx]
+	cmp	r8b, r9b
+	jnb	.L31
+	sub	r9d, r8d
+	movsx	r8, r9d
+.L32:
+	add	rax, r8
+	lea	r8, 12[rdx]
+	cmp	r8, rsi
+	jnb	.L1
+	movzx	r9d, BYTE PTR 12[rdi+rdx]
+	movzx	r8d, BYTE PTR 12[rcx+rdx]
+	cmp	r8b, r9b
+	jnb	.L33
+	sub	r9d, r8d
+	movsx	r8, r9d
+.L34:
+	add	rax, r8
+	lea	r8, 13[rdx]
+	cmp	r8, rsi
+	jnb	.L1
+	movzx	r11d, BYTE PTR 13[rdi+rdx]
+	movzx	r8d, BYTE PTR 13[rcx+rdx]
+	cmp	r8b, r11b
+	jnb	.L35
+	sub	r11d, r8d
+	movsx	r8, r11d
+.L36:
+	add	rax, r8
+	lea	r8, 14[rdx]
+	cmp	r8, rsi
+	jnb	.L1
+	movzx	esi, BYTE PTR 14[rdi+rdx]
+	movzx	edi, BYTE PTR 14[rcx+rdx]
+	movzx	edx, sil
+	cmp	dil, sil
+	jnb	.L52
+	sub	edx, edi
+	movsx	rdx, edx
+.L39:
+	add	rax, rdx
+	ret
+	.p2align 4,,10
+	.p2align 3
+.L40:
+	xor	eax, eax
+.L1:
+	ret
+	.p2align 4,,10
+	.p2align 3
+.L50:
+	sub	r11d, r8d
+	movsx	r8, r11d
+	jmp	.L10
+	.p2align 4,,10
+	.p2align 3
+.L11:
+	sub	r8d, r9d
+	movsx	r8, r8d
+	jmp	.L12
+	.p2align 4,,10
+	.p2align 3
+.L13:
+	sub	r8d, r11d
+	movsx	r8, r8d
+	jmp	.L14
+	.p2align 4,,10
+	.p2align 3
+.L15:
+	sub	r8d, r11d
+	movsx	r8, r8d
+	jmp	.L16
+	.p2align 4,,10
+	.p2align 3
+.L17:
+	sub	r8d, r9d
+	movsx	r8, r8d
+	jmp	.L18
+	.p2align 4,,10
+	.p2align 3
+.L19:
+	sub	r8d, r9d
+	movsx	r8, r8d
+	jmp	.L20
+	.p2align 4,,10
+	.p2align 3
+.L21:
+	sub	r8d, r9d
+	movsx	r8, r8d
+	jmp	.L22
+	.p2align 4,,10
+	.p2align 3
+.L51:
+	sub	r11d, r8d
+	movsx	r8, r11d
+	jmp	.L24
+	.p2align 4,,10
+	.p2align 3
+.L25:
+	sub	r8d, r11d
+	movsx	r8, r8d
+	jmp	.L26
+	.p2align 4,,10
+	.p2align 3
+.L27:
+	sub	r8d, r11d
+	movsx	r8, r8d
+	jmp	.L28
+	.p2align 4,,10
+	.p2align 3
+.L29:
+	sub	r8d, r9d
+	movsx	r8, r8d
+	jmp	.L30
+	.p2align 4,,10
+	.p2align 3
+.L31:
+	sub	r8d, r9d
+	movsx	r8, r8d
+	jmp	.L32
+	.p2align 4,,10
+	.p2align 3
+.L33:
+	sub	r8d, r9d
+	movsx	r8, r8d
+	jmp	.L34
+.L35:
+	sub	r8d, r11d
+	movsx	r8, r8d
+	jmp	.L36
+.L41:
+	vpxor	xmm7, xmm7, xmm7
+	xor	edx, edx
+	xor	eax, eax
+	jmp	.L3
+.L52:
+	sub	edi, edx
+	movsx	rdx, edi
+	jmp	.L39
+.L49:
+	vzeroupper
+	ret
+	.cfi_endproc
+.LFE6459:
+	.size	sad_u8_scalar, .-sad_u8_scalar
+	.p2align 4
+	.globl	sad_u8_avx2
+	.type	sad_u8_avx2, @function
+sad_u8_avx2:
+.LFB6460:
+	.cfi_startproc
+	endbr64
+	push	rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	mov	r9, rdi
+	mov	r8, rsi
+	mov	rdi, rdx
+	mov	eax, 32
+	vpxor	xmm1, xmm1, xmm1
+	mov	rbp, rsp
+	.cfi_def_cfa_register 6
+	push	rbx
+	.cfi_offset 3, -24
+	cmp	rdx, 31
+	jbe	.L111
+	.p2align 4,,10
+	.p2align 3
+.L54:
+	vmovdqu	ymm5, YMMWORD PTR -32[r9+rax]
+	vpsadbw	ymm0, ymm5, YMMWORD PTR -32[r8+rax]
+	mov	rsi, rax
+	lea	rax, 32[rax]
+	vpaddq	ymm1, ymm1, ymm0
+	cmp	rdi, rax
+	jnb	.L54
+	vpextrq	rax, xmm1, 1
+	vmovq	rdx, xmm1
+	vextracti128	xmm1, ymm1, 0x1
+	add	rdx, rax
+	vmovq	rax, xmm1
+	add	rdx, rax
+	vpextrq	rax, xmm1, 1
+	add	rdx, rax
+	cmp	rsi, rdi
+	jnb	.L107
+	mov	r11, rdi
+	sub	r11, rsi
+	lea	rax, -1[r11]
+	cmp	rax, 30
+	jbe	.L95
+	mov	r10, r11
+	lea	rbx, [r9+rsi]
+	lea	rcx, [r8+rsi]
+	xor	eax, eax
+	and	r10, -32
+	vpxor	xmm2, xmm2, xmm2
+	.p2align 4,,10
+	.p2align 3
+.L57:
+	vmovdqu	ymm5, YMMWORD PTR [rcx+rax]
+	vmovdqu	ymm13, YMMWORD PTR [rbx+rax]
+	add	rax, 32
+	vpmovzxbw	ymm1, xmm5
+	vpmovzxbw	ymm8, xmm13
+	vextracti128	xmm0, ymm5, 0x1
+	vextracti128	xmm14, ymm13, 0x1
+	vpsubusb	ymm13, ymm13, ymm5
+	vpxor	xmm5, xmm5, xmm5
+	vpcmpeqb	ymm13, ymm13, ymm5
+	vpmovzxwd	ymm4, xmm8
+	vpmovzxwd	ymm3, xmm1
+	vpmovzxbw	ymm0, xmm0
+	vpmovzxbw	ymm14, xmm14
+	vextracti128	xmm1, ymm1, 0x1
+	vextracti128	xmm8, ymm8, 0x1
+	vpmovzxwd	ymm15, xmm14
+	vpmovzxwd	ymm11, xmm1
+	vpcmpeqb	ymm13, ymm13, ymm5
+	vpmovzxwd	ymm8, xmm8
+	vpmovzxwd	ymm7, xmm0
+	vextracti128	xmm14, ymm14, 0x1
+	vextracti128	xmm0, ymm0, 0x1
+	vpsubd	ymm1, ymm11, ymm8
+	vpsubd	ymm10, ymm8, ymm11
+	vpmovzxwd	ymm14, xmm14
+	vpmovzxwd	ymm0, xmm0
+	vpmovsxbw	ymm11, xmm13
+	vpsubd	ymm6, ymm14, ymm0
+	vpsubd	ymm5, ymm0, ymm14
+	vpsubd	ymm12, ymm4, ymm3
+	vpmovsxwd	ymm14, xmm11
+	vpsubd	ymm3, ymm3, ymm4
+	vpsubd	ymm9, ymm15, ymm7
+	vpmovsxdq	ymm4, xmm12
+	vpsubd	ymm7, ymm7, ymm15
+	vextracti128	xmm0, ymm13, 0x1
+	vpmovsxdq	ymm15, xmm14
+	vpmovsxdq	ymm13, xmm3
+	vpblendvb	ymm13, ymm13, ymm4, ymm15
+	vextracti128	xmm14, ymm14, 0x1
+	vextracti128	xmm4, ymm3, 0x1
+	vextracti128	xmm12, ymm12, 0x1
+	vextracti128	xmm11, ymm11, 0x1
+	vpmovsxdq	ymm14, xmm14
+	vpmovsxdq	ymm12, xmm12
+	vpmovsxdq	ymm4, xmm4
+	vpmovsxwd	ymm11, xmm11
+	vpblendvb	ymm4, ymm4, ymm12, ymm14
+	vpmovsxdq	ymm3, xmm10
+	vpmovsxdq	ymm12, xmm1
+	vpaddq	ymm4, ymm4, ymm13
+	vpmovsxdq	ymm13, xmm11
+	vextracti128	xmm10, ymm10, 0x1
+	vpblendvb	ymm12, ymm12, ymm3, ymm13
+	vextracti128	xmm11, ymm11, 0x1
+	vextracti128	xmm3, ymm1, 0x1
+	vpmovsxdq	ymm10, xmm10
+	vpmovsxdq	ymm11, xmm11
+	vpmovsxdq	ymm3, xmm3
+	vpmovsxbw	ymm0, xmm0
+	vpblendvb	ymm3, ymm3, ymm10, ymm11
+	vpmovsxdq	ymm1, xmm9
+	vpmovsxwd	ymm8, xmm0
+	vpaddq	ymm3, ymm3, ymm12
+	vextracti128	xmm9, ymm9, 0x1
+	vpaddq	ymm3, ymm3, ymm4
+	vpmovsxdq	ymm10, xmm8
+	vpmovsxdq	ymm4, xmm7
+	vpblendvb	ymm4, ymm4, ymm1, ymm10
+	vextracti128	xmm8, ymm8, 0x1
+	vextracti128	xmm1, ymm7, 0x1
+	vpmovsxdq	ymm8, xmm8
+	vextracti128	xmm0, ymm0, 0x1
+	vpmovsxdq	ymm9, xmm9
+	vpmovsxdq	ymm1, xmm1
+	vpmovsxwd	ymm0, xmm0
+	vpmovsxdq	ymm7, xmm6
+	vpblendvb	ymm1, ymm1, ymm9, ymm8
+	vpmovsxdq	ymm8, xmm0
+	vextracti128	xmm0, ymm0, 0x1
+	vpaddq	ymm1, ymm1, ymm4
+	vpmovsxdq	ymm4, xmm5
+	vextracti128	xmm6, ymm6, 0x1
+	vpblendvb	ymm4, ymm4, ymm7, ymm8
+	vpmovsxdq	ymm6, xmm6
+	vpaddq	ymm1, ymm1, ymm4
+	vpaddq	ymm1, ymm1, ymm3
+	vpmovsxdq	ymm3, xmm0
+	vextracti128	xmm0, ymm5, 0x1
+	vpmovsxdq	ymm0, xmm0
+	vpblendvb	ymm0, ymm0, ymm6, ymm3
+	vpaddq	ymm2, ymm2, ymm0
+	vpaddq	ymm2, ymm2, ymm1
+	cmp	r10, rax
+	jne	.L57
+	vmovdqa	xmm7, xmm2
+	vextracti128	xmm2, ymm2, 0x1
+	lea	rcx, [r10+rsi]
+	vpaddq	xmm7, xmm7, xmm2
+	vpsrldq	xmm0, xmm7, 8
+	vpaddq	xmm0, xmm7, xmm0
+	vmovq	rax, xmm0
+	add	rax, rdx
+	cmp	r11, r10
+	je	.L112
+	vzeroupper
+.L55:
+	sub	r11, r10
+	lea	rbx, -1[r11]
+	cmp	rbx, 14
+	jbe	.L97
+	add	r10, rsi
+	vmovdqu	xmm15, XMMWORD PTR [r8+r10]
+	vmovdqu	xmm1, XMMWORD PTR [r9+r10]
+	vpmovzxbw	xmm2, xmm15
+	vpsrldq	xmm11, xmm1, 8
+	vpmovzxbw	xmm4, xmm1
+	vpmovzxwd	xmm3, xmm2
+	vpsrldq	xmm2, xmm2, 8
+	vpsubusb	xmm1, xmm1, xmm15
+	vpmovzxwd	xmm9, xmm2
+	vpxor	xmm2, xmm2, xmm2
+	vpmovzxbw	xmm11, xmm11
+	vpcmpeqb	xmm1, xmm1, xmm2
+	vpsrldq	xmm0, xmm15, 8
+	vpmovzxwd	xmm13, xmm11
+	vpmovzxbw	xmm0, xmm0
+	vpsrldq	xmm11, xmm11, 8
+	vpmovzxwd	xmm14, xmm4
+	vpmovzxwd	xmm6, xmm0
+	vpsrldq	xmm0, xmm0, 8
+	vpmovzxwd	xmm11, xmm11
+	vpcmpeqb	xmm1, xmm1, xmm2
+	vpmovzxwd	xmm0, xmm0
+	vpsubd	xmm12, xmm14, xmm3
+	vpsubd	xmm5, xmm11, xmm0
+	vpsrldq	xmm4, xmm4, 8
+	vpsubd	xmm0, xmm0, xmm11
+	vpsubd	xmm3, xmm3, xmm14
+	vpmovzxwd	xmm4, xmm4
+	vpsubd	xmm8, xmm13, xmm6
+	vpmovsxbw	xmm11, xmm1
+	vpsubd	xmm2, xmm9, xmm4
+	vpsubd	xmm10, xmm4, xmm9
+	vpmovsxwd	xmm14, xmm11
+	vpsubd	xmm6, xmm6, xmm13
+	vpmovsxdq	xmm4, xmm12
+	vpmovsxdq	xmm15, xmm14
+	vpsrldq	xmm12, xmm12, 8
+	vpmovsxdq	xmm13, xmm3
+	vpblendvb	xmm13, xmm13, xmm4, xmm15
+	vpsrldq	xmm14, xmm14, 8
+	vpmovsxdq	xmm12, xmm12
+	vpsrldq	xmm4, xmm3, 8
+	vpsrldq	xmm11, xmm11, 8
+	vpmovsxdq	xmm14, xmm14
+	vpmovsxdq	xmm4, xmm4
+	vpmovsxwd	xmm11, xmm11
+	vpmovsxdq	xmm3, xmm10
+	vpsrldq	xmm10, xmm10, 8
+	vpsrldq	xmm1, xmm1, 8
+	vpblendvb	xmm4, xmm4, xmm12, xmm14
+	vpaddq	xmm4, xmm4, xmm13
+	vpmovsxdq	xmm12, xmm2
+	vpmovsxdq	xmm13, xmm11
+	vpblendvb	xmm12, xmm12, xmm3, xmm13
+	vpsrldq	xmm11, xmm11, 8
+	vpmovsxdq	xmm10, xmm10
+	vpsrldq	xmm3, xmm2, 8
+	vpmovsxdq	xmm11, xmm11
+	vpmovsxbw	xmm1, xmm1
+	vpmovsxdq	xmm3, xmm3
+	vpmovsxwd	xmm9, xmm1
+	vpmovsxdq	xmm2, xmm8
+	vpsrldq	xmm8, xmm8, 8
+	vpsrldq	xmm1, xmm1, 8
+	vpblendvb	xmm3, xmm3, xmm10, xmm11
+	vpaddq	xmm3, xmm3, xmm12
+	vpmovsxdq	xmm10, xmm9
+	vpmovsxdq	xmm8, xmm8
+	vpaddq	xmm3, xmm3, xmm4
+	vpmovsxdq	xmm4, xmm6
+	vpmovsxwd	xmm1, xmm1
+	vpblendvb	xmm4, xmm4, xmm2, xmm10
+	vpsrldq	xmm9, xmm9, 8
+	vpsrldq	xmm2, xmm6, 8
+	vpmovsxdq	xmm9, xmm9
+	vpmovsxdq	xmm6, xmm1
+	vpmovsxdq	xmm2, xmm2
+	vpsrldq	xmm1, xmm1, 8
+	vpblendvb	xmm2, xmm2, xmm8, xmm9
+	vpmovsxdq	xmm1, xmm1
+	vpaddq	xmm2, xmm2, xmm4
+	vpmovsxdq	xmm4, xmm5
+	vpaddq	xmm2, xmm2, xmm7
+	vpsrldq	xmm5, xmm5, 8
+	vpaddq	xmm2, xmm2, xmm3
+	vpmovsxdq	xmm3, xmm0
+	vpmovsxdq	xmm5, xmm5
+	vpsrldq	xmm0, xmm0, 8
+	vpblendvb	xmm3, xmm3, xmm4, xmm6
+	vpmovsxdq	xmm0, xmm0
+	vpblendvb	xmm0, xmm0, xmm5, xmm1
+	vpaddq	xmm0, xmm0, xmm3
+	vpaddq	xmm0, xmm0, xmm2
+	vpsrldq	xmm1, xmm0, 8
+	vpaddq	xmm0, xmm0, xmm1
+	vmovq	rax, xmm0
+	add	rdx, rax
+	mov	rax, r11
+	and	rax, -16
+	add	rcx, rax
+	and	r11d, 15
+	je	.L53
+.L60:
+	movzx	r11d, BYTE PTR [r9+rcx]
+	movzx	eax, BYTE PTR [r8+rcx]
+	cmp	al, r11b
+	jb	.L113
+	sub	eax, r11d
+	cdqe
+.L63:
+	add	rdx, rax
+	lea	rax, 1[rcx]
+	cmp	rax, rdi
+	jnb	.L53
+	movzx	esi, BYTE PTR 1[r9+rcx]
+	movzx	eax, BYTE PTR 1[r8+rcx]
+	cmp	al, sil
+	jnb	.L64
+	sub	esi, eax
+	movsx	rax, esi
+.L65:
+	add	rdx, rax
+	lea	rax, 2[rcx]
+	cmp	rax, rdi
+	jnb	.L53
+	movzx	r11d, BYTE PTR 2[r9+rcx]
+	movzx	eax, BYTE PTR 2[r8+rcx]
+	cmp	al, r11b
+	jnb	.L66
+	sub	r11d, eax
+	movsx	rax, r11d
+.L67:
+	add	rdx, rax
+	lea	rax, 3[rcx]
+	cmp	rax, rdi
+	jnb	.L53
+	movzx	r11d, BYTE PTR 3[r9+rcx]
+	movzx	eax, BYTE PTR 3[r8+rcx]
+	cmp	al, r11b
+	jnb	.L68
+	sub	r11d, eax
+	movsx	rax, r11d
+.L69:
+	add	rdx, rax
+	lea	rax, 4[rcx]
+	cmp	rax, rdi
+	jnb	.L53
+	movzx	esi, BYTE PTR 4[r9+rcx]
+	movzx	eax, BYTE PTR 4[r8+rcx]
+	cmp	al, sil
+	jnb	.L70
+	sub	esi, eax
+	movsx	rax, esi
+.L71:
+	add	rdx, rax
+	lea	rax, 5[rcx]
+	cmp	rax, rdi
+	jnb	.L53
+	movzx	esi, BYTE PTR 5[r9+rcx]
+	movzx	eax, BYTE PTR 5[r8+rcx]
+	cmp	al, sil
+	jnb	.L72
+	sub	esi, eax
+	movsx	rax, esi
+.L73:
+	add	rdx, rax
+	lea	rax, 6[rcx]
+	cmp	rax, rdi
+	jnb	.L53
+	movzx	esi, BYTE PTR 6[r9+rcx]
+	movzx	eax, BYTE PTR 6[r8+rcx]
+	cmp	al, sil
+	jnb	.L74
+	sub	esi, eax
+	movsx	rax, esi
+.L75:
+	add	rdx, rax
+	lea	rax, 7[rcx]
+	cmp	rax, rdi
+	jnb	.L53
+	movzx	r11d, BYTE PTR 7[r9+rcx]
+	movzx	eax, BYTE PTR 7[r8+rcx]
+	cmp	al, r11b
+	jb	.L114
+	sub	eax, r11d
+	cdqe
+.L77:
+	add	rdx, rax
+	lea	rax, 8[rcx]
+	cmp	rax, rdi
+	jnb	.L53
+	movzx	r11d, BYTE PTR 8[r9+rcx]
+	movzx	eax, BYTE PTR 8[r8+rcx]
+	cmp	al, r11b
+	jnb	.L78
+	sub	r11d, eax
+	movsx	rax, r11d
+.L79:
+	add	rdx, rax
+	lea	rax, 9[rcx]
+	cmp	rax, rdi
+	jnb	.L53
+	movzx	r11d, BYTE PTR 9[r9+rcx]
+	movzx	eax, BYTE PTR 9[r8+rcx]
+	cmp	al, r11b
+	jnb	.L80
+	sub	r11d, eax
+	movsx	rax, r11d
+.L81:
+	add	rdx, rax
+	lea	rax, 10[rcx]
+	cmp	rax, rdi
+	jnb	.L53
+	movzx	esi, BYTE PTR 10[r9+rcx]
+	movzx	eax, BYTE PTR 10[r8+rcx]
+	cmp	al, sil
+	jnb	.L82
+	sub	esi, eax
+	movsx	rax, esi
+.L83:
+	add	rdx, rax
+	lea	rax, 11[rcx]
+	cmp	rax, rdi
+	jnb	.L53
+	movzx	esi, BYTE PTR 11[r9+rcx]
+	movzx	eax, BYTE PTR 11[r8+rcx]
+	cmp	al, sil
+	jnb	.L84
+	sub	esi, eax
+	movsx	rax, esi
+.L85:
+	add	rdx, rax
+	lea	rax, 12[rcx]
+	cmp	rax, rdi
+	jnb	.L53
+	movzx	esi, BYTE PTR 12[r9+rcx]
+	movzx	eax, BYTE PTR 12[r8+rcx]
+	cmp	al, sil
+	jnb	.L86
+	sub	esi, eax
+	movsx	rax, esi
+.L87:
+	add	rdx, rax
+	lea	rax, 13[rcx]
+	cmp	rax, rdi
+	jnb	.L53
+	movzx	r11d, BYTE PTR 13[r9+rcx]
+	movzx	eax, BYTE PTR 13[r8+rcx]
+	cmp	al, r11b
+	jnb	.L88
+	sub	r11d, eax
+	movsx	rax, r11d
+.L89:
+	add	rdx, rax
+	lea	rax, 14[rcx]
+	cmp	rax, rdi
+	jnb	.L53
+	movzx	eax, BYTE PTR 14[r9+rcx]
+	movzx	edi, BYTE PTR 14[r8+rcx]
+	cmp	dil, al
+	jnb	.L115
+	sub	eax, edi
+	cdqe
+.L92:
+	add	rdx, rax
+.L53:
+	mov	rbx, QWORD PTR -8[rbp]
+	mov	rax, rdx
+	leave
+	.cfi_remember_state
+	.cfi_def_cfa 7, 8
+	ret
+	.p2align 4,,10
+	.p2align 3
+.L113:
+	.cfi_restore_state
+	sub	r11d, eax
+	movsx	rax, r11d
+	jmp	.L63
+	.p2align 4,,10
+	.p2align 3
+.L64:
+	sub	eax, esi
+	cdqe
+	jmp	.L65
+	.p2align 4,,10
+	.p2align 3
+.L66:
+	sub	eax, r11d
+	cdqe
+	jmp	.L67
+	.p2align 4,,10
+	.p2align 3
+.L68:
+	sub	eax, r11d
+	cdqe
+	jmp	.L69
+	.p2align 4,,10
+	.p2align 3
+.L70:
+	sub	eax, esi
+	cdqe
+	jmp	.L71
+	.p2align 4,,10
+	.p2align 3
+.L72:
+	sub	eax, esi
+	cdqe
+	jmp	.L73
+	.p2align 4,,10
+	.p2align 3
+.L74:
+	sub	eax, esi
+	cdqe
+	jmp	.L75
+	.p2align 4,,10
+	.p2align 3
+.L114:
+	sub	r11d, eax
+	movsx	rax, r11d
+	jmp	.L77
+	.p2align 4,,10
+	.p2align 3
+.L78:
+	sub	eax, r11d
+	cdqe
+	jmp	.L79
+	.p2align 4,,10
+	.p2align 3
+.L80:
+	sub	eax, r11d
+	cdqe
+	jmp	.L81
+	.p2align 4,,10
+	.p2align 3
+.L82:
+	sub	eax, esi
+	cdqe
+	jmp	.L83
+	.p2align 4,,10
+	.p2align 3
+.L84:
+	sub	eax, esi
+	cdqe
+	jmp	.L85
+	.p2align 4,,10
+	.p2align 3
+.L111:
+	xor	edx, edx
+	test	rdi, rdi
+	je	.L53
+	mov	r11, rdi
+	xor	edx, edx
+	xor	esi, esi
+	xor	r10d, r10d
+	vpxor	xmm7, xmm7, xmm7
+	xor	eax, eax
+	xor	ecx, ecx
+	jmp	.L55
+	.p2align 4,,10
+	.p2align 3
+.L86:
+	sub	eax, esi
+	cdqe
+	jmp	.L87
+	.p2align 4,,10
+	.p2align 3
+.L107:
+	vzeroupper
+	jmp	.L53
+.L88:
+	sub	eax, r11d
+	cdqe
+	jmp	.L89
+.L97:
+	mov	rdx, rax
+	jmp	.L60
+.L115:
+	sub	edi, eax
+	movsx	rax, edi
+	jmp	.L92
+.L112:
+	mov	rdx, rax
+	vzeroupper
+	jmp	.L53
+.L95:
+	xor	r10d, r10d
+	mov	rax, rdx
+	vpxor	xmm7, xmm7, xmm7
+	mov	rcx, rsi
+	vzeroupper
+	jmp	.L55
+	.cfi_endproc
+.LFE6460:
+	.size	sad_u8_avx2, .-sad_u8_avx2
+	.ident	"GCC: (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0"
+	.section	.note.GNU-stack,"",@progbits
+	.section	.note.gnu.property,"a"
+	.align 8
+	.long	1f - 0f
+	.long	4f - 1f
+	.long	5
+0:
+	.string	"GNU"
+1:
+	.align 8
+	.long	0xc0000002
+	.long	3f - 2f
+2:
+	.long	0x3
+3:
+	.align 8
+4:

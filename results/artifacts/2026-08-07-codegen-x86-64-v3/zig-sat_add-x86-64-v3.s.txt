@@ -1,0 +1,700 @@
+	.intel_syntax noprefix
+	.file	"sat_add"
+	.file	1 "/home/runner/work/_temp/08b952bc-6816-40c6-9fd8-a824091faf3e/zig-x86_64-linux-0.16.0/lib/std" "builtin.zig"
+	.file	2 "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/.zig-cache/b/609f0ce7a7e09013f697f67d1c9b794a" "builtin.zig"
+	.text
+	.p2align	4
+	.type	sat_add.sat_add_u8_scalar,@function
+sat_add.sat_add_u8_scalar:
+.Lfunc_begin0:
+	.file	3 "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/zig" "sat_add.zig"
+	.loc	3 5 0
+	.cfi_startproc
+	push	rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset rbp, -16
+	mov	rbp, rsp
+	.cfi_def_cfa_register rbp
+.Ltmp0:
+	.loc	3 7 12 prologue_end discriminator 2
+	test	rcx, rcx
+	je	.LBB0_8
+.Ltmp1:
+	mov	eax, ecx
+	and	eax, 3
+	cmp	rcx, 4
+	jae	.LBB0_3
+.Ltmp2:
+	.loc	3 0 12 is_stmt 0
+	xor	ecx, ecx
+.Ltmp3:
+	.loc	3 7 12 discriminator 2
+	jmp	.LBB0_5
+.Ltmp4:
+.LBB0_3:
+	.loc	3 7 12 discriminator 4
+	and	rcx, -4
+.Ltmp5:
+	.loc	3 0 12
+	xor	r8d, r8d
+	mov	r9d, 255
+.Ltmp6:
+	.p2align	4
+.LBB0_4:
+	.loc	3 8 19 is_stmt 1
+	movzx	r10d, byte ptr [rsi + r8]
+	.loc	3 8 27 is_stmt 0
+	add	r10b, byte ptr [rdx + r8]
+	movzx	r10d, r10b
+	cmovb	r10d, r9d
+	mov	byte ptr [rdi + r8], r10b
+.Ltmp7:
+	.loc	3 8 19
+	movzx	r10d, byte ptr [rsi + r8 + 1]
+	.loc	3 8 27
+	add	r10b, byte ptr [rdx + r8 + 1]
+	movzx	r10d, r10b
+	cmovb	r10d, r9d
+	mov	byte ptr [rdi + r8 + 1], r10b
+.Ltmp8:
+	.loc	3 8 19
+	movzx	r10d, byte ptr [rsi + r8 + 2]
+	.loc	3 8 27
+	add	r10b, byte ptr [rdx + r8 + 2]
+	movzx	r10d, r10b
+	cmovb	r10d, r9d
+	mov	byte ptr [rdi + r8 + 2], r10b
+.Ltmp9:
+	.loc	3 8 19
+	movzx	r10d, byte ptr [rsi + r8 + 3]
+	.loc	3 8 27
+	add	r10b, byte ptr [rdx + r8 + 3]
+	movzx	r10d, r10b
+	cmovb	r10d, r9d
+	mov	byte ptr [rdi + r8 + 3], r10b
+	.loc	3 7 26 is_stmt 1 discriminator 6
+	add	r8, 4
+.Ltmp10:
+	.loc	3 7 12 is_stmt 0 discriminator 6
+	cmp	rcx, r8
+	jne	.LBB0_4
+.Ltmp11:
+.LBB0_5:
+	.loc	3 7 12 discriminator 8
+	test	rax, rax
+	je	.LBB0_8
+.Ltmp12:
+	.loc	3 7 12 discriminator 10
+	add	rdx, rcx
+.Ltmp13:
+	add	rsi, rcx
+.Ltmp14:
+	add	rdi, rcx
+.Ltmp15:
+	.loc	3 0 12
+	xor	ecx, ecx
+	mov	r8d, 255
+.Ltmp16:
+	.p2align	4
+.LBB0_7:
+	.loc	3 8 19 is_stmt 1 discriminator 2
+	movzx	r9d, byte ptr [rsi + rcx]
+	.loc	3 8 27 is_stmt 0
+	add	r9b, byte ptr [rdx + rcx]
+	movzx	r9d, r9b
+	cmovb	r9d, r8d
+	.loc	3 8 27 discriminator 2
+	mov	byte ptr [rdi + rcx], r9b
+.Ltmp17:
+	.loc	3 7 12 is_stmt 1 discriminator 12
+	inc	rcx
+	cmp	rax, rcx
+	jne	.LBB0_7
+.Ltmp18:
+.LBB0_8:
+	.loc	3 7 26 epilogue_begin is_stmt 0 discriminator 14
+	pop	rbp
+	.cfi_def_cfa rsp, 8
+	ret
+.Ltmp19:
+.Lfunc_end0:
+	.size	sat_add.sat_add_u8_scalar, .Lfunc_end0-sat_add.sat_add_u8_scalar
+	.cfi_endproc
+
+	.p2align	4
+	.type	sat_add.sat_add_u8x32,@function
+sat_add.sat_add_u8x32:
+.Lfunc_begin1:
+	.loc	3 1 0 is_stmt 1
+	.cfi_startproc
+	push	rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset rbp, -16
+	mov	rbp, rsp
+	.cfi_def_cfa_register rbp
+.Ltmp20:
+	.loc	3 2 5 prologue_end
+	vpaddusb	ymm0, ymm0, ymm1
+.Ltmp21:
+	.loc	3 2 5 epilogue_begin is_stmt 0
+	pop	rbp
+	.cfi_def_cfa rsp, 8
+	ret
+.Ltmp22:
+.Lfunc_end1:
+	.size	sat_add.sat_add_u8x32, .Lfunc_end1-sat_add.sat_add_u8x32
+	.cfi_endproc
+
+	.globl	sat_add_u8_scalar
+	.type	sat_add_u8_scalar,@function
+sat_add_u8_scalar = sat_add.sat_add_u8_scalar
+	.globl	sat_add_u8x32
+	.type	sat_add_u8x32,@function
+sat_add_u8x32 = sat_add.sat_add_u8x32
+	.section	.debug_loc,"",@progbits
+.Ldebug_loc0:
+	.quad	.Lfunc_begin0-.Lfunc_begin0
+	.quad	.Ltmp15-.Lfunc_begin0
+	.short	1
+	.byte	85
+	.quad	.Ltmp15-.Lfunc_begin0
+	.quad	.Lfunc_end0-.Lfunc_begin0
+	.short	4
+	.byte	243
+	.byte	1
+	.byte	85
+	.byte	159
+	.quad	0
+	.quad	0
+.Ldebug_loc1:
+	.quad	.Lfunc_begin0-.Lfunc_begin0
+	.quad	.Ltmp14-.Lfunc_begin0
+	.short	1
+	.byte	84
+	.quad	.Ltmp14-.Lfunc_begin0
+	.quad	.Lfunc_end0-.Lfunc_begin0
+	.short	4
+	.byte	243
+	.byte	1
+	.byte	84
+	.byte	159
+	.quad	0
+	.quad	0
+.Ldebug_loc2:
+	.quad	.Lfunc_begin0-.Lfunc_begin0
+	.quad	.Ltmp13-.Lfunc_begin0
+	.short	1
+	.byte	81
+	.quad	.Ltmp13-.Lfunc_begin0
+	.quad	.Lfunc_end0-.Lfunc_begin0
+	.short	4
+	.byte	243
+	.byte	1
+	.byte	81
+	.byte	159
+	.quad	0
+	.quad	0
+.Ldebug_loc3:
+	.quad	.Lfunc_begin0-.Lfunc_begin0
+	.quad	.Ltmp3-.Lfunc_begin0
+	.short	1
+	.byte	82
+	.quad	.Ltmp3-.Lfunc_begin0
+	.quad	.Ltmp4-.Lfunc_begin0
+	.short	4
+	.byte	243
+	.byte	1
+	.byte	82
+	.byte	159
+	.quad	.Ltmp4-.Lfunc_begin0
+	.quad	.Ltmp5-.Lfunc_begin0
+	.short	1
+	.byte	82
+	.quad	.Ltmp5-.Lfunc_begin0
+	.quad	.Lfunc_end0-.Lfunc_begin0
+	.short	4
+	.byte	243
+	.byte	1
+	.byte	82
+	.byte	159
+	.quad	0
+	.quad	0
+.Ldebug_loc4:
+	.quad	.Ltmp0-.Lfunc_begin0
+	.quad	.Ltmp6-.Lfunc_begin0
+	.short	2
+	.byte	48
+	.byte	159
+	.quad	.Ltmp6-.Lfunc_begin0
+	.quad	.Ltmp7-.Lfunc_begin0
+	.short	1
+	.byte	88
+	.quad	.Ltmp7-.Lfunc_begin0
+	.quad	.Ltmp8-.Lfunc_begin0
+	.short	5
+	.byte	120
+	.byte	0
+	.byte	49
+	.byte	33
+	.byte	159
+	.quad	.Ltmp8-.Lfunc_begin0
+	.quad	.Ltmp9-.Lfunc_begin0
+	.short	5
+	.byte	120
+	.byte	0
+	.byte	50
+	.byte	33
+	.byte	159
+	.quad	.Ltmp9-.Lfunc_begin0
+	.quad	.Ltmp10-.Lfunc_begin0
+	.short	5
+	.byte	120
+	.byte	0
+	.byte	51
+	.byte	33
+	.byte	159
+	.quad	.Ltmp10-.Lfunc_begin0
+	.quad	.Ltmp11-.Lfunc_begin0
+	.short	1
+	.byte	88
+	.quad	0
+	.quad	0
+.Ldebug_loc5:
+	.quad	.Lfunc_begin1-.Lfunc_begin0
+	.quad	.Ltmp21-.Lfunc_begin0
+	.short	1
+	.byte	97
+	.quad	.Ltmp21-.Lfunc_begin0
+	.quad	.Lfunc_end1-.Lfunc_begin0
+	.short	4
+	.byte	243
+	.byte	1
+	.byte	97
+	.byte	159
+	.quad	0
+	.quad	0
+	.section	.debug_abbrev,"",@progbits
+	.byte	1
+	.byte	17
+	.byte	1
+	.byte	37
+	.byte	14
+	.byte	19
+	.byte	5
+	.byte	3
+	.byte	14
+	.byte	16
+	.byte	23
+	.byte	27
+	.byte	14
+	.ascii	"\264B"
+	.byte	25
+	.byte	17
+	.byte	1
+	.byte	18
+	.byte	6
+	.byte	0
+	.byte	0
+	.byte	2
+	.byte	52
+	.byte	0
+	.byte	3
+	.byte	14
+	.byte	73
+	.byte	19
+	.byte	58
+	.byte	11
+	.byte	59
+	.byte	11
+	.byte	110
+	.byte	14
+	.byte	0
+	.byte	0
+	.byte	3
+	.byte	4
+	.byte	1
+	.byte	73
+	.byte	19
+	.byte	3
+	.byte	14
+	.byte	11
+	.byte	11
+	.byte	58
+	.byte	11
+	.byte	59
+	.byte	5
+	.ascii	"\210\001"
+	.byte	15
+	.byte	0
+	.byte	0
+	.byte	4
+	.byte	40
+	.byte	0
+	.byte	3
+	.byte	14
+	.byte	28
+	.byte	15
+	.byte	0
+	.byte	0
+	.byte	5
+	.byte	36
+	.byte	0
+	.byte	3
+	.byte	14
+	.byte	62
+	.byte	11
+	.byte	11
+	.byte	11
+	.byte	0
+	.byte	0
+	.byte	6
+	.byte	46
+	.byte	1
+	.byte	17
+	.byte	1
+	.byte	18
+	.byte	6
+	.byte	64
+	.byte	24
+	.byte	110
+	.byte	14
+	.byte	3
+	.byte	14
+	.byte	58
+	.byte	11
+	.byte	59
+	.byte	11
+	.byte	73
+	.byte	19
+	.byte	0
+	.byte	0
+	.byte	7
+	.byte	5
+	.byte	0
+	.byte	2
+	.byte	23
+	.byte	3
+	.byte	14
+	.byte	58
+	.byte	11
+	.byte	59
+	.byte	11
+	.byte	73
+	.byte	19
+	.byte	0
+	.byte	0
+	.byte	8
+	.byte	52
+	.byte	0
+	.byte	2
+	.byte	23
+	.byte	3
+	.byte	14
+	.byte	58
+	.byte	11
+	.byte	59
+	.byte	11
+	.byte	73
+	.byte	19
+	.byte	0
+	.byte	0
+	.byte	9
+	.byte	5
+	.byte	0
+	.byte	2
+	.byte	24
+	.byte	3
+	.byte	14
+	.byte	58
+	.byte	11
+	.byte	59
+	.byte	11
+	.byte	73
+	.byte	19
+	.byte	0
+	.byte	0
+	.byte	10
+	.byte	1
+	.byte	1
+	.ascii	"\207B"
+	.byte	25
+	.byte	73
+	.byte	19
+	.byte	3
+	.byte	14
+	.byte	0
+	.byte	0
+	.byte	11
+	.byte	33
+	.byte	0
+	.byte	73
+	.byte	19
+	.byte	55
+	.byte	11
+	.byte	0
+	.byte	0
+	.byte	12
+	.byte	36
+	.byte	0
+	.byte	3
+	.byte	14
+	.byte	11
+	.byte	11
+	.byte	62
+	.byte	11
+	.byte	0
+	.byte	0
+	.byte	13
+	.byte	15
+	.byte	0
+	.byte	73
+	.byte	19
+	.byte	3
+	.byte	14
+	.byte	0
+	.byte	0
+	.byte	0
+	.section	.debug_info,"",@progbits
+.Lcu_begin0:
+	.long	.Ldebug_info_end0-.Ldebug_info_start0
+.Ldebug_info_start0:
+	.short	4
+	.long	.debug_abbrev
+	.byte	8
+	.byte	1
+	.long	.Linfo_string0
+	.short	12
+	.long	.Linfo_string1
+	.long	.Lline_table_start0
+	.long	.Linfo_string2
+
+	.quad	.Lfunc_begin0
+	.long	.Lfunc_end1-.Lfunc_begin0
+	.byte	2
+	.long	.Linfo_string3
+	.long	57
+	.byte	2
+	.byte	8
+	.long	.Linfo_string9
+	.byte	3
+	.long	90
+	.long	.Linfo_string8
+	.byte	1
+	.byte	1
+	.short	862
+	.byte	1
+	.byte	4
+	.long	.Linfo_string5
+	.byte	0
+	.byte	4
+	.long	.Linfo_string6
+	.byte	1
+	.byte	4
+	.long	.Linfo_string7
+	.byte	2
+	.byte	0
+	.byte	5
+	.long	.Linfo_string4
+	.byte	7
+	.byte	1
+	.byte	6
+	.quad	.Lfunc_begin0
+	.long	.Lfunc_end0-.Lfunc_begin0
+	.byte	1
+	.byte	86
+	.long	.Linfo_string10
+	.long	.Linfo_string11
+	.byte	3
+	.byte	5
+	.long	260
+	.byte	7
+	.long	.Ldebug_loc0
+	.long	.Linfo_string17
+	.byte	3
+	.byte	5
+	.long	297
+	.byte	7
+	.long	.Ldebug_loc1
+	.long	.Linfo_string20
+	.byte	3
+	.byte	5
+	.long	313
+	.byte	7
+	.long	.Ldebug_loc2
+	.long	.Linfo_string22
+	.byte	3
+	.byte	5
+	.long	313
+	.byte	7
+	.long	.Ldebug_loc3
+	.long	.Linfo_string23
+	.byte	3
+	.byte	5
+	.long	322
+	.byte	8
+	.long	.Ldebug_loc4
+	.long	.Linfo_string25
+	.byte	3
+	.byte	6
+	.long	322
+	.byte	0
+	.byte	6
+	.quad	.Lfunc_begin1
+	.long	.Lfunc_end1-.Lfunc_begin1
+	.byte	1
+	.byte	86
+	.long	.Linfo_string13
+	.long	.Linfo_string14
+	.byte	3
+	.byte	1
+	.long	267
+	.byte	7
+	.long	.Ldebug_loc5
+	.long	.Linfo_string20
+	.byte	3
+	.byte	1
+	.long	267
+	.byte	9
+	.byte	1
+	.byte	98
+	.long	.Linfo_string22
+	.byte	3
+	.byte	1
+	.long	267
+	.byte	0
+	.byte	5
+	.long	.Linfo_string12
+	.byte	5
+	.byte	0
+	.byte	10
+
+	.long	283
+	.long	.Linfo_string15
+	.byte	11
+	.long	290
+	.byte	32
+	.byte	0
+	.byte	5
+	.long	.Linfo_string15
+	.byte	7
+	.byte	1
+	.byte	12
+	.long	.Linfo_string16
+	.byte	8
+	.byte	7
+	.byte	13
+	.long	306
+	.long	.Linfo_string19
+	.byte	5
+	.long	.Linfo_string18
+	.byte	7
+	.byte	1
+	.byte	13
+	.long	306
+	.long	.Linfo_string21
+	.byte	5
+	.long	.Linfo_string24
+	.byte	7
+	.byte	8
+	.byte	0
+.Ldebug_info_end0:
+	.section	.debug_str,"MS",@progbits,1
+.Linfo_string0:
+	.asciz	"zig 0.16.0"
+.Linfo_string1:
+	.asciz	"sat_add"
+.Linfo_string2:
+	.asciz	"/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/zig"
+.Linfo_string3:
+	.asciz	"output_mode"
+.Linfo_string4:
+	.asciz	"u2"
+.Linfo_string5:
+	.asciz	"Exe"
+.Linfo_string6:
+	.asciz	"Lib"
+.Linfo_string7:
+	.asciz	"Obj"
+.Linfo_string8:
+	.asciz	"builtin.OutputMode"
+.Linfo_string9:
+	.asciz	"builtin.output_mode"
+.Linfo_string10:
+	.asciz	"sat_add.sat_add_u8_scalar"
+.Linfo_string11:
+	.asciz	"sat_add_u8_scalar"
+.Linfo_string12:
+	.asciz	"void"
+.Linfo_string13:
+	.asciz	"sat_add.sat_add_u8x32"
+.Linfo_string14:
+	.asciz	"sat_add_u8x32"
+.Linfo_string15:
+	.asciz	"@Vector(32, u8)"
+.Linfo_string16:
+	.asciz	"__ARRAY_SIZE_TYPE__"
+.Linfo_string17:
+	.asciz	"dst"
+.Linfo_string18:
+	.asciz	"u8"
+.Linfo_string19:
+	.asciz	"[*]u8"
+.Linfo_string20:
+	.asciz	"a"
+.Linfo_string21:
+	.asciz	"[*]const u8"
+.Linfo_string22:
+	.asciz	"b"
+.Linfo_string23:
+	.asciz	"len"
+.Linfo_string24:
+	.asciz	"usize"
+.Linfo_string25:
+	.asciz	"i"
+	.section	.debug_pubnames,"",@progbits
+	.long	.LpubNames_end0-.LpubNames_start0
+.LpubNames_start0:
+	.short	2
+	.long	.Lcu_begin0
+	.long	330
+	.long	42
+	.asciz	"output_mode"
+	.long	71
+	.asciz	"Exe"
+	.long	77
+	.asciz	"Lib"
+	.long	83
+	.asciz	"Obj"
+	.long	97
+	.asciz	"sat_add_u8_scalar"
+	.long	202
+	.asciz	"sat_add_u8x32"
+	.long	0
+.LpubNames_end0:
+	.section	.debug_pubtypes,"",@progbits
+	.long	.LpubTypes_end0-.LpubTypes_start0
+.LpubTypes_start0:
+	.short	2
+	.long	.Lcu_begin0
+	.long	330
+	.long	57
+	.asciz	"builtin.OutputMode"
+	.long	90
+	.asciz	"u2"
+	.long	260
+	.asciz	"void"
+	.long	283
+	.asciz	"@Vector(32, u8)"
+	.long	297
+	.asciz	"[*]u8"
+	.long	306
+	.asciz	"u8"
+	.long	313
+	.asciz	"[*]const u8"
+	.long	322
+	.asciz	"usize"
+	.long	0
+.LpubTypes_end0:
+	.section	".note.GNU-stack","",@progbits
+	.section	.debug_line,"",@progbits
+.Lline_table_start0:

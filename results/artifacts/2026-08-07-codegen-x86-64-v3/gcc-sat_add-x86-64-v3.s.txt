@@ -1,0 +1,599 @@
+	.file	"sat_add.cpp"
+	.intel_syntax noprefix
+	.text
+	.p2align 4
+	.globl	sat_add_u8_scalar
+	.type	sat_add_u8_scalar, @function
+sat_add_u8_scalar:
+.LFB6459:
+	.cfi_startproc
+	endbr64
+	mov	r8, rdx
+	mov	r9, rcx
+	test	rcx, rcx
+	je	.L30
+	lea	rax, -1[rcx]
+	cmp	rax, 14
+	jbe	.L12
+	lea	rcx, 1[rsi]
+	mov	rdx, rdi
+	sub	rdx, rcx
+	cmp	rdx, 30
+	jbe	.L12
+	lea	rcx, 1[r8]
+	mov	rdx, rdi
+	sub	rdx, rcx
+	cmp	rdx, 30
+	jbe	.L12
+	cmp	rax, 30
+	jbe	.L13
+	mov	ecx, 255
+	mov	rax, r9
+	xor	edx, edx
+	vmovd	xmm3, ecx
+	and	rax, -32
+	vpbroadcastw	ymm3, xmm3
+	.p2align 4,,10
+	.p2align 3
+.L5:
+	vpmovzxbw	ymm1, XMMWORD PTR [r8+rdx]
+	vpmovzxbw	ymm0, XMMWORD PTR [rsi+rdx]
+	vmovdqu	ymm4, YMMWORD PTR [rsi+rdx]
+	vmovdqu	ymm5, YMMWORD PTR [r8+rdx]
+	vpaddw	ymm0, ymm0, ymm1
+	vextracti128	xmm2, ymm5, 0x1
+	vextracti128	xmm1, ymm4, 0x1
+	vpminuw	ymm0, ymm0, ymm3
+	vpmovzxbw	ymm1, xmm1
+	vpmovzxbw	ymm2, xmm2
+	vpand	ymm0, ymm3, ymm0
+	vpaddw	ymm1, ymm1, ymm2
+	vpminuw	ymm1, ymm1, ymm3
+	vpand	ymm1, ymm3, ymm1
+	vpackuswb	ymm0, ymm0, ymm1
+	vpermq	ymm0, ymm0, 216
+	vmovdqu	YMMWORD PTR [rdi+rdx], ymm0
+	add	rdx, 32
+	cmp	rax, rdx
+	jne	.L5
+	cmp	r9, rax
+	je	.L28
+	mov	rcx, r9
+	sub	rcx, rax
+	lea	rdx, -1[rcx]
+	cmp	rdx, 14
+	jbe	.L32
+	vzeroupper
+.L4:
+	vmovdqu	xmm0, XMMWORD PTR [rsi+rax]
+	vmovdqu	xmm3, XMMWORD PTR [r8+rax]
+	mov	edx, 255
+	vpmovzxbw	xmm2, xmm3
+	vpsrldq	xmm3, xmm3, 8
+	vpmovzxbw	xmm1, xmm0
+	vpsrldq	xmm0, xmm0, 8
+	vpaddw	xmm1, xmm1, xmm2
+	vpmovzxbw	xmm3, xmm3
+	vmovd	xmm2, edx
+	vpmovzxbw	xmm0, xmm0
+	mov	rdx, rcx
+	vpbroadcastw	xmm2, xmm2
+	vpaddw	xmm0, xmm0, xmm3
+	and	rdx, -16
+	vpminuw	xmm1, xmm1, xmm2
+	vpminuw	xmm0, xmm0, xmm2
+	vpand	xmm1, xmm2, xmm1
+	vpand	xmm2, xmm2, xmm0
+	vpackuswb	xmm1, xmm1, xmm2
+	vmovdqu	XMMWORD PTR [rdi+rax], xmm1
+	add	rax, rdx
+	and	ecx, 15
+	je	.L30
+.L7:
+	movzx	ecx, BYTE PTR [r8+rax]
+	movzx	edx, BYTE PTR [rsi+rax]
+	add	edx, ecx
+	mov	ecx, 255
+	cmp	edx, ecx
+	cmova	edx, ecx
+	mov	BYTE PTR [rdi+rax], dl
+	lea	rdx, 1[rax]
+	cmp	rdx, r9
+	jnb	.L30
+	movzx	ecx, BYTE PTR 1[r8+rax]
+	movzx	edx, BYTE PTR 1[rsi+rax]
+	add	edx, ecx
+	mov	ecx, 255
+	cmp	edx, ecx
+	cmova	edx, ecx
+	mov	BYTE PTR 1[rdi+rax], dl
+	lea	rdx, 2[rax]
+	cmp	rdx, r9
+	jnb	.L30
+	movzx	ecx, BYTE PTR 2[rsi+rax]
+	movzx	edx, BYTE PTR 2[r8+rax]
+	add	edx, ecx
+	mov	ecx, 255
+	cmp	edx, ecx
+	cmova	edx, ecx
+	mov	BYTE PTR 2[rdi+rax], dl
+	lea	rdx, 3[rax]
+	cmp	rdx, r9
+	jnb	.L30
+	movzx	ecx, BYTE PTR 3[rsi+rax]
+	movzx	edx, BYTE PTR 3[r8+rax]
+	add	edx, ecx
+	mov	ecx, 255
+	cmp	edx, ecx
+	cmova	edx, ecx
+	mov	BYTE PTR 3[rdi+rax], dl
+	lea	rdx, 4[rax]
+	cmp	rdx, r9
+	jnb	.L30
+	movzx	ecx, BYTE PTR 4[r8+rax]
+	movzx	edx, BYTE PTR 4[rsi+rax]
+	add	edx, ecx
+	mov	ecx, 255
+	cmp	edx, ecx
+	cmova	edx, ecx
+	mov	BYTE PTR 4[rdi+rax], dl
+	lea	rdx, 5[rax]
+	cmp	rdx, r9
+	jnb	.L30
+	movzx	ecx, BYTE PTR 5[r8+rax]
+	movzx	edx, BYTE PTR 5[rsi+rax]
+	add	edx, ecx
+	mov	ecx, 255
+	cmp	edx, ecx
+	cmova	edx, ecx
+	mov	BYTE PTR 5[rdi+rax], dl
+	lea	rdx, 6[rax]
+	cmp	rdx, r9
+	jnb	.L30
+	movzx	ecx, BYTE PTR 6[r8+rax]
+	movzx	edx, BYTE PTR 6[rsi+rax]
+	add	edx, ecx
+	mov	ecx, 255
+	cmp	edx, ecx
+	cmova	edx, ecx
+	mov	BYTE PTR 6[rdi+rax], dl
+	lea	rdx, 7[rax]
+	cmp	rdx, r9
+	jnb	.L30
+	movzx	ecx, BYTE PTR 7[r8+rax]
+	movzx	edx, BYTE PTR 7[rsi+rax]
+	add	edx, ecx
+	mov	ecx, 255
+	cmp	edx, ecx
+	cmova	edx, ecx
+	mov	BYTE PTR 7[rdi+rax], dl
+	lea	rdx, 8[rax]
+	cmp	rdx, r9
+	jnb	.L30
+	movzx	ecx, BYTE PTR 8[r8+rax]
+	movzx	edx, BYTE PTR 8[rsi+rax]
+	add	edx, ecx
+	mov	ecx, 255
+	cmp	edx, ecx
+	cmova	edx, ecx
+	mov	BYTE PTR 8[rdi+rax], dl
+	lea	rdx, 9[rax]
+	cmp	rdx, r9
+	jnb	.L30
+	movzx	ecx, BYTE PTR 9[r8+rax]
+	movzx	edx, BYTE PTR 9[rsi+rax]
+	add	edx, ecx
+	mov	ecx, 255
+	cmp	edx, ecx
+	cmova	edx, ecx
+	mov	BYTE PTR 9[rdi+rax], dl
+	lea	rdx, 10[rax]
+	cmp	rdx, r9
+	jnb	.L30
+	movzx	ecx, BYTE PTR 10[r8+rax]
+	movzx	edx, BYTE PTR 10[rsi+rax]
+	add	edx, ecx
+	mov	ecx, 255
+	cmp	edx, ecx
+	cmova	edx, ecx
+	mov	BYTE PTR 10[rdi+rax], dl
+	lea	rdx, 11[rax]
+	cmp	rdx, r9
+	jnb	.L30
+	movzx	ecx, BYTE PTR 11[r8+rax]
+	movzx	edx, BYTE PTR 11[rsi+rax]
+	add	edx, ecx
+	mov	ecx, 255
+	cmp	edx, ecx
+	cmova	edx, ecx
+	mov	BYTE PTR 11[rdi+rax], dl
+	lea	rdx, 12[rax]
+	cmp	rdx, r9
+	jnb	.L30
+	movzx	ecx, BYTE PTR 12[r8+rax]
+	movzx	edx, BYTE PTR 12[rsi+rax]
+	add	edx, ecx
+	mov	ecx, 255
+	cmp	edx, ecx
+	cmova	edx, ecx
+	mov	BYTE PTR 12[rdi+rax], dl
+	lea	rdx, 13[rax]
+	cmp	rdx, r9
+	jnb	.L30
+	movzx	ecx, BYTE PTR 13[r8+rax]
+	movzx	edx, BYTE PTR 13[rsi+rax]
+	add	edx, ecx
+	mov	ecx, 255
+	cmp	edx, ecx
+	cmova	edx, ecx
+	mov	BYTE PTR 13[rdi+rax], dl
+	lea	rdx, 14[rax]
+	cmp	rdx, r9
+	jnb	.L30
+	movzx	ecx, BYTE PTR 14[r8+rax]
+	movzx	edx, BYTE PTR 14[rsi+rax]
+	add	edx, ecx
+	mov	ecx, 255
+	cmp	edx, ecx
+	cmova	edx, ecx
+	mov	BYTE PTR 14[rdi+rax], dl
+	ret
+	.p2align 4,,10
+	.p2align 3
+.L12:
+	xor	edx, edx
+	.p2align 4,,10
+	.p2align 3
+.L9:
+	movzx	ecx, BYTE PTR [r8+rdx]
+	movzx	eax, BYTE PTR [rsi+rdx]
+	add	eax, ecx
+	mov	ecx, 255
+	cmp	eax, ecx
+	cmova	eax, ecx
+	mov	BYTE PTR [rdi+rdx], al
+	add	rdx, 1
+	cmp	r9, rdx
+	jne	.L9
+	ret
+.L28:
+	vzeroupper
+.L30:
+	ret
+.L13:
+	mov	rcx, r9
+	xor	eax, eax
+	jmp	.L4
+.L32:
+	vzeroupper
+	jmp	.L7
+	.cfi_endproc
+.LFE6459:
+	.size	sat_add_u8_scalar, .-sat_add_u8_scalar
+	.p2align 4
+	.globl	sat_add_u8_avx2
+	.type	sat_add_u8_avx2, @function
+sat_add_u8_avx2:
+.LFB6460:
+	.cfi_startproc
+	endbr64
+	mov	r8, rdi
+	mov	rdi, rdx
+	cmp	rcx, 31
+	jbe	.L44
+	mov	eax, 32
+	.p2align 4,,10
+	.p2align 3
+.L35:
+	vmovdqu	ymm4, YMMWORD PTR -32[rsi+rax]
+	vpaddusb	ymm0, ymm4, YMMWORD PTR -32[rdi+rax]
+	mov	rdx, rax
+	vmovdqu	YMMWORD PTR -32[r8+rax], ymm0
+	add	rax, 32
+	cmp	rcx, rax
+	jnb	.L35
+	cmp	rdx, rcx
+	jnb	.L64
+.L69:
+	push	rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	mov	r10, rcx
+	lea	r9, 1[rdx]
+	sub	r10, rdx
+	lea	rax, -1[r10]
+	mov	rbp, rsp
+	.cfi_def_cfa_register 6
+	push	r12
+	push	rbx
+	.cfi_offset 12, -24
+	.cfi_offset 3, -32
+	cmp	rax, 14
+	jbe	.L42
+	lea	r11, [r8+rdx]
+	lea	r9, 1[rdx]
+	lea	r12, [rsi+r9]
+	mov	rbx, r11
+	sub	rbx, r12
+	cmp	rbx, 30
+	jbe	.L42
+	lea	r12, [rdi+r9]
+	mov	rbx, r11
+	sub	rbx, r12
+	cmp	rbx, 30
+	jbe	.L42
+	cmp	rax, 30
+	jbe	.L45
+	vpmovzxbw	ymm1, XMMWORD PTR [rdi+rdx]
+	vpmovzxbw	ymm0, XMMWORD PTR [rsi+rdx]
+	mov	eax, 255
+	mov	r9, r10
+	vmovdqu	ymm5, YMMWORD PTR [rsi+rdx]
+	vmovdqu	ymm6, YMMWORD PTR [rdi+rdx]
+	vmovd	xmm2, eax
+	and	r9, -32
+	vpaddw	ymm0, ymm0, ymm1
+	vpbroadcastw	ymm2, xmm2
+	add	rdx, r9
+	vextracti128	xmm1, ymm5, 0x1
+	vextracti128	xmm3, ymm6, 0x1
+	vpminuw	ymm0, ymm0, ymm2
+	mov	rax, rdx
+	vpmovzxbw	ymm1, xmm1
+	vpmovzxbw	ymm3, xmm3
+	vpand	ymm0, ymm2, ymm0
+	vpaddw	ymm1, ymm1, ymm3
+	vpminuw	ymm1, ymm1, ymm2
+	vpand	ymm2, ymm2, ymm1
+	vpackuswb	ymm0, ymm0, ymm2
+	vpermq	ymm0, ymm0, 216
+	vmovdqu	YMMWORD PTR [r11], ymm0
+	test	r10b, 31
+	je	.L62
+	sub	r10, r9
+	lea	r9, -1[r10]
+	cmp	r9, 14
+	jbe	.L40
+.L38:
+	vmovdqu	xmm0, XMMWORD PTR [rsi+rdx]
+	vmovdqu	xmm3, XMMWORD PTR [rdi+rdx]
+	mov	r9d, 255
+	vpmovzxbw	xmm2, xmm3
+	vpsrldq	xmm3, xmm3, 8
+	vpmovzxbw	xmm1, xmm0
+	vpsrldq	xmm0, xmm0, 8
+	vpaddw	xmm1, xmm1, xmm2
+	vpmovzxbw	xmm3, xmm3
+	vmovd	xmm2, r9d
+	vpmovzxbw	xmm0, xmm0
+	vpbroadcastw	xmm2, xmm2
+	vpaddw	xmm0, xmm0, xmm3
+	vpminuw	xmm1, xmm1, xmm2
+	vpminuw	xmm0, xmm0, xmm2
+	vpand	xmm1, xmm2, xmm1
+	vpand	xmm2, xmm2, xmm0
+	vpackuswb	xmm1, xmm1, xmm2
+	vmovdqu	XMMWORD PTR [r8+rdx], xmm1
+	mov	rdx, r10
+	and	rdx, -16
+	add	rax, rdx
+	and	r10d, 15
+	je	.L62
+.L40:
+	movzx	r9d, BYTE PTR [rdi+rax]
+	movzx	edx, BYTE PTR [rsi+rax]
+	add	edx, r9d
+	mov	r9d, 255
+	cmp	edx, r9d
+	cmova	edx, r9d
+	mov	BYTE PTR [r8+rax], dl
+	lea	rdx, 1[rax]
+	cmp	rdx, rcx
+	jnb	.L62
+	movzx	r9d, BYTE PTR 1[rdi+rax]
+	movzx	edx, BYTE PTR 1[rsi+rax]
+	add	edx, r9d
+	mov	r9d, 255
+	cmp	edx, r9d
+	cmova	edx, r9d
+	mov	BYTE PTR 1[r8+rax], dl
+	lea	rdx, 2[rax]
+	cmp	rdx, rcx
+	jnb	.L62
+	movzx	r9d, BYTE PTR 2[rdi+rax]
+	movzx	edx, BYTE PTR 2[rsi+rax]
+	add	edx, r9d
+	mov	r9d, 255
+	cmp	edx, r9d
+	cmova	edx, r9d
+	mov	BYTE PTR 2[r8+rax], dl
+	lea	rdx, 3[rax]
+	cmp	rdx, rcx
+	jnb	.L62
+	movzx	r9d, BYTE PTR 3[rsi+rax]
+	movzx	edx, BYTE PTR 3[rdi+rax]
+	add	edx, r9d
+	mov	r9d, 255
+	cmp	edx, r9d
+	cmova	edx, r9d
+	mov	BYTE PTR 3[r8+rax], dl
+	lea	rdx, 4[rax]
+	cmp	rdx, rcx
+	jnb	.L62
+	movzx	r9d, BYTE PTR 4[rdi+rax]
+	movzx	edx, BYTE PTR 4[rsi+rax]
+	add	edx, r9d
+	mov	r9d, 255
+	cmp	edx, r9d
+	cmova	edx, r9d
+	mov	BYTE PTR 4[r8+rax], dl
+	lea	rdx, 5[rax]
+	cmp	rdx, rcx
+	jnb	.L62
+	movzx	r9d, BYTE PTR 5[rdi+rax]
+	movzx	edx, BYTE PTR 5[rsi+rax]
+	add	edx, r9d
+	mov	r9d, 255
+	cmp	edx, r9d
+	cmova	edx, r9d
+	mov	BYTE PTR 5[r8+rax], dl
+	lea	rdx, 6[rax]
+	cmp	rdx, rcx
+	jnb	.L62
+	movzx	r9d, BYTE PTR 6[rdi+rax]
+	movzx	edx, BYTE PTR 6[rsi+rax]
+	add	edx, r9d
+	mov	r9d, 255
+	cmp	edx, r9d
+	cmova	edx, r9d
+	mov	BYTE PTR 6[r8+rax], dl
+	lea	rdx, 7[rax]
+	cmp	rdx, rcx
+	jnb	.L62
+	movzx	r9d, BYTE PTR 7[rdi+rax]
+	movzx	edx, BYTE PTR 7[rsi+rax]
+	add	edx, r9d
+	mov	r9d, 255
+	cmp	edx, r9d
+	cmova	edx, r9d
+	mov	BYTE PTR 7[r8+rax], dl
+	lea	rdx, 8[rax]
+	cmp	rdx, rcx
+	jnb	.L62
+	movzx	r9d, BYTE PTR 8[rdi+rax]
+	movzx	edx, BYTE PTR 8[rsi+rax]
+	add	edx, r9d
+	mov	r9d, 255
+	cmp	edx, r9d
+	cmova	edx, r9d
+	mov	BYTE PTR 8[r8+rax], dl
+	lea	rdx, 9[rax]
+	cmp	rdx, rcx
+	jnb	.L62
+	movzx	r9d, BYTE PTR 9[rdi+rax]
+	movzx	edx, BYTE PTR 9[rsi+rax]
+	add	edx, r9d
+	mov	r9d, 255
+	cmp	edx, r9d
+	cmova	edx, r9d
+	mov	BYTE PTR 9[r8+rax], dl
+	lea	rdx, 10[rax]
+	cmp	rdx, rcx
+	jnb	.L62
+	movzx	r9d, BYTE PTR 10[rdi+rax]
+	movzx	edx, BYTE PTR 10[rsi+rax]
+	add	edx, r9d
+	mov	r9d, 255
+	cmp	edx, r9d
+	cmova	edx, r9d
+	mov	BYTE PTR 10[r8+rax], dl
+	lea	rdx, 11[rax]
+	cmp	rdx, rcx
+	jnb	.L62
+	movzx	r9d, BYTE PTR 11[rdi+rax]
+	movzx	edx, BYTE PTR 11[rsi+rax]
+	add	edx, r9d
+	mov	r9d, 255
+	cmp	edx, r9d
+	cmova	edx, r9d
+	mov	BYTE PTR 11[r8+rax], dl
+	lea	rdx, 12[rax]
+	cmp	rdx, rcx
+	jnb	.L62
+	movzx	r9d, BYTE PTR 12[rdi+rax]
+	movzx	edx, BYTE PTR 12[rsi+rax]
+	add	edx, r9d
+	mov	r9d, 255
+	cmp	edx, r9d
+	cmova	edx, r9d
+	mov	BYTE PTR 12[r8+rax], dl
+	lea	rdx, 13[rax]
+	cmp	rdx, rcx
+	jnb	.L62
+	movzx	r9d, BYTE PTR 13[rdi+rax]
+	movzx	edx, BYTE PTR 13[rsi+rax]
+	add	edx, r9d
+	mov	r9d, 255
+	cmp	edx, r9d
+	cmova	edx, r9d
+	mov	BYTE PTR 13[r8+rax], dl
+	lea	rdx, 14[rax]
+	cmp	rdx, rcx
+	jnb	.L62
+	movzx	ecx, BYTE PTR 14[rdi+rax]
+	movzx	edx, BYTE PTR 14[rsi+rax]
+	add	edx, ecx
+	mov	ecx, 255
+	cmp	edx, ecx
+	cmova	edx, ecx
+	mov	BYTE PTR 14[r8+rax], dl
+.L62:
+	vzeroupper
+	pop	rbx
+	pop	r12
+	pop	rbp
+	.cfi_remember_state
+	.cfi_def_cfa 7, 8
+	ret
+	.p2align 4,,10
+	.p2align 3
+.L68:
+	.cfi_restore_state
+	add	r9, 1
+.L42:
+	movzx	r10d, BYTE PTR [rdi+rdx]
+	movzx	eax, BYTE PTR [rsi+rdx]
+	add	eax, r10d
+	mov	r10d, 255
+	cmp	eax, r10d
+	cmova	eax, r10d
+	mov	BYTE PTR [r8+rdx], al
+	mov	rdx, r9
+	cmp	rcx, r9
+	jne	.L68
+	vzeroupper
+	pop	rbx
+	pop	r12
+	pop	rbp
+	.cfi_def_cfa 7, 8
+	ret
+	.p2align 4,,10
+	.p2align 3
+.L44:
+	.cfi_restore 3
+	.cfi_restore 6
+	.cfi_restore 12
+	xor	edx, edx
+	cmp	rdx, rcx
+	jb	.L69
+.L64:
+	vzeroupper
+	ret
+.L45:
+	.cfi_def_cfa 6, 16
+	.cfi_offset 3, -32
+	.cfi_offset 6, -16
+	.cfi_offset 12, -24
+	mov	rax, rdx
+	jmp	.L38
+	.cfi_endproc
+.LFE6460:
+	.size	sat_add_u8_avx2, .-sat_add_u8_avx2
+	.ident	"GCC: (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0"
+	.section	.note.GNU-stack,"",@progbits
+	.section	.note.gnu.property,"a"
+	.align 8
+	.long	1f - 0f
+	.long	4f - 1f
+	.long	5
+0:
+	.string	"GNU"
+1:
+	.align 8
+	.long	0xc0000002
+	.long	3f - 2f
+2:
+	.long	0x3
+3:
+	.align 8
+4:

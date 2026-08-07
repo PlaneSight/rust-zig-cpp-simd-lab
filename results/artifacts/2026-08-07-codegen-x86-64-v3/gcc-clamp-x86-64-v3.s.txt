@@ -1,0 +1,185 @@
+	.file	"clamp.cpp"
+	.intel_syntax noprefix
+	.text
+	.p2align 4
+	.globl	clamp_u8
+	.type	clamp_u8, @function
+clamp_u8:
+.LFB1535:
+	.cfi_startproc
+	endbr64
+	cmp	dl, sil
+	mov	eax, esi
+	mov	r10d, ecx
+	cmovbe	eax, edx
+	cmp	al, cl
+	cmova	eax, r10d
+	mov	r10d, r8d
+	cmp	al, r8b
+	cmova	eax, r10d
+	mov	r10d, r9d
+	cmp	al, r9b
+	cmova	eax, r10d
+	movzx	r10d, BYTE PTR 8[rsp]
+	cmp	al, r10b
+	cmova	eax, r10d
+	movzx	r10d, BYTE PTR 16[rsp]
+	cmp	al, r10b
+	cmova	eax, r10d
+	movzx	r10d, BYTE PTR 24[rsp]
+	cmp	al, r10b
+	cmova	eax, r10d
+	cmp	al, dil
+	cmovb	eax, edi
+	cmp	dl, sil
+	cmovb	edx, esi
+	cmp	dl, cl
+	cmovb	edx, ecx
+	movzx	ecx, BYTE PTR 8[rsp]
+	cmp	dl, r8b
+	cmovb	edx, r8d
+	cmp	dl, r9b
+	cmovb	edx, r9d
+	cmp	dl, cl
+	cmovb	edx, ecx
+	movzx	ecx, BYTE PTR 16[rsp]
+	cmp	dl, cl
+	cmovb	edx, ecx
+	mov	ecx, r10d
+	cmp	dl, r10b
+	cmovb	edx, ecx
+	cmp	al, dl
+	cmova	eax, edx
+	ret
+	.cfi_endproc
+.LFE1535:
+	.size	clamp_u8, .-clamp_u8
+	.p2align 4
+	.globl	clamp_u16
+	.type	clamp_u16, @function
+clamp_u16:
+.LFB1542:
+	.cfi_startproc
+	endbr64
+	cmp	dx, si
+	mov	eax, esi
+	mov	r10d, ecx
+	cmovbe	eax, edx
+	cmp	ax, cx
+	cmova	eax, r10d
+	mov	r10d, r8d
+	cmp	ax, r8w
+	cmova	eax, r10d
+	mov	r10d, r9d
+	cmp	ax, r9w
+	cmova	eax, r10d
+	movzx	r10d, WORD PTR 8[rsp]
+	cmp	ax, r10w
+	cmova	eax, r10d
+	movzx	r10d, WORD PTR 16[rsp]
+	cmp	ax, r10w
+	cmova	eax, r10d
+	movzx	r10d, WORD PTR 24[rsp]
+	cmp	ax, r10w
+	cmova	eax, r10d
+	cmp	ax, di
+	cmovb	eax, edi
+	cmp	dx, si
+	cmovb	edx, esi
+	cmp	dx, cx
+	cmovb	edx, ecx
+	movzx	ecx, WORD PTR 8[rsp]
+	cmp	dx, r8w
+	cmovb	edx, r8d
+	cmp	dx, r9w
+	cmovb	edx, r9d
+	cmp	dx, cx
+	cmovb	edx, ecx
+	movzx	ecx, WORD PTR 16[rsp]
+	cmp	dx, cx
+	cmovb	edx, ecx
+	mov	ecx, r10d
+	cmp	dx, r10w
+	cmovb	edx, ecx
+	cmp	ax, dx
+	cmova	eax, edx
+	ret
+	.cfi_endproc
+.LFE1542:
+	.size	clamp_u16, .-clamp_u16
+	.p2align 4
+	.globl	clamp_f32
+	.type	clamp_f32, @function
+clamp_f32:
+.LFB1549:
+	.cfi_startproc
+	endbr64
+	vminss	xmm8, xmm2, xmm1
+	vmaxss	xmm2, xmm2, xmm1
+	vmovaps	xmm9, xmm0
+	vmovss	xmm0, DWORD PTR 8[rsp]
+	vminss	xmm8, xmm3, xmm8
+	vmaxss	xmm3, xmm3, xmm2
+	vminss	xmm8, xmm4, xmm8
+	vmaxss	xmm4, xmm4, xmm3
+	vminss	xmm8, xmm5, xmm8
+	vmaxss	xmm5, xmm5, xmm4
+	vminss	xmm8, xmm6, xmm8
+	vmaxss	xmm6, xmm6, xmm5
+	vminss	xmm8, xmm7, xmm8
+	vmaxss	xmm7, xmm7, xmm6
+	vminss	xmm8, xmm0, xmm8
+	vmaxss	xmm0, xmm0, xmm7
+	vmaxss	xmm8, xmm8, xmm9
+	vminss	xmm0, xmm0, xmm8
+	ret
+	.cfi_endproc
+.LFE1549:
+	.size	clamp_f32, .-clamp_f32
+	.p2align 4
+	.globl	clamp_f64
+	.type	clamp_f64, @function
+clamp_f64:
+.LFB1552:
+	.cfi_startproc
+	endbr64
+	vminsd	xmm8, xmm2, xmm1
+	vmaxsd	xmm2, xmm2, xmm1
+	vmovsd	xmm9, xmm0, xmm0
+	vmovsd	xmm0, QWORD PTR 8[rsp]
+	vminsd	xmm8, xmm3, xmm8
+	vmaxsd	xmm3, xmm3, xmm2
+	vminsd	xmm8, xmm4, xmm8
+	vmaxsd	xmm4, xmm4, xmm3
+	vminsd	xmm8, xmm5, xmm8
+	vmaxsd	xmm5, xmm5, xmm4
+	vminsd	xmm8, xmm6, xmm8
+	vmaxsd	xmm6, xmm6, xmm5
+	vminsd	xmm8, xmm7, xmm8
+	vmaxsd	xmm7, xmm7, xmm6
+	vminsd	xmm8, xmm0, xmm8
+	vmaxsd	xmm0, xmm0, xmm7
+	vmaxsd	xmm8, xmm8, xmm9
+	vminsd	xmm0, xmm0, xmm8
+	ret
+	.cfi_endproc
+.LFE1552:
+	.size	clamp_f64, .-clamp_f64
+	.ident	"GCC: (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0"
+	.section	.note.GNU-stack,"",@progbits
+	.section	.note.gnu.property,"a"
+	.align 8
+	.long	1f - 0f
+	.long	4f - 1f
+	.long	5
+0:
+	.string	"GNU"
+1:
+	.align 8
+	.long	0xc0000002
+	.long	3f - 2f
+2:
+	.long	0x3
+3:
+	.align 8
+4:
