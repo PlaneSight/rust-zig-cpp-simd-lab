@@ -36,8 +36,6 @@ jobs:
           if [ -d results/artifacts ]; then cp -R results/artifacts _site/results/; fi
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
