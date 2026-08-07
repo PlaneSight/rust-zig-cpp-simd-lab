@@ -58,6 +58,97 @@ void sat_add_u8_scalar(std::span<std::uint8_t> dst,
     }
 }
 
+double dot_f32_scalar(std::span<const float> a,
+                      std::span<const float> b) {
+    assert(a.size() == b.size());
+    double sum = 0.0;
+    for (std::size_t i = 0; i < a.size(); ++i) {
+        const auto lhs = static_cast<double>(a[i]);
+        const auto rhs = static_cast<double>(b[i]);
+        sum += lhs * rhs;
+    }
+    return sum;
+}
+
+double dot_f64_scalar(std::span<const double> a,
+                      std::span<const double> b) {
+    assert(a.size() == b.size());
+    double sum = 0.0;
+    for (std::size_t i = 0; i < a.size(); ++i) {
+        sum += a[i] * b[i];
+    }
+    return sum;
+}
+
+std::int64_t dot_i16_scalar(std::span<const std::int16_t> a,
+                            std::span<const std::int16_t> b) {
+    assert(a.size() == b.size());
+    std::int64_t sum = 0;
+    for (std::size_t i = 0; i < a.size(); ++i) {
+        const auto lhs = static_cast<std::int64_t>(a[i]);
+        const auto rhs = static_cast<std::int64_t>(b[i]);
+        sum += lhs * rhs;
+    }
+    return sum;
+}
+
+std::int64_t dot_u8_i8_scalar(std::span<const std::uint8_t> a,
+                              std::span<const std::int8_t> b) {
+    assert(a.size() == b.size());
+    std::int64_t sum = 0;
+    for (std::size_t i = 0; i < a.size(); ++i) {
+        const auto lhs = static_cast<std::int64_t>(a[i]);
+        const auto rhs = static_cast<std::int64_t>(b[i]);
+        sum += lhs * rhs;
+    }
+    return sum;
+}
+
+void widen_mul_u8_u16_scalar(std::span<std::uint16_t> dst,
+                             std::span<const std::uint8_t> a,
+                             std::span<const std::uint8_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto lhs = static_cast<std::uint16_t>(a[i]);
+        const auto rhs = static_cast<std::uint16_t>(b[i]);
+        dst[i] = static_cast<std::uint16_t>(lhs * rhs);
+    }
+}
+
+void widen_mul_i8_i16_scalar(std::span<std::int16_t> dst,
+                             std::span<const std::int8_t> a,
+                             std::span<const std::int8_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto lhs = static_cast<std::int16_t>(a[i]);
+        const auto rhs = static_cast<std::int16_t>(b[i]);
+        dst[i] = static_cast<std::int16_t>(lhs * rhs);
+    }
+}
+
+void widen_mul_u16_u32_scalar(std::span<std::uint32_t> dst,
+                              std::span<const std::uint16_t> a,
+                              std::span<const std::uint16_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto lhs = static_cast<std::uint32_t>(a[i]);
+        const auto rhs = static_cast<std::uint32_t>(b[i]);
+        dst[i] = static_cast<std::uint32_t>(lhs * rhs);
+    }
+}
+
+void widen_mul_i16_i32_scalar(std::span<std::int32_t> dst,
+                              std::span<const std::int16_t> a,
+                              std::span<const std::int16_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto lhs = static_cast<std::int32_t>(a[i]);
+        const auto rhs = static_cast<std::int32_t>(b[i]);
+        dst[i] = static_cast<std::int32_t>(lhs * rhs);
+    }
+}
+
+
 #if (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__)
 __attribute__((target("avx2,fma")))
 static double squared_error_avx2(std::span<const float> a,

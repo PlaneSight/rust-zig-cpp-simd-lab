@@ -1,7 +1,8 @@
 use simd_lab_rust::{
-    axpy_scalar, dispatch_tier, f16c::clamp_f16c, sad_u8_best, sad_u8_scalar,
-    sat_add_u8_best, sat_add_u8_dispatch_tier, sat_add_u8_scalar,
-    squared_error_best, squared_error_scalar,
+    axpy_scalar, dispatch_tier, dot_f32_scalar, dot_f64_scalar, dot_i16_scalar, dot_u8_i8_scalar,
+    f16c::clamp_f16c, sad_u8_best, sad_u8_scalar, sat_add_u8_best, sat_add_u8_dispatch_tier,
+    sat_add_u8_scalar, squared_error_best, squared_error_scalar, widen_mul_i16_i32_scalar,
+    widen_mul_i8_i16_scalar, widen_mul_u16_u32_scalar, widen_mul_u8_u16_scalar,
 };
 use std::hint::black_box;
 use std::time::Instant;
@@ -140,6 +141,27 @@ fn main() {
                 black_box(squared_error_best(black_box(&x), black_box(&y)));
             });
             report("sqerr/best-dispatch-f64", n, n * 8, n * 8, &measurement);
+
+            let expected_f32_dot: f64 = x
+                .iter()
+                .zip(&y)
+                .map(|(&lhs, &rhs)| f64::from(lhs) * f64::from(rhs))
+                .sum();
+            assert_eq!(dot_f32_scalar(&x, &y), expected_f32_dot);
+            let f64_x: Vec<f64> = (0..n).map(|i| i as f64 * 0.001).collect();
+            let f64_y: Vec<f64> = (0..n).map(|i| 1.0 + i as f64 * 0.0005).collect();
+            let expected_f64_dot: f64 = f64_x.iter().zip(&f64_y).map(|(&a, &b)| a * b).sum();
+            assert_eq!(dot_f64_scalar(&f64_x, &f64_y), expected_f64_dot);
+
+            let measurement = measure(n, || {
+                black_box(dot_f32_scalar(black_box(&x), black_box(&y)));
+            });
+            report("dot-f32/scalar-f64", n, n * 8, n * 8, &measurement);
+
+            let measurement = measure(n, || {
+                black_box(dot_f64_scalar(black_box(&f64_x), black_box(&f64_y)));
+            });
+            report("dot-f64/scalar-f64", n, n * 16, n * 16, &measurement);
         }
 
         {
@@ -152,6 +174,59 @@ fn main() {
             sat_add_u8_best(&mut sat_dst, &a, &b);
             assert_eq!(sat_dst, sat_reference);
 
+            let i16_a: Vec<i16> = (0..n).map(|i| (i as i16).wrapping_mul(17)).collect();
+            let i16_b: Vec<i16> = (0..n).map(|i| (i as i16).wrapping_mul(29)).collect();
+            let expected_i16_dot: i64 = i16_a
+                .iter()
+                .zip(&i16_b)
+                .map(|(&lhs, &rhs)| i64::from(lhs) * i64::from(rhs))
+                .sum();
+            assert_eq!(dot_i16_scalar(&i16_a, &i16_b), expected_i16_dot);
+
+            let i8_b: Vec<i8> = (0..n).map(|i| (i as i8).wrapping_mul(3)).collect();
+            let expected_mixed_dot: i64 = a
+                .iter()
+                .zip(&i8_b)
+                .map(|(&lhs, &rhs)| i64::from(lhs) * i64::from(rhs))
+                .sum();
+            assert_eq!(dot_u8_i8_scalar(&a, &i8_b), expected_mixed_dot);
+
+            let u16_a: Vec<u16> = (0..n).map(|i| (i as u16).wrapping_mul(257)).collect();
+            let u16_b: Vec<u16> = (0..n).map(|i| (i as u16).wrapping_mul(13)).collect();
+            let i16_widen_a = i16_a.clone();
+            let i16_widen_b = i16_b.clone();
+            let mut u16_dst = vec![0_u16; n];
+            let mut i16_dst = vec![0_i16; n];
+            let mut u32_dst = vec![0_u32; n];
+            let mut i32_dst = vec![0_i32; n];
+            let u16_expected: Vec<u16> = a
+                .iter()
+                .zip(&b)
+                .map(|(&lhs, &rhs)| u16::from(lhs) * u16::from(rhs))
+                .collect();
+            let i16_expected: Vec<i16> = i8_b
+                .iter()
+                .zip(&i8_b)
+                .map(|(&lhs, &rhs)| i16::from(lhs) * i16::from(rhs))
+                .collect();
+            let u32_expected: Vec<u32> = u16_a
+                .iter()
+                .zip(&u16_b)
+                .map(|(&lhs, &rhs)| u32::from(lhs) * u32::from(rhs))
+                .collect();
+            let i32_expected: Vec<i32> = i16_widen_a
+                .iter()
+                .zip(&i16_widen_b)
+                .map(|(&lhs, &rhs)| i32::from(lhs) * i32::from(rhs))
+                .collect();
+            widen_mul_u8_u16_scalar(&mut u16_dst, &a, &b);
+            widen_mul_i8_i16_scalar(&mut i16_dst, &i8_b, &i8_b);
+            widen_mul_u16_u32_scalar(&mut u32_dst, &u16_a, &u16_b);
+            widen_mul_i16_i32_scalar(&mut i32_dst, &i16_widen_a, &i16_widen_b);
+            assert_eq!(u16_dst, u16_expected);
+            assert_eq!(i16_dst, i16_expected);
+            assert_eq!(u32_dst, u32_expected);
+            assert_eq!(i32_dst, i32_expected);
             let measurement = measure(n, || {
                 black_box(sad_u8_scalar(black_box(&a), black_box(&b)));
             });
@@ -163,34 +238,83 @@ fn main() {
             report("sad-u8/best-dispatch", n, n * 2, n * 2, &measurement);
 
             let measurement = measure(n, || {
-                sat_add_u8_scalar(
-                    black_box(&mut sat_dst),
-                    black_box(&a),
-                    black_box(&b),
-                );
+                sat_add_u8_scalar(black_box(&mut sat_dst), black_box(&a), black_box(&b));
                 black_box(&sat_dst);
             });
+            report("sat-add-u8/scalar-autovec", n, n * 3, n * 3, &measurement);
+
+            let measurement = measure(n, || {
+                sat_add_u8_best(black_box(&mut sat_dst), black_box(&a), black_box(&b));
+                black_box(&sat_dst);
+            });
+            report("sat-add-u8/best-dispatch", n, n * 3, n * 3, &measurement);
+            let measurement = measure(n, || {
+                black_box(dot_i16_scalar(black_box(&i16_a), black_box(&i16_b)));
+            });
+            report("dot-i16/scalar-i64", n, n * 4, n * 4, &measurement);
+
+            let measurement = measure(n, || {
+                black_box(dot_u8_i8_scalar(black_box(&a), black_box(&i8_b)));
+            });
+            report("dot-u8-i8/scalar-i64", n, n * 2, n * 2, &measurement);
+
+            let measurement = measure(n, || {
+                widen_mul_u8_u16_scalar(black_box(&mut u16_dst), black_box(&a), black_box(&b));
+                black_box(&u16_dst);
+            });
             report(
-                "sat-add-u8/scalar-autovec",
+                "widen-mul-u8-u16/scalar-autovec",
                 n,
-                n * 3,
-                n * 3,
+                n * 4,
+                n * 4,
                 &measurement,
             );
 
             let measurement = measure(n, || {
-                sat_add_u8_best(
-                    black_box(&mut sat_dst),
-                    black_box(&a),
-                    black_box(&b),
+                widen_mul_i8_i16_scalar(
+                    black_box(&mut i16_dst),
+                    black_box(&i8_b),
+                    black_box(&i8_b),
                 );
-                black_box(&sat_dst);
+                black_box(&i16_dst);
             });
             report(
-                "sat-add-u8/best-dispatch",
+                "widen-mul-i8-i16/scalar-autovec",
                 n,
-                n * 3,
-                n * 3,
+                n * 4,
+                n * 4,
+                &measurement,
+            );
+
+            let measurement = measure(n, || {
+                widen_mul_u16_u32_scalar(
+                    black_box(&mut u32_dst),
+                    black_box(&u16_a),
+                    black_box(&u16_b),
+                );
+                black_box(&u32_dst);
+            });
+            report(
+                "widen-mul-u16-u32/scalar-autovec",
+                n,
+                n * 8,
+                n * 8,
+                &measurement,
+            );
+
+            let measurement = measure(n, || {
+                widen_mul_i16_i32_scalar(
+                    black_box(&mut i32_dst),
+                    black_box(&i16_widen_a),
+                    black_box(&i16_widen_b),
+                );
+                black_box(&i32_dst);
+            });
+            report(
+                "widen-mul-i16-i32/scalar-autovec",
+                n,
+                n * 8,
+                n * 8,
                 &measurement,
             );
         }
@@ -202,10 +326,8 @@ fn main() {
             let mut dst = vec![0_u16; n];
 
             if clamp_f16c(&mut dst, &c, &lo, &hi) {
-                let expected: Vec<u16> = c
-                    .iter()
-                    .map(|&value| value.clamp(0x3800, 0x4000))
-                    .collect();
+                let expected: Vec<u16> =
+                    c.iter().map(|&value| value.clamp(0x3800, 0x4000)).collect();
                 assert_eq!(dst, expected);
 
                 let measurement = measure(n, || {
@@ -219,9 +341,7 @@ fn main() {
                 });
                 report("clamp-f16/f16c-f32", n, n * 8, n * 8, &measurement);
             } else {
-                println!(
-                    "SKIP name=clamp-f16/f16c-f32 n={n} reason=avx-f16c-unavailable"
-                );
+                println!("SKIP name=clamp-f16/f16c-f32 n={n} reason=avx-f16c-unavailable");
             }
         }
     }

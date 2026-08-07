@@ -49,6 +49,31 @@ Every kernel starts with a scalar reference and should be implemented with equiv
 | Squared error | `(a-b)^2` reduction | MSE/PSNR-style workload |
 | Convolution | short 3/5/7/8-tap kernels | realistic multiply-accumulate pressure |
 
+## Dot-product and widening-multiply family
+
+The Stage 7 integer family keeps products in their mathematical widened
+storage type before writing results:
+
+| Operation | Output contract | Reduction contract |
+|---|---|---|
+| `u8 * u8 -> u16` | one widened product per lane | none |
+| `i8 * i8 -> i16` | one widened product per lane | none |
+| `u16 * u16 -> u32` | one widened product per lane | none |
+| `i16 * i16 -> i32` | one widened product per lane | none |
+| `f32` dot | none | cast each input to `f64`, multiply, sum in `f64` |
+| `f64` dot | none | multiply and sum in `f64` |
+| `i16 * i16` dot | none | widen each product and sum in `i64` |
+| `u8 * i8` dot | none | preserve signedness and sum products in `i64` |
+
+Every implementation asserts equal input lengths, processes complete native
+vector chunks where available, and finishes with a scalar tail. Integer dot
+results are exact when the mathematical sum fits `i64`; the benchmark inputs
+stay within that contract. No operation allocates in its hot loop. The Rust
+and C++ scalar loops are autovectorization baselines; Zig also exposes
+explicit native-vector forms. The current Stage 7 implementation intentionally
+does not claim dedicated VNNI, dot-product, or widening multiply-accumulate
+instructions.
+
 ## Implementation layers
 
 Where the language/toolchain permits it, compare:

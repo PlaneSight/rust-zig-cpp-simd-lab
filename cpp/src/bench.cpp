@@ -24,6 +24,7 @@ constexpr std::array<std::uint16_t, 8> half_values{
     0x0000, 0x3400, 0x3800, 0x3c00, 0x3e00, 0x4000, 0x4200, 0x4400};
 volatile double sink = 0.0;
 volatile std::uint64_t sink_u64 = 0;
+volatile std::int64_t sink_i64 = 0;
 
 struct Measurement {
     std::size_t iterations_per_sample;
@@ -169,6 +170,138 @@ int main() {
                 simd_lab::sat_add_u8_best(sat_dst, a, b);
             });
             report("sat-add-u8/best-dispatch", n, n * 3, n * 3, result);
+        }
+
+        {
+            std::vector<float> f32_a(n), f32_b(n);
+            std::vector<double> f64_a(n), f64_b(n);
+            std::vector<std::int16_t> i16_a(n), i16_b(n);
+            std::vector<std::uint8_t> u8_a(n), u8_b(n);
+            std::vector<std::int8_t> i8_a(n), i8_b(n);
+            std::vector<std::uint16_t> u16_a(n), u16_b(n);
+            for (std::size_t i = 0; i < n; ++i) {
+                f32_a[i] = static_cast<float>(i % 257) * 0.03125F - 4.0F;
+                f32_b[i] = static_cast<float>(i % 193) * 0.015625F - 1.5F;
+                f64_a[i] = static_cast<double>(i % 257) * 0.03125 - 4.0;
+                f64_b[i] = static_cast<double>(i % 193) * 0.015625 - 1.5;
+                i16_a[i] = static_cast<std::int16_t>(
+                    (i * 97 + 13) & 0xffff);
+                i16_b[i] = static_cast<std::int16_t>(
+                    (i * 53 + 29) & 0xffff);
+                u8_a[i] = static_cast<std::uint8_t>((i * 17 + 3) & 255);
+                u8_b[i] = static_cast<std::uint8_t>((i * 29 + 11) & 255);
+                i8_a[i] = static_cast<std::int8_t>(
+                    static_cast<int>((i * 19 + 7) & 255) - 128);
+                i8_b[i] = static_cast<std::int8_t>(
+                    static_cast<int>((i * 23 + 5) & 255) - 128);
+                u16_a[i] = static_cast<std::uint16_t>(
+                    (i * 257 + 19) & 0xffff);
+                u16_b[i] = static_cast<std::uint16_t>(
+                    (i * 131 + 37) & 0xffff);
+            }
+
+            double f32_reference = 0.0;
+            double f64_reference = 0.0;
+            std::int64_t i16_dot_reference = 0;
+            std::int64_t mixed_reference = 0;
+            for (std::size_t i = 0; i < n; ++i) {
+                f32_reference += static_cast<double>(f32_a[i]) *
+                                 static_cast<double>(f32_b[i]);
+                f64_reference += f64_a[i] * f64_b[i];
+                i16_dot_reference += static_cast<std::int64_t>(i16_a[i]) *
+                                     static_cast<std::int64_t>(i16_b[i]);
+                mixed_reference += static_cast<std::int64_t>(u8_a[i]) *
+                                   static_cast<std::int64_t>(i8_b[i]);
+            }
+            const auto close = [](double expected, double actual) {
+                return std::abs(expected - actual) /
+                           std::max(std::abs(expected), 1.0) <= 1e-12;
+            };
+            if (!close(f32_reference,
+                       simd_lab::dot_f32_scalar(f32_a, f32_b)) ||
+                !close(f64_reference,
+                       simd_lab::dot_f64_scalar(f64_a, f64_b)) ||
+                i16_dot_reference != simd_lab::dot_i16_scalar(i16_a, i16_b) ||
+                mixed_reference !=
+                    simd_lab::dot_u8_i8_scalar(u8_a, i8_b)) {
+                std::cerr << "dot-product validation failed\n";
+                return 1;
+            }
+
+            std::vector<std::uint16_t> u8_reference(n), u8_dst(n);
+            std::vector<std::int16_t> i8_reference(n), i8_dst(n);
+            std::vector<std::uint32_t> u16_reference(n), u16_dst(n);
+            std::vector<std::int32_t> i16_product_reference(n), i16_dst(n);
+            for (std::size_t i = 0; i < n; ++i) {
+                const auto u8_lhs = static_cast<std::uint16_t>(u8_a[i]);
+                const auto u8_rhs = static_cast<std::uint16_t>(u8_b[i]);
+                u8_reference[i] =
+                    static_cast<std::uint16_t>(u8_lhs * u8_rhs);
+                const auto i8_lhs = static_cast<std::int16_t>(i8_a[i]);
+                const auto i8_rhs = static_cast<std::int16_t>(i8_b[i]);
+                i8_reference[i] =
+                    static_cast<std::int16_t>(i8_lhs * i8_rhs);
+                const auto u16_lhs = static_cast<std::uint32_t>(u16_a[i]);
+                const auto u16_rhs = static_cast<std::uint32_t>(u16_b[i]);
+                u16_reference[i] = u16_lhs * u16_rhs;
+                const auto i16_lhs = static_cast<std::int32_t>(i16_a[i]);
+                const auto i16_rhs = static_cast<std::int32_t>(i16_b[i]);
+                i16_product_reference[i] = i16_lhs * i16_rhs;
+            }
+            simd_lab::widen_mul_u8_u16_scalar(u8_dst, u8_a, u8_b);
+            simd_lab::widen_mul_i8_i16_scalar(i8_dst, i8_a, i8_b);
+            simd_lab::widen_mul_u16_u32_scalar(
+                u16_dst, u16_a, u16_b);
+            simd_lab::widen_mul_i16_i32_scalar(
+                i16_dst, i16_a, i16_b);
+            if (u8_dst != u8_reference || i8_dst != i8_reference ||
+                u16_dst != u16_reference || i16_dst != i16_product_reference) {
+                std::cerr << "widening-multiply validation failed\n";
+                return 1;
+            }
+
+            auto result = measure(n, [&] {
+                sink = simd_lab::dot_f32_scalar(f32_a, f32_b);
+            });
+            report("dot-f32/scalar-f64", n, n * 8, n * 8, result);
+            result = measure(n, [&] {
+                sink = simd_lab::dot_f64_scalar(f64_a, f64_b);
+            });
+            report("dot-f64/scalar-f64", n, n * 16, n * 16, result);
+            result = measure(n, [&] {
+                sink_i64 = simd_lab::dot_i16_scalar(i16_a, i16_b);
+            });
+            report("dot-i16/scalar-i64", n, n * 4, n * 4, result);
+            result = measure(n, [&] {
+                sink_i64 = simd_lab::dot_u8_i8_scalar(u8_a, i8_b);
+            });
+            report("dot-u8-i8/scalar-i64", n, n * 2, n * 2, result);
+            result = measure(n, [&] {
+                simd_lab::widen_mul_u8_u16_scalar(u8_dst, u8_a, u8_b);
+                sink_u64 = u8_dst[n - 1];
+            });
+            report("widen-mul-u8-u16/scalar-autovec", n, n * 4, n * 4,
+                   result);
+            result = measure(n, [&] {
+                simd_lab::widen_mul_i8_i16_scalar(i8_dst, i8_a, i8_b);
+                sink_i64 = i8_dst[n - 1];
+            });
+            report("widen-mul-i8-i16/scalar-autovec", n, n * 4, n * 4,
+                   result);
+            result = measure(n, [&] {
+                simd_lab::widen_mul_u16_u32_scalar(
+                    u16_dst, u16_a, u16_b);
+                sink_u64 = u16_dst[n - 1];
+            });
+            report("widen-mul-u16-u32/scalar-autovec", n, n * 8, n * 8,
+                   result);
+            result = measure(n, [&] {
+                simd_lab::widen_mul_i16_i32_scalar(
+                    i16_dst, i16_a, i16_b);
+                sink_i64 = i16_dst[n - 1];
+            });
+            report("widen-mul-i16-i32/scalar-autovec", n, n * 8, n * 8,
+                   result);
         }
 
         {

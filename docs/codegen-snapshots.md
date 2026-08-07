@@ -49,7 +49,7 @@ Snapshots are written under `results/codegen/`. Every manifest uses schema `simd
 - top mnemonics;
 - tracked SIMD idioms.
 
-Tracked x86 signals include FP16 conversions (`vcvtph2ps`, `vcvtps2ph`), SAD (`vpsadbw`/`psadbw`), and widening moves (`vpmovzx*` / `vpmovsx*`). AArch64 signals include `uabd`, widening/reduction operations such as `uaddlp`/`uaddlv`/`uadalp`, FP min/max and conversion operations. WebAssembly tracking recognizes the `v128`, integer-lane, and floating-lane SIMD opcode families.
+Tracked x86 signals include FP16 conversions (`vcvtph2ps`, `vcvtps2ph`), SAD (`vpsadbw`/`psadbw`), widening moves (`vpmovzx*` / `vpmovsx*`), multiply-add idioms (`vpmaddwd`, `vpmaddubsw`, and VNNI `vpdp*` families), and vector multiply families. AArch64 signals include `uabd`, widening/reduction operations such as `uaddlp`/`uaddlv`/`uadalp`, integer widening multiply (`smull`/`umull`/`smlal`/`umlal`), dot-product (`sdot`/`udot`/`usdot`), FP min/max and conversion operations. WebAssembly tracking recognizes the `v128`, integer-lane, floating-lane, widening multiply, and dot-product opcode families.
 
 ## Questions the snapshots should answer
 
@@ -68,6 +68,16 @@ Tracked x86 signals include FP16 conversions (`vcvtph2ps`, `vcvtps2ph`), SAD (`v
 - Does Sapphire Rapids targeting replace conversion-heavy lowering with native FP16 instructions?
 - Does AArch64 FP16 targeting use native half arithmetic rather than promotion?
 - How does Zig native f16 differ from explicit promote-once code across those targets?
+
+
+### Dot product and widening multiply
+
+The Stage 7 probes expose scalar/autovec products and reductions without
+allocations or I/O. The portable x86 baseline is intentionally separate from
+future dedicated instruction studies: `vpmaddwd`, VNNI `vpdp*`, AArch64
+`sdot`/`udot`, and wasm widening/dot opcodes are tracked as evidence, but are
+not promoted to an expected lowering until a generated target-profile
+snapshot demonstrates the idiom and its semantics match.
 
 ## Comparing snapshots
 

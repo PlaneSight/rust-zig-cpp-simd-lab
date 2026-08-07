@@ -42,6 +42,15 @@ The key codegen question is whether generic vector IR recognizes the SAD idiom a
 
 `probes/zig/sad.zig` also contains standalone absdiff and widening probes so missed idiom recognition can be separated from widening/reduction cost.
 
+## Dot-product and widening-multiply probes
+
+Stage 7 adds standalone `dot` and `widen_mul` probes for Rust, Zig, and
+C++23. Each exports the scalar/autovec operation with raw pointer boundaries;
+the Zig probe additionally exports its explicit native-vector forms. Products
+are widened before multiplication, and dot reductions use the documented
+`f64` or `i64` accumulators. These probes are codegen evidence only: runtime
+correctness is exercised by the language harnesses, not by the probe source.
+
 ## Generate assembly
 
 Clamp probes:
@@ -60,6 +69,14 @@ zig build-obj probes/zig/sad.zig -O ReleaseFast -femit-asm=zig-sad.s
 rustc -O --crate-type=lib --emit=asm probes/rust/sad.rs -o rust-sad.s
 clang++ -std=c++23 -O3 -S -masm=intel probes/cpp/sad.cpp -o cpp-clang-sad.s
 g++ -std=c++23 -O3 -S -masm=intel probes/cpp/sad.cpp -o cpp-gcc-sad.s
+```
+
+Generate the Stage 7 probes with the same target-profile pipeline:
+
+```bash
+python3 scripts/generate_codegen_snapshots.py --target x86-64-v3
+python3 scripts/generate_cross_codegen.py --target aarch64-neon
+python3 scripts/generate_cross_codegen.py --target wasm-simd128
 ```
 
 For target-specific experiments, record the complete target flags next to the result. Important x86 cases include baseline x86-64, AVX2, AVX2+F16C+FMA, AVX-512, and AVX-512 FP16.

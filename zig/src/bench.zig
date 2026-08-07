@@ -126,6 +126,15 @@ pub fn main() !void {
             report("sqerr/scalar-f64", n, n * 8, n * 8, result);
             result = try measure(io, kernels.squaredErrorVector, .{ x, y }, n);
             report("sqerr/native-vector-f64", n, n * 8, n * 8, result);
+            const dot_f32_scalar = kernels.dotF32Scalar(x, y);
+            const dot_f32_vector = kernels.dotF32Vector(x, y);
+            const dot_f32_error = @abs(dot_f32_scalar - dot_f32_vector) /
+                @max(@abs(dot_f32_scalar), 1.0);
+            std.debug.assert(dot_f32_error <= 1e-12);
+            result = try measure(io, kernels.dotF32Scalar, .{ x, y }, n);
+            report("dot-f32/scalar-f64", n, n * 8, n * 8, result);
+            result = try measure(io, kernels.dotF32Vector, .{ x, y }, n);
+            report("dot-f32/native-vector-f64", n, n * 8, n * 8, result);
         }
 
         {
@@ -155,6 +164,134 @@ pub fn main() !void {
             report("sat-add-u8/scalar-autovec", n, n * 3, n * 3, result);
             result = try measure(io, kernels.satAddU8Vector, .{ sat_dst, a, b }, n);
             report("sat-add-u8/native-vector", n, n * 3, n * 3, result);
+        }
+
+        {
+            const a = try allocator.alloc(f64, n);
+            defer allocator.free(a);
+            const b = try allocator.alloc(f64, n);
+            defer allocator.free(b);
+            for (a, b, 0..) |*av, *bv, i| {
+                av.* = @as(f64, @floatFromInt(i)) * 0.001;
+                bv.* = 1.0 + @as(f64, @floatFromInt(i)) * 0.0005;
+            }
+
+            const scalar = kernels.dotF64Scalar(a, b);
+            const vector = kernels.dotF64Vector(a, b);
+            const relative_error = @abs(scalar - vector) / @max(@abs(scalar), 1.0);
+            std.debug.assert(relative_error <= 1e-12);
+
+            var result = try measure(io, kernels.dotF64Scalar, .{ a, b }, n);
+            report("dot-f64/scalar-f64", n, n * 16, n * 16, result);
+            result = try measure(io, kernels.dotF64Vector, .{ a, b }, n);
+            report("dot-f64/native-vector-f64", n, n * 16, n * 16, result);
+        }
+
+        {
+            const i16_a = try allocator.alloc(i16, n);
+            defer allocator.free(i16_a);
+            const i16_b = try allocator.alloc(i16, n);
+            defer allocator.free(i16_b);
+            const u8_a = try allocator.alloc(u8, n);
+            defer allocator.free(u8_a);
+            const i8_a = try allocator.alloc(i8, n);
+            defer allocator.free(i8_a);
+            const i8_b = try allocator.alloc(i8, n);
+            defer allocator.free(i8_b);
+            const u8_u16_scalar = try allocator.alloc(u16, n);
+            defer allocator.free(u8_u16_scalar);
+            const u8_u16_vector = try allocator.alloc(u16, n);
+            defer allocator.free(u8_u16_vector);
+            const i8_i16_scalar = try allocator.alloc(i16, n);
+            defer allocator.free(i8_i16_scalar);
+            const i8_i16_vector = try allocator.alloc(i16, n);
+            defer allocator.free(i8_i16_vector);
+
+            const signed16 = [_]i16{ -32768, -32767, -1, 0, 1, 32767 };
+            const signed8 = [_]i8{ -128, -127, -1, 0, 1, 127 };
+            const unsigned8 = [_]u8{ 0, 1, 127, 128, 254, 255 };
+            for (i16_a, i16_b, u8_a, i8_a, i8_b, 0..) |*ia, *ib, *ua, *sa, *sb, i| {
+                ia.* = signed16[i % signed16.len];
+                ib.* = signed16[(i * 5 + 1) % signed16.len];
+                ua.* = unsigned8[i % unsigned8.len];
+                sa.* = signed8[i % signed8.len];
+                sb.* = signed8[(i * 5 + 1) % signed8.len];
+            }
+
+            const dot_i16_scalar = kernels.dotI16Scalar(i16_a, i16_b);
+            const dot_i16_vector = kernels.dotI16Vector(i16_a, i16_b);
+            std.debug.assert(dot_i16_scalar == dot_i16_vector);
+            const dot_u8_i8_scalar = kernels.dotU8I8Scalar(u8_a, i8_b);
+            const dot_u8_i8_vector = kernels.dotU8I8Vector(u8_a, i8_b);
+            std.debug.assert(dot_u8_i8_scalar == dot_u8_i8_vector);
+
+            kernels.widenMulU8U16Scalar(u8_u16_scalar, u8_a, u8_a);
+            kernels.widenMulU8U16Vector(u8_u16_vector, u8_a, u8_a);
+            std.debug.assert(std.mem.eql(u16, u8_u16_scalar, u8_u16_vector));
+            kernels.widenMulI8I16Scalar(i8_i16_scalar, i8_a, i8_b);
+            kernels.widenMulI8I16Vector(i8_i16_vector, i8_a, i8_b);
+            std.debug.assert(std.mem.eql(i16, i8_i16_scalar, i8_i16_vector));
+
+            var result = try measure(io, kernels.dotI16Scalar, .{ i16_a, i16_b }, n);
+            report("dot-i16/scalar-i64", n, n * 4, n * 4, result);
+            result = try measure(io, kernels.dotI16Vector, .{ i16_a, i16_b }, n);
+            report("dot-i16/native-vector-i64", n, n * 4, n * 4, result);
+            result = try measure(io, kernels.dotU8I8Scalar, .{ u8_a, i8_b }, n);
+            report("dot-u8-i8/scalar-i64", n, n * 2, n * 2, result);
+            result = try measure(io, kernels.dotU8I8Vector, .{ u8_a, i8_b }, n);
+            report("dot-u8-i8/native-vector-i64", n, n * 2, n * 2, result);
+            result = try measure(io, kernels.widenMulU8U16Scalar, .{ u8_u16_scalar, u8_a, u8_a }, n);
+            report("widen-mul-u8-u16/scalar-autovec", n, n * 4, n * 4, result);
+            result = try measure(io, kernels.widenMulU8U16Vector, .{ u8_u16_vector, u8_a, u8_a }, n);
+            report("widen-mul-u8-u16/native-vector", n, n * 4, n * 4, result);
+            result = try measure(io, kernels.widenMulI8I16Scalar, .{ i8_i16_scalar, i8_a, i8_b }, n);
+            report("widen-mul-i8-i16/scalar-autovec", n, n * 4, n * 4, result);
+            result = try measure(io, kernels.widenMulI8I16Vector, .{ i8_i16_vector, i8_a, i8_b }, n);
+            report("widen-mul-i8-i16/native-vector", n, n * 4, n * 4, result);
+        }
+
+        {
+            const u16_a = try allocator.alloc(u16, n);
+            defer allocator.free(u16_a);
+            const u16_b = try allocator.alloc(u16, n);
+            defer allocator.free(u16_b);
+            const i16_a = try allocator.alloc(i16, n);
+            defer allocator.free(i16_a);
+            const i16_b = try allocator.alloc(i16, n);
+            defer allocator.free(i16_b);
+            const u16_u32_scalar = try allocator.alloc(u32, n);
+            defer allocator.free(u16_u32_scalar);
+            const u16_u32_vector = try allocator.alloc(u32, n);
+            defer allocator.free(u16_u32_vector);
+            const i16_i32_scalar = try allocator.alloc(i32, n);
+            defer allocator.free(i16_i32_scalar);
+            const i16_i32_vector = try allocator.alloc(i32, n);
+            defer allocator.free(i16_i32_vector);
+
+            const unsigned16 = [_]u16{ 0, 1, 255, 256, 65534, 65535 };
+            const signed16 = [_]i16{ -32768, -32767, -1, 0, 1, 32767 };
+            for (u16_a, u16_b, i16_a, i16_b, 0..) |*ua, *ub, *ia, *ib, i| {
+                ua.* = unsigned16[i % unsigned16.len];
+                ub.* = unsigned16[(i * 5 + 1) % unsigned16.len];
+                ia.* = signed16[i % signed16.len];
+                ib.* = signed16[(i * 5 + 1) % signed16.len];
+            }
+
+            kernels.widenMulU16U32Scalar(u16_u32_scalar, u16_a, u16_b);
+            kernels.widenMulU16U32Vector(u16_u32_vector, u16_a, u16_b);
+            std.debug.assert(std.mem.eql(u32, u16_u32_scalar, u16_u32_vector));
+            kernels.widenMulI16I32Scalar(i16_i32_scalar, i16_a, i16_b);
+            kernels.widenMulI16I32Vector(i16_i32_vector, i16_a, i16_b);
+            std.debug.assert(std.mem.eql(i32, i16_i32_scalar, i16_i32_vector));
+
+            var result = try measure(io, kernels.widenMulU16U32Scalar, .{ u16_u32_scalar, u16_a, u16_b }, n);
+            report("widen-mul-u16-u32/scalar-autovec", n, n * 8, n * 8, result);
+            result = try measure(io, kernels.widenMulU16U32Vector, .{ u16_u32_vector, u16_a, u16_b }, n);
+            report("widen-mul-u16-u32/native-vector", n, n * 8, n * 8, result);
+            result = try measure(io, kernels.widenMulI16I32Scalar, .{ i16_i32_scalar, i16_a, i16_b }, n);
+            report("widen-mul-i16-i32/scalar-autovec", n, n * 8, n * 8, result);
+            result = try measure(io, kernels.widenMulI16I32Vector, .{ i16_i32_vector, i16_a, i16_b }, n);
+            report("widen-mul-i16-i32/native-vector", n, n * 8, n * 8, result);
         }
 
         {

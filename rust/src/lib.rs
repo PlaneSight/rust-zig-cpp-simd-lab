@@ -46,6 +46,119 @@ pub fn sat_add_u8_scalar(dst: &mut [u8], a: &[u8], b: &[u8]) {
         *out = x.saturating_add(y);
     }
 }
+/// Computes an f32 dot product with f64 products and accumulation.
+pub fn dot_f32_scalar(a: &[f32], b: &[f32]) -> f64 {
+    assert_eq!(a.len(), b.len());
+
+    let mut sum = 0.0_f64;
+    let mut i = 0;
+    while i < a.len() {
+        let x = f64::from(a[i]);
+        let y = f64::from(b[i]);
+        sum += x * y;
+        i += 1;
+    }
+    sum
+}
+
+/// Computes an f64 dot product with f64 accumulation.
+pub fn dot_f64_scalar(a: &[f64], b: &[f64]) -> f64 {
+    assert_eq!(a.len(), b.len());
+
+    let mut sum = 0.0_f64;
+    let mut i = 0;
+    while i < a.len() {
+        sum += a[i] * b[i];
+        i += 1;
+    }
+    sum
+}
+
+/// Computes an i16 dot product with widened i64 products and accumulation.
+pub fn dot_i16_scalar(a: &[i16], b: &[i16]) -> i64 {
+    assert_eq!(a.len(), b.len());
+
+    let mut sum = 0_i64;
+    let mut i = 0;
+    while i < a.len() {
+        let x = i64::from(a[i]);
+        let y = i64::from(b[i]);
+        sum += x * y;
+        i += 1;
+    }
+    sum
+}
+
+/// Computes a mixed u8/i8 dot product with exact i64 products and accumulation.
+pub fn dot_u8_i8_scalar(a: &[u8], b: &[i8]) -> i64 {
+    assert_eq!(a.len(), b.len());
+
+    let mut sum = 0_i64;
+    let mut i = 0;
+    while i < a.len() {
+        let x = i64::from(a[i]);
+        let y = i64::from(b[i]);
+        sum += x * y;
+        i += 1;
+    }
+    sum
+}
+
+/// Multiplies u8 pairs after widening each operand to u16.
+pub fn widen_mul_u8_u16_scalar(dst: &mut [u16], a: &[u8], b: &[u8]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    let mut i = 0;
+    while i < dst.len() {
+        let x = u16::from(a[i]);
+        let y = u16::from(b[i]);
+        dst[i] = x * y;
+        i += 1;
+    }
+}
+
+/// Multiplies i8 pairs after widening each operand to i16.
+pub fn widen_mul_i8_i16_scalar(dst: &mut [i16], a: &[i8], b: &[i8]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    let mut i = 0;
+    while i < dst.len() {
+        let x = i16::from(a[i]);
+        let y = i16::from(b[i]);
+        dst[i] = x * y;
+        i += 1;
+    }
+}
+
+/// Multiplies u16 pairs after widening each operand to u32.
+pub fn widen_mul_u16_u32_scalar(dst: &mut [u32], a: &[u16], b: &[u16]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    let mut i = 0;
+    while i < dst.len() {
+        let x = u32::from(a[i]);
+        let y = u32::from(b[i]);
+        dst[i] = x * y;
+        i += 1;
+    }
+}
+
+/// Multiplies i16 pairs after widening each operand to i32.
+pub fn widen_mul_i16_i32_scalar(dst: &mut [i32], a: &[i16], b: &[i16]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    let mut i = 0;
+    while i < dst.len() {
+        let x = i32::from(a[i]);
+        let y = i32::from(b[i]);
+        dst[i] = x * y;
+        i += 1;
+    }
+}
 
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2,fma")]
@@ -162,8 +275,7 @@ pub unsafe fn sat_add_u8_avx2(dst: &mut [u8], a: &[u8], b: &[u8]) {
 pub fn squared_error_best(a: &[f32], b: &[f32]) -> f64 {
     #[cfg(target_arch = "x86_64")]
     {
-        if std::arch::is_x86_feature_detected!("avx2")
-            && std::arch::is_x86_feature_detected!("fma")
+        if std::arch::is_x86_feature_detected!("avx2") && std::arch::is_x86_feature_detected!("fma")
         {
             // SAFETY: runtime feature detection establishes the target-feature
             // precondition; the callee validates equal slice lengths.
@@ -212,8 +324,7 @@ pub fn sat_add_u8_dispatch_tier() -> &'static str {
 pub fn dispatch_tier() -> &'static str {
     #[cfg(target_arch = "x86_64")]
     {
-        if std::arch::is_x86_feature_detected!("avx2")
-            && std::arch::is_x86_feature_detected!("fma")
+        if std::arch::is_x86_feature_detected!("avx2") && std::arch::is_x86_feature_detected!("fma")
         {
             return "avx2+fma";
         }
@@ -268,9 +379,9 @@ mod tests {
             let candidate = squared_error_best(&a, &b);
             let relative_error = (reference - candidate).abs() / reference.abs().max(1.0);
             assert!(
-                relative_error <= 1e-12,
-                "len={len}: reference={reference}, candidate={candidate}, relative_error={relative_error}"
-            );
+        relative_error <= 1e-12,
+        "len={len}: reference={reference}, candidate={candidate}, relative_error={relative_error}"
+      );
 
             let bytes_a: Vec<u8> = (0..len).map(|_| rng.next() as u8).collect();
             let bytes_b: Vec<u8> = (0..len).map(|_| rng.next() as u8).collect();
@@ -313,5 +424,194 @@ mod tests {
         candidate.fill(0);
         sat_add_u8_best(&mut candidate, &a, &b);
         assert_eq!(candidate, expected);
+    }
+
+    #[test]
+    fn dot_and_widen_cover_extrema_and_pathological_lengths() {
+        const LENGTHS: [usize; 14] = [0, 1, 7, 8, 9, 15, 16, 17, 31, 32, 63, 64, 65, 127];
+        for &len in &LENGTHS {
+            let a_f32: Vec<f32> = (0..len)
+                .map(|i| [f32::MAX, f32::MIN, 1.5, -2.25][i & 3])
+                .collect();
+            let b_f32: Vec<f32> = (0..len).map(|i| [1.0, 1.0, 2.0, -4.0][i & 3]).collect();
+            let mut expected_f32 = 0.0_f64;
+            for i in 0..len {
+                expected_f32 += f64::from(a_f32[i]) * f64::from(b_f32[i]);
+            }
+            let candidate_f32 = dot_f32_scalar(&a_f32, &b_f32);
+            let error_f32 = (expected_f32 - candidate_f32).abs() / expected_f32.abs().max(1.0);
+            assert!(
+                error_f32 <= 1e-12,
+                "len={len}: f32 relative error={error_f32}"
+            );
+
+            let a_f64: Vec<f64> = (0..len)
+                .map(|i| [f64::MAX, f64::MIN, 1.0e150, -1.0e150][i & 3])
+                .collect();
+            let b_f64: Vec<f64> = (0..len)
+                .map(|i| [1.0, 1.0, 1.0e-150, -1.0e-150][i & 3])
+                .collect();
+            let mut expected_f64 = 0.0_f64;
+            for i in 0..len {
+                expected_f64 += a_f64[i] * b_f64[i];
+            }
+            let candidate_f64 = dot_f64_scalar(&a_f64, &b_f64);
+            let error_f64 = (expected_f64 - candidate_f64).abs() / expected_f64.abs().max(1.0);
+            assert!(
+                error_f64 <= 1e-12,
+                "len={len}: f64 relative error={error_f64}"
+            );
+
+            let a_i16: Vec<i16> = (0..len)
+                .map(|i| [i16::MIN, -1, 1, i16::MAX][i & 3])
+                .collect();
+            let b_i16: Vec<i16> = (0..len)
+                .map(|i| [i16::MAX, i16::MIN, -1, i16::MAX][i & 3])
+                .collect();
+            let mut expected_i16 = 0_i64;
+            for i in 0..len {
+                expected_i16 += i64::from(a_i16[i]) * i64::from(b_i16[i]);
+            }
+            assert_eq!(dot_i16_scalar(&a_i16, &b_i16), expected_i16);
+
+            let a_u8: Vec<u8> = (0..len).map(|i| [0, 1, 127, u8::MAX][i & 3]).collect();
+            let b_i8: Vec<i8> = (0..len).map(|i| [i8::MIN, -1, 1, i8::MAX][i & 3]).collect();
+            let mut expected_mixed = 0_i64;
+            for i in 0..len {
+                expected_mixed += i64::from(a_u8[i]) * i64::from(b_i8[i]);
+            }
+            assert_eq!(dot_u8_i8_scalar(&a_u8, &b_i8), expected_mixed);
+
+            let a_u8_w: Vec<u8> = (0..len).map(|i| [0, 1, 127, u8::MAX][i & 3]).collect();
+            let b_u8_w: Vec<u8> = (0..len).map(|i| [u8::MAX, 254, 128, 1][i & 3]).collect();
+            let mut expected_u8_u16 = vec![0_u16; len];
+            for i in 0..len {
+                expected_u8_u16[i] = u16::from(a_u8_w[i]) * u16::from(b_u8_w[i]);
+            }
+            let mut candidate_u8_u16 = vec![0_u16; len];
+            widen_mul_u8_u16_scalar(&mut candidate_u8_u16, &a_u8_w, &b_u8_w);
+            assert_eq!(candidate_u8_u16, expected_u8_u16);
+
+            let a_i8: Vec<i8> = (0..len).map(|i| [i8::MIN, -1, 1, i8::MAX][i & 3]).collect();
+            let b_i8_w: Vec<i8> = (0..len).map(|i| [i8::MIN, 1, -1, 0][i & 3]).collect();
+            let mut expected_i8_i16 = vec![0_i16; len];
+            for i in 0..len {
+                expected_i8_i16[i] = i16::from(a_i8[i]) * i16::from(b_i8_w[i]);
+            }
+            let mut candidate_i8_i16 = vec![0_i16; len];
+            widen_mul_i8_i16_scalar(&mut candidate_i8_i16, &a_i8, &b_i8_w);
+            assert_eq!(candidate_i8_i16, expected_i8_i16);
+
+            let a_u16: Vec<u16> = (0..len).map(|i| [0, 1, 32_768, u16::MAX][i & 3]).collect();
+            let b_u16: Vec<u16> = (0..len).map(|i| [u16::MAX, 2, 3, 1][i & 3]).collect();
+            let mut expected_u16_u32 = vec![0_u32; len];
+            for i in 0..len {
+                expected_u16_u32[i] = u32::from(a_u16[i]) * u32::from(b_u16[i]);
+            }
+            let mut candidate_u16_u32 = vec![0_u32; len];
+            widen_mul_u16_u32_scalar(&mut candidate_u16_u32, &a_u16, &b_u16);
+            assert_eq!(candidate_u16_u32, expected_u16_u32);
+
+            let a_i16_w: Vec<i16> = (0..len)
+                .map(|i| [i16::MIN, -1, 1, i16::MAX][i & 3])
+                .collect();
+            let b_i16_w: Vec<i16> = (0..len).map(|i| [i16::MIN, 1, -1, 0][i & 3]).collect();
+            let mut expected_i16_i32 = vec![0_i32; len];
+            for i in 0..len {
+                expected_i16_i32[i] = i32::from(a_i16_w[i]) * i32::from(b_i16_w[i]);
+            }
+            let mut candidate_i16_i32 = vec![0_i32; len];
+            widen_mul_i16_i32_scalar(&mut candidate_i16_i32, &a_i16_w, &b_i16_w);
+            assert_eq!(candidate_i16_i32, expected_i16_i32);
+        }
+    }
+
+    #[test]
+    fn randomized_dot_and_widen_differential_coverage() {
+        let mut rng = XorShift64(0x31d2_9a77_40e6_b5c1);
+        for trial in 0..256 {
+            let len = if trial == 0 {
+                2049
+            } else {
+                (rng.next() as usize) % 2050
+            };
+            let a_f32: Vec<f32> = (0..len).map(|_| rng.f32()).collect();
+            let b_f32: Vec<f32> = (0..len).map(|_| rng.f32()).collect();
+            let mut expected_f32 = 0.0_f64;
+            for i in 0..len {
+                expected_f32 += f64::from(a_f32[i]) * f64::from(b_f32[i]);
+            }
+            let candidate_f32 = dot_f32_scalar(&a_f32, &b_f32);
+            assert!((expected_f32 - candidate_f32).abs() / expected_f32.abs().max(1.0) <= 1e-12);
+
+            let a_f64: Vec<f64> = (0..len)
+                .map(|_| (rng.next() as i64 as f64) / 1.0e12)
+                .collect();
+            let b_f64: Vec<f64> = (0..len)
+                .map(|_| (rng.next() as i64 as f64) / 1.0e12)
+                .collect();
+            let mut expected_f64 = 0.0_f64;
+            for i in 0..len {
+                expected_f64 += a_f64[i] * b_f64[i];
+            }
+            let candidate_f64 = dot_f64_scalar(&a_f64, &b_f64);
+            assert!((expected_f64 - candidate_f64).abs() / expected_f64.abs().max(1.0) <= 1e-12);
+
+            let a_i16: Vec<i16> = (0..len).map(|_| rng.next() as i16).collect();
+            let b_i16: Vec<i16> = (0..len).map(|_| rng.next() as i16).collect();
+            let mut expected_i16 = 0_i64;
+            for i in 0..len {
+                expected_i16 += i64::from(a_i16[i]) * i64::from(b_i16[i]);
+            }
+            assert_eq!(dot_i16_scalar(&a_i16, &b_i16), expected_i16);
+
+            let a_u8: Vec<u8> = (0..len).map(|_| rng.next() as u8).collect();
+            let b_i8: Vec<i8> = (0..len).map(|_| rng.next() as i8).collect();
+            let mut expected_mixed = 0_i64;
+            for i in 0..len {
+                expected_mixed += i64::from(a_u8[i]) * i64::from(b_i8[i]);
+            }
+            assert_eq!(dot_u8_i8_scalar(&a_u8, &b_i8), expected_mixed);
+
+            let a_u8_w: Vec<u8> = (0..len).map(|_| rng.next() as u8).collect();
+            let b_u8_w: Vec<u8> = (0..len).map(|_| rng.next() as u8).collect();
+            let mut expected_u8_u16 = vec![0_u16; len];
+            for i in 0..len {
+                expected_u8_u16[i] = u16::from(a_u8_w[i]) * u16::from(b_u8_w[i]);
+            }
+            let mut candidate_u8_u16 = vec![0_u16; len];
+            widen_mul_u8_u16_scalar(&mut candidate_u8_u16, &a_u8_w, &b_u8_w);
+            assert_eq!(candidate_u8_u16, expected_u8_u16);
+
+            let a_i8: Vec<i8> = (0..len).map(|_| rng.next() as i8).collect();
+            let b_i8_w: Vec<i8> = (0..len).map(|_| rng.next() as i8).collect();
+            let mut expected_i8_i16 = vec![0_i16; len];
+            for i in 0..len {
+                expected_i8_i16[i] = i16::from(a_i8[i]) * i16::from(b_i8_w[i]);
+            }
+            let mut candidate_i8_i16 = vec![0_i16; len];
+            widen_mul_i8_i16_scalar(&mut candidate_i8_i16, &a_i8, &b_i8_w);
+            assert_eq!(candidate_i8_i16, expected_i8_i16);
+
+            let a_u16: Vec<u16> = (0..len).map(|_| rng.next() as u16).collect();
+            let b_u16: Vec<u16> = (0..len).map(|_| rng.next() as u16).collect();
+            let mut expected_u16_u32 = vec![0_u32; len];
+            for i in 0..len {
+                expected_u16_u32[i] = u32::from(a_u16[i]) * u32::from(b_u16[i]);
+            }
+            let mut candidate_u16_u32 = vec![0_u32; len];
+            widen_mul_u16_u32_scalar(&mut candidate_u16_u32, &a_u16, &b_u16);
+            assert_eq!(candidate_u16_u32, expected_u16_u32);
+
+            let a_i16_w: Vec<i16> = (0..len).map(|_| rng.next() as i16).collect();
+            let b_i16_w: Vec<i16> = (0..len).map(|_| rng.next() as i16).collect();
+            let mut expected_i16_i32 = vec![0_i32; len];
+            for i in 0..len {
+                expected_i16_i32[i] = i32::from(a_i16_w[i]) * i32::from(b_i16_w[i]);
+            }
+            let mut candidate_i16_i32 = vec![0_i32; len];
+            widen_mul_i16_i32_scalar(&mut candidate_i16_i32, &a_i16_w, &b_i16_w);
+            assert_eq!(candidate_i16_i32, expected_i16_i32);
+        }
     }
 }

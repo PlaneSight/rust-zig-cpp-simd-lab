@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <iostream>
 #include <numeric>
+#include <limits>
+
 #include <vector>
 
 namespace {
@@ -32,14 +34,125 @@ public:
 private:
     std::uint64_t state_;
 };
+bool run_new_operation_case(std::size_t length, XorShift64& rng,
+                            bool extrema) {
+    constexpr std::array<float, 8> f32_values{
+        -3.0F, -1.0F, -0.0F, 0.0F, 1.0F, 2.5F,
+        std::numeric_limits<float>::max(), 0.5F};
+    constexpr std::array<double, 8> f64_values{
+        -1.0e100, -1.0, -0.0, 0.0, 1.0, 3.5, 1.0e100, -2.25};
+    constexpr std::array<std::int16_t, 8> i16_values{
+        std::numeric_limits<std::int16_t>::min(), -32767, -1, 0,
+        1, 32766, std::numeric_limits<std::int16_t>::max(), -12345};
+    constexpr std::array<std::uint8_t, 8> u8_values{
+        0, 1, 127, 128, 254, 255, 3, 200};
+    constexpr std::array<std::int8_t, 8> i8_values{
+        -128, -127, -1, 0, 1, 126, 127, -64};
+
+    std::vector<float> f32_a(length), f32_b(length);
+    std::vector<double> f64_a(length), f64_b(length);
+    std::vector<std::int16_t> i16_a(length), i16_b(length);
+    std::vector<std::uint8_t> u8_a(length), u8_b(length);
+    std::vector<std::int8_t> i8_a(length), i8_b(length);
+    std::vector<std::uint16_t> u16_a(length), u16_b(length);
+    for (std::size_t i = 0; i < length; ++i) {
+        if (extrema) {
+            f32_a[i] = f32_values[i & 7];
+            f32_b[i] = f32_values[(i + 3) & 7];
+            f64_a[i] = f64_values[i & 7];
+            f64_b[i] = f64_values[(i + 5) & 7];
+            i16_a[i] = i16_values[i & 7];
+            i16_b[i] = i16_values[(i + 3) & 7];
+            u8_a[i] = u8_values[i & 7];
+            u8_b[i] = u8_values[(i + 5) & 7];
+            i8_a[i] = i8_values[i & 7];
+            i8_b[i] = i8_values[(i + 2) & 7];
+            u16_a[i] = (i & 1) == 0 ? 0U : 65535U;
+            u16_b[i] = (i & 1) == 0 ? 65535U : 1U;
+        } else {
+            f32_a[i] = rng.next_float();
+            f32_b[i] = rng.next_float();
+            f64_a[i] = static_cast<double>(rng.next_float());
+            f64_b[i] = static_cast<double>(rng.next_float());
+            i16_a[i] = static_cast<std::int16_t>(rng.next());
+            i16_b[i] = static_cast<std::int16_t>(rng.next());
+            u8_a[i] = static_cast<std::uint8_t>(rng.next());
+            u8_b[i] = static_cast<std::uint8_t>(rng.next());
+            i8_a[i] = static_cast<std::int8_t>(rng.next());
+            i8_b[i] = static_cast<std::int8_t>(rng.next());
+            u16_a[i] = static_cast<std::uint16_t>(rng.next());
+            u16_b[i] = static_cast<std::uint16_t>(rng.next());
+        }
+    }
+
+    double f32_expected = 0.0;
+    double f64_expected = 0.0;
+    std::int64_t i16_dot_expected = 0;
+    std::int64_t mixed_dot_expected = 0;
+    for (std::size_t i = 0; i < length; ++i) {
+        f32_expected += static_cast<double>(f32_a[i]) *
+                        static_cast<double>(f32_b[i]);
+        f64_expected += f64_a[i] * f64_b[i];
+        i16_dot_expected += static_cast<std::int64_t>(i16_a[i]) *
+                            static_cast<std::int64_t>(i16_b[i]);
+        mixed_dot_expected += static_cast<std::int64_t>(u8_a[i]) *
+                              static_cast<std::int64_t>(i8_b[i]);
+    }
+    const auto close = [](double expected, double actual) {
+        return std::abs(expected - actual) /
+                   std::max(std::abs(expected), 1.0) <= 1e-12;
+    };
+    if (!close(f32_expected, simd_lab::dot_f32_scalar(f32_a, f32_b)) ||
+        !close(f64_expected, simd_lab::dot_f64_scalar(f64_a, f64_b)) ||
+        i16_dot_expected != simd_lab::dot_i16_scalar(i16_a, i16_b) ||
+        mixed_dot_expected != simd_lab::dot_u8_i8_scalar(u8_a, i8_b)) {
+        std::cerr << "dot mismatch at length " << length << '\n';
+        return false;
+    }
+
+    std::vector<std::uint16_t> u16_expected(length), u16_actual(length);
+    std::vector<std::int16_t> i16_expected(length), i16_actual(length);
+    std::vector<std::uint32_t> u32_expected(length), u32_actual(length);
+    std::vector<std::int32_t> i32_expected(length), i32_actual(length);
+    for (std::size_t i = 0; i < length; ++i) {
+        const auto u8_lhs = static_cast<std::uint16_t>(u8_a[i]);
+        const auto u8_rhs = static_cast<std::uint16_t>(u8_b[i]);
+        u16_expected[i] = static_cast<std::uint16_t>(u8_lhs * u8_rhs);
+        const auto i8_lhs = static_cast<std::int16_t>(i8_a[i]);
+        const auto i8_rhs = static_cast<std::int16_t>(i8_b[i]);
+        i16_expected[i] = static_cast<std::int16_t>(i8_lhs * i8_rhs);
+        const auto u16_lhs = static_cast<std::uint32_t>(u16_a[i]);
+        const auto u16_rhs = static_cast<std::uint32_t>(u16_b[i]);
+        u32_expected[i] = u16_lhs * u16_rhs;
+        const auto i16_lhs = static_cast<std::int32_t>(i16_a[i]);
+        const auto i16_rhs = static_cast<std::int32_t>(i16_b[i]);
+        i32_expected[i] = i16_lhs * i16_rhs;
+    }
+    simd_lab::widen_mul_u8_u16_scalar(u16_actual, u8_a, u8_b);
+    simd_lab::widen_mul_i8_i16_scalar(i16_actual, i8_a, i8_b);
+    simd_lab::widen_mul_u16_u32_scalar(u32_actual, u16_a, u16_b);
+    simd_lab::widen_mul_i16_i32_scalar(i32_actual, i16_a, i16_b);
+    if (u16_actual != u16_expected || i16_actual != i16_expected ||
+        u32_actual != u32_expected || i32_actual != i32_expected) {
+        std::cerr << "widening multiply mismatch at length " << length << '\n';
+        return false;
+    }
+    return true;
+}
 
 bool run_randomized_differential_tests() {
+    constexpr std::array<std::size_t, 13> pathological_lengths{
+        0, 1, 7, 8, 9, 15, 16, 31, 32, 63, 64, 65, 127};
     constexpr std::array<std::uint16_t, 8> half_values{
         0x0000, 0x3400, 0x3800, 0x3c00, 0x3e00, 0x4000, 0x4200, 0x4400};
     XorShift64 rng{0x8f3ca516d27b49e1ULL};
+    for (const auto length : pathological_lengths) {
+        if (!run_new_operation_case(length, rng, true)) return false;
+    }
 
     for (std::size_t trial = 0; trial < 256; ++trial) {
-        const std::size_t length = trial < 64 ? trial : rng.next() % 2049;
+        const std::size_t length = trial < 64 ? trial : rng.next() % 2050;
+        if (!run_new_operation_case(length, rng, false)) return false;
         std::vector<float> a(length), b(length);
         std::generate(a.begin(), a.end(), [&] { return rng.next_float(); });
         std::generate(b.begin(), b.end(), [&] { return rng.next_float(); });

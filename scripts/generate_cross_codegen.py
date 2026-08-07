@@ -52,11 +52,11 @@ def run(cmd: list[str]) -> str:
 
 
 def version(exe: str) -> str:
+    args = ["version"] if exe == "zig" else ["--version"]
     try:
-        return run([exe, "--version"]).splitlines()[0]
+        return run([exe, *args]).splitlines()[0]
     except Exception:
         return "unavailable"
-
 
 def main() -> None:
     ap = argparse.ArgumentParser()
@@ -68,8 +68,10 @@ def main() -> None:
 
     if shutil.which("clang++"):
         sources = [
+            ("dot", ROOT / "probes/cpp/dot.cpp"),
             ("sad-portable", ROOT / "probes/cpp/sad_portable.cpp"),
             ("sat-add-portable", ROOT / "probes/cpp/sat_add_portable.cpp"),
+            ("widen-mul", ROOT / "probes/cpp/widen_mul.cpp"),
         ]
         if args.target == "aarch64-fp16":
             sources.append(("fp16-clang-ext", ROOT / "probes/cpp/fp16_clang.cpp"))
@@ -83,7 +85,7 @@ def main() -> None:
                          "assembly": str(out.relative_to(ROOT)), "command": cmd})
 
     if shutil.which("zig"):
-        for probe in ["clamp", "sad", "sat_add"]:
+        for probe in ["clamp", "dot", "sad", "sat_add", "widen_mul"]:
             source = ROOT / f"probes/zig/{probe}.zig"
             out = OUT / f"zig-{probe}-{args.target}.s"
             obj = OUT / f"zig-{probe}-{args.target}.o"

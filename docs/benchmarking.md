@@ -15,7 +15,7 @@ Each kernel runs at six element counts:
 | `1 << 20` | 4 MiB | shared cache / memory transition |
 | `1 << 22` | 16 MiB | shared cache or DRAM |
 
-The actual working set depends on the kernel and is emitted for every result. AXPY has three f32 arrays; squared error has two; SAD has two byte arrays; u8 saturating add has two byte inputs plus one byte output; FP16 clamp has four binary16 arrays. Cache labels are therefore orientation points, not universal classifications.
+The actual working set depends on the kernel and is emitted for every result. AXPY has three f32 arrays; squared error has two; SAD has two byte arrays; u8 saturating add has two byte inputs plus one byte output; FP16 clamp has four binary16 arrays; dot products have two input arrays; widening multiply has two input arrays plus one output array. Cache labels are therefore orientation points, not universal classifications.
 
 For every kernel and size:
 
@@ -69,6 +69,15 @@ Reported bandwidth is effective algorithmic traffic:
 - u8 SAD: two byte reads = 2 bytes per element;
 - u8 saturating add: two byte reads plus one byte write = 3 bytes per element;
 - FP16 clamp: three binary16 reads plus one binary16 write = 8 bytes per element.
+
+Stage 7 uses the same accounting for all three languages:
+
+- each dot product reports two input streams (`2 * sizeof(input)` bytes per
+  element, with mixed `u8/i8` using one byte per input);
+- each widening multiply reports two input streams plus one output stream;
+- scalar and native-vector variants use identical working-set and effective
+  traffic fields, so the implementation label does not change the bandwidth
+  model.
 
 AXPY's 12-byte figure is not necessarily physical memory-bus traffic. A normal cached store can trigger a read-for-ownership/write-allocate transaction for `dst`, making a cold streaming pass closer to 16 bytes per element before eviction writeback details. If `dst` is already resident, the extra read may not reach DRAM; non-temporal stores would change the model again. Treat the reported figure as effective bandwidth and use hardware counters when making physical-bandwidth claims.
 

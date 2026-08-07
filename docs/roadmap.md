@@ -136,10 +136,10 @@ For each useful kernel, aim for the following implementation tiers where the lan
 
 ## Dot products
 
-- [ ] `f32` dot product
-- [ ] `f64` dot product
-- [ ] `i16 * i16 -> i32` dot product
-- [ ] `u8/i8` mixed signedness dot products
+- [x] `f32` dot product
+- [x] `f64` dot product
+- [x] `i16 * i16 -> i32` dot product
+- [x] `u8/i8` mixed signedness dot products
 - [ ] x86 `VPMADDWD` idioms
 - [ ] x86 VNNI / AVX-VNNI dot-product variants
 - [ ] AArch64 dot-product extension variants
@@ -148,10 +148,10 @@ For each useful kernel, aim for the following implementation tiers where the lan
 
 # 4. Widening multiply and multiply-accumulate
 
-- [ ] `u8 * u8 -> u16`
-- [ ] `i8 * i8 -> i16`
-- [ ] `u16 * u16 -> u32`
-- [ ] `i16 * i16 -> i32`
+- [x] `u8 * u8 -> u16`
+- [x] `i8 * i8 -> i16`
+- [x] `u16 * u16 -> u32`
+- [x] `i16 * i16 -> i32`
 - [ ] widening multiply-accumulate
 - [ ] pairwise multiply-add idioms
 - [ ] coefficient/filter kernels that reuse widened data
@@ -578,7 +578,7 @@ The most useful next sequence is:
 4. inspect AArch64 NEON/FP16 and wasm-simd128 snapshots;
 5. promote reviewed manifests to known-good baselines;
 6. add runtime saturating-add benchmarks;
-7. add dot product and widening-multiply families;
+7. [x] add dot product and widening-multiply families
 8. add blend and short-convolution kernels;
 9. integrate `perf` and `llvm-mca`;
 10. only then add inline-assembly reference implementations where the evidence says they are warranted.
