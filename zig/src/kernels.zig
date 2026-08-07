@@ -75,6 +75,35 @@ pub fn sadU8Vector(a: []const u8, b: []const u8) u64 {
     return sum;
 }
 
+/// Adds unsigned bytes element-wise with saturation at 255.
+/// `dst`, `a`, and `b` must have equal lengths, and `dst` must not partially
+/// overlap either input.
+pub fn satAddU8Scalar(dst: []u8, a: []const u8, b: []const u8) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        out.* = x +| y;
+    }
+}
+
+/// Adds unsigned bytes in native 32-lane vectors with a scalar tail.
+/// `dst`, `a`, and `b` must have equal lengths, and `dst` must not partially
+/// overlap either input.
+pub fn satAddU8Vector(dst: []u8, a: []const u8, b: []const u8) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    const Bytes = @Vector(32, u8);
+    var i: usize = 0;
+
+    while (i + 32 <= dst.len) : (i += 32) {
+        const va: Bytes = a[i..][0..32].*;
+        const vb: Bytes = b[i..][0..32].*;
+        dst[i..][0..32].* = va +| vb;
+    }
+
+    while (i < dst.len) : (i += 1) {
+        dst[i] = a[i] +| b[i];
+    }
+}
+
 pub fn clampF16Native(dst: []f16, c: []const f16, lo: []const f16, hi: []const f16) void {
     std.debug.assert(dst.len == c.len and c.len == lo.len and lo.len == hi.len);
     const Vec = @Vector(16, f16);
@@ -147,6 +176,8 @@ test "randomized vector paths match scalar references across tails" {
     var floats_b: [max_len]f32 = undefined;
     var bytes_a: [max_len]u8 = undefined;
     var bytes_b: [max_len]u8 = undefined;
+    var sat_expected: [max_len]u8 = undefined;
+    var sat_candidate: [max_len]u8 = undefined;
     var rng = XorShift64{ .state = 0x8f3c_a516_d27b_49e1 };
 
     for (0..256) |trial| {
@@ -166,7 +197,49 @@ test "randomized vector paths match scalar references across tails" {
             sadU8Scalar(bytes_a[0..len], bytes_b[0..len]),
             sadU8Vector(bytes_a[0..len], bytes_b[0..len]),
         );
+        for (sat_expected[0..len], bytes_a[0..len], bytes_b[0..len]) |*out, x, y| {
+            const widened_sum = @as(u16, x) + @as(u16, y);
+            out.* = @intCast(@min(widened_sum, 255));
+        }
+        satAddU8Vector(
+            sat_candidate[0..len],
+            bytes_a[0..len],
+            bytes_b[0..len],
+        );
+        try std.testing.expectEqualSlices(
+            u8,
+            sat_expected[0..len],
+            sat_candidate[0..len],
+        );
     }
+}
+
+test "saturating add covers every u8 pair" {
+    const pair_count = 256 * 256;
+    const allocator = std.testing.allocator;
+    const a = try allocator.alloc(u8, pair_count);
+    defer allocator.free(a);
+    const b = try allocator.alloc(u8, pair_count);
+    defer allocator.free(b);
+    const expected = try allocator.alloc(u8, pair_count);
+    defer allocator.free(expected);
+    const candidate = try allocator.alloc(u8, pair_count);
+    defer allocator.free(candidate);
+
+    for (0..256) |x| {
+        for (0..256) |y| {
+            const index = x * 256 + y;
+            a[index] = @intCast(x);
+            b[index] = @intCast(y);
+            expected[index] = @intCast(@min(x + y, 255));
+        }
+    }
+
+    satAddU8Scalar(candidate, a, b);
+    try std.testing.expectEqualSlices(u8, expected, candidate);
+    @memset(candidate, 0);
+    satAddU8Vector(candidate, a, b);
+    try std.testing.expectEqualSlices(u8, expected, candidate);
 }
 
 test "randomized f16 clamp strategies match across vector tails" {
