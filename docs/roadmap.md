@@ -222,7 +222,7 @@ These are the bridge from microbenchmarks to realistic workloads.
 - [ ] pixel scaling / normalization
 - [ ] clamp-to-range
 - [ ] add/subtract with saturation
-- [ ] weighted blend / lerp
+- [x] weighted blend / lerp
 - [ ] alpha blend
 - [ ] average / rounded average
 - [ ] absdiff image kernel
@@ -239,14 +239,14 @@ These are the bridge from microbenchmarks to realistic workloads.
 
 ## Convolution / filtering
 
-- [ ] 3-tap horizontal convolution
-- [ ] 5-tap horizontal convolution
+- [x] 3-tap horizontal convolution
+- [x] 5-tap horizontal convolution
 - [ ] 7/8-tap filter representative of resampling
 - [ ] short vertical convolution
 - [ ] separable 2D convolution
-- [ ] integer coefficient convolution with widening accumulation
+- [x] integer coefficient convolution with widening accumulation (fixed unsigned filters)
 - [ ] float convolution with FMA
-- [ ] edge/tail strategies for filters
+- [x] edge/tail strategies for filters (covered clamp-to-edge borders and arbitrary tails)
 
 ## Color/pixel conversion
 
@@ -594,6 +594,19 @@ NEON/FP16 cross-target manifests were generated and inspected for widening
 and floating reduction mnemonics. Dedicated VNNI, `sdot`/`udot`, `vpmadd*`,
 wasm dot, and widening multiply-accumulate variants remain intentionally
 unchecked.
-8. add blend and short-convolution kernels;
+8. [x] add weighted `u8` blend/lerp and 3-/5-tap horizontal convolution kernels;
+
+Stage 8 fixes the equal-length blend contract as
+`dst[i] = (u16(a[i]) * (256 - weight) + u16(b[i]) * weight + 128) >> 8`,
+with `weight` asserted in `0..=256` and benchmark weight `77`. The fixed
+`[1, 2, 1] / 4` and `[1, 4, 6, 4, 1] / 16` filters use clamp-to-edge samples
+and round with `+2 >> 2` and `+8 >> 4`. Zero, `1..5`, vector-boundary, and
+arbitrary-tail lengths produce every output with explicit unsigned widening
+and no signed-overflow UB. Rust and C++ use scalar/autovec forms; Zig adds
+`@Vector` forms with scalar borders and tails. Traffic is `3*n` bytes for
+blend and `2*n` for convolution. Raw-pointer probes use length-last entry
+points, with Rust guarding `len == 0` before constructing slices. Generated
+cross-target manifests remain evidence until review; no ISA-specific path,
+generic signed coefficients, alpha blending, or benchmark baseline is claimed.
 9. integrate `perf` and `llvm-mca`;
 10. only then add inline-assembly reference implementations where the evidence says they are warranted.

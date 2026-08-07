@@ -449,6 +449,129 @@ pub fn unpack_u32_to_u8x4_scalar(dst: &mut [u8], src: &[u32]) {
     }
 }
 
+/// Blends two byte slices with a 16-bit fixed-point weight.
+///
+/// The three slices must have identical lengths. `weight` is an inclusive
+/// fixed-point weight in `0..=256`: zero selects `a`, while 256 selects `b`.
+/// The weighted sum is rounded to the nearest byte with ties rounded upward.
+/// Rust's borrowing rules make this an out-of-place transform: `dst` cannot
+/// overlap either input.
+pub fn blend_u8_scalar(dst: &mut [u8], a: &[u8], b: &[u8], weight: u16) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+    assert!(weight <= 256);
+
+    let weight = u32::from(weight);
+    let inverse_weight = 256_u32 - weight;
+    let mut i = 0;
+    while i < dst.len() {
+        let weighted_sum =
+            u32::from(a[i]) * inverse_weight + u32::from(b[i]) * weight + 128;
+        dst[i] = (weighted_sum >> 8) as u8;
+        i += 1;
+    }
+}
+
+/// Applies a three-tap `[1, 2, 1] / 4` horizontal filter to bytes.
+///
+/// The destination and source slices must have identical lengths. Source
+/// indices outside the slice are clamped to the nearest endpoint, and the
+/// rounded result is written for every destination element.
+/// Rust's borrowing rules make this an out-of-place transform: `dst` cannot
+/// overlap `src`.
+pub fn convolve3_u8_scalar(dst: &mut [u8], src: &[u8]) {
+    assert_eq!(dst.len(), src.len());
+    let n = src.len();
+    if n == 0 {
+        return;
+    }
+    if n == 1 {
+        dst[0] = src[0];
+        return;
+    }
+
+    dst[0] =
+        ((3 * u32::from(src[0]) + u32::from(src[1]) + 2) >> 2) as u8;
+    let mut i = 1;
+    while i < n - 1 {
+        let weighted_sum = u32::from(src[i - 1])
+            + 2 * u32::from(src[i])
+            + u32::from(src[i + 1])
+            + 2;
+        dst[i] = (weighted_sum >> 2) as u8;
+        i += 1;
+    }
+    dst[n - 1] =
+        ((u32::from(src[n - 2]) + 3 * u32::from(src[n - 1]) + 2) >> 2) as u8;
+}
+
+/// Applies a five-tap `[1, 4, 6, 4, 1] / 16` horizontal filter to bytes.
+///
+/// The destination and source slices must have identical lengths. Source
+/// indices outside the slice are clamped to the nearest endpoint, and the
+/// rounded result is written for every destination element.
+/// Rust's borrowing rules make this an out-of-place transform: `dst` cannot
+/// overlap `src`.
+pub fn convolve5_u8_scalar(dst: &mut [u8], src: &[u8]) {
+    assert_eq!(dst.len(), src.len());
+    let n = src.len();
+    if n == 0 {
+        return;
+    }
+    if n < 5 {
+        let last = n - 1;
+        for i in 0..n {
+            let left2 = i.saturating_sub(2);
+            let left1 = i.saturating_sub(1);
+            let right1 = i.saturating_add(1).min(last);
+            let right2 = i.saturating_add(2).min(last);
+            let weighted_sum = u32::from(src[left2])
+                + 4 * u32::from(src[left1])
+                + 6 * u32::from(src[i])
+                + 4 * u32::from(src[right1])
+                + u32::from(src[right2])
+                + 8;
+            dst[i] = (weighted_sum >> 4) as u8;
+        }
+        return;
+    }
+
+    dst[0] =
+        ((11 * u32::from(src[0]) + 4 * u32::from(src[1]) + u32::from(src[2]) + 8) >> 4)
+            as u8;
+    dst[1] = ((5 * u32::from(src[0])
+        + 6 * u32::from(src[1])
+        + 4 * u32::from(src[2])
+        + u32::from(src[3])
+        + 8)
+        >> 4) as u8;
+    let mut i = 2;
+    while i < n - 2 {
+        let weighted_sum = u32::from(src[i - 2])
+            + 4 * u32::from(src[i - 1])
+            + 6 * u32::from(src[i])
+            + 4 * u32::from(src[i + 1])
+            + u32::from(src[i + 2])
+            + 8;
+        dst[i] = (weighted_sum >> 4) as u8;
+        i += 1;
+    }
+    dst[n - 2] = ((
+        u32::from(src[n - 4])
+            + 4 * u32::from(src[n - 3])
+            + 6 * u32::from(src[n - 2])
+            + 5 * u32::from(src[n - 1])
+            + 8
+    ) >> 4) as u8;
+    dst[n - 1] = ((
+        u32::from(src[n - 3])
+            + 4 * u32::from(src[n - 2])
+            + 11 * u32::from(src[n - 1])
+            + 8
+    ) >> 4) as u8;
+}
+
+
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2,fma")]
 pub unsafe fn squared_error_avx2(a: &[f32], b: &[f32]) -> f64 {
@@ -1383,6 +1506,138 @@ mod tests {
         }
     }
 
+    fn reference_blend_u8(a: &[u8], b: &[u8], weight: u16) -> Vec<u8> {
+        let weight = u32::from(weight);
+        let inverse_weight = 256_u32 - weight;
+        a.iter()
+            .zip(b)
+            .map(|(&x, &y)| {
+                ((u32::from(x) * inverse_weight + u32::from(y) * weight + 128) >> 8) as u8
+            })
+            .collect()
+    }
+
+    fn reference_convolve3_u8(src: &[u8]) -> Vec<u8> {
+        if src.is_empty() {
+            return Vec::new();
+        }
+        let last = src.len() - 1;
+        (0..src.len())
+            .map(|i| {
+                let left = src[i.saturating_sub(1)];
+                let right = src[i.saturating_add(1).min(last)];
+                ((u32::from(left) + 2 * u32::from(src[i]) + u32::from(right) + 2) >> 2) as u8
+            })
+            .collect()
+    }
+
+    fn reference_convolve5_u8(src: &[u8]) -> Vec<u8> {
+        if src.is_empty() {
+            return Vec::new();
+        }
+        let last = src.len() - 1;
+        (0..src.len())
+            .map(|i| {
+                let left2 = src[i.saturating_sub(2)];
+                let left = src[i.saturating_sub(1)];
+                let right = src[i.saturating_add(1).min(last)];
+                let right2 = src[i.saturating_add(2).min(last)];
+                ((u32::from(left2)
+                    + 4 * u32::from(left)
+                    + 6 * u32::from(src[i])
+                    + 4 * u32::from(right)
+                    + u32::from(right2)
+                    + 8)
+                    >> 4) as u8
+            })
+            .collect()
+    }
+
+    fn assert_convolutions_match_references(src: &[u8]) {
+        let expected3 = reference_convolve3_u8(src);
+        let expected5 = reference_convolve5_u8(src);
+        let mut actual3 = vec![0_u8; src.len()];
+        let mut actual5 = vec![0_u8; src.len()];
+        convolve3_u8_scalar(&mut actual3, src);
+        convolve5_u8_scalar(&mut actual5, src);
+        assert_eq!(actual3, expected3, "convolve3 len={}", src.len());
+        assert_eq!(actual5, expected5, "convolve5 len={}", src.len());
+    }
+
+    #[test]
+    fn image_kernels_cover_edges_extrema_and_random_lengths() {
+        const LENGTHS: [usize; 19] = [
+            0, 1, 2, 3, 4, 5, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127,
+        ];
+        const WEIGHTS: [u16; 6] = [0, 1, 77, 128, 255, 256];
+        let mut rng = XorShift64(0x71e3_4a29_c805_d6f1);
+
+        for &len in &LENGTHS {
+            let a: Vec<u8> = (0..len)
+                .map(|i| match i {
+                    0 => 0,
+                    1 => u8::MAX,
+                    2 => 1,
+                    3 => u8::MAX - 1,
+                    _ => rng.next() as u8,
+                })
+                .collect();
+            let b: Vec<u8> = (0..len)
+                .map(|i| match i {
+                    0 => u8::MAX,
+                    1 => 0,
+                    2 => u8::MAX,
+                    3 => 1,
+                    _ => rng.next() as u8,
+                })
+                .collect();
+            for &weight in &WEIGHTS {
+                let expected = reference_blend_u8(&a, &b, weight);
+                let mut actual = vec![0_u8; len];
+                blend_u8_scalar(&mut actual, &a, &b, weight);
+                assert_eq!(actual, expected, "blend len={len}, weight={weight}");
+            }
+
+            let source: Vec<u8> = (0..len)
+                .map(|i| match i {
+                    0 => 0,
+                    1 => u8::MAX,
+                    2 => 1,
+                    3 => u8::MAX - 1,
+                    _ => rng.next() as u8,
+                })
+                .collect();
+            assert_convolutions_match_references(&source);
+            for &value in &[0_u8, u8::MAX] {
+                assert_convolutions_match_references(&vec![value; len]);
+            }
+        }
+
+        for trial in 0..256 {
+            let len = if trial < 6 {
+                trial
+            } else {
+                (rng.next() as usize) % 258
+            };
+            let a: Vec<u8> = (0..len).map(|_| rng.next() as u8).collect();
+            let b: Vec<u8> = (0..len).map(|_| rng.next() as u8).collect();
+            let weight = (rng.next() % 257) as u16;
+            let expected = reference_blend_u8(&a, &b, weight);
+            let mut actual = vec![0_u8; len];
+            blend_u8_scalar(&mut actual, &a, &b, weight);
+            assert_eq!(actual, expected, "random blend trial={trial}, len={len}");
+
+            let source: Vec<u8> = (0..len).map(|_| rng.next() as u8).collect();
+            assert_convolutions_match_references(&source);
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn blend_u8_rejects_weight_above_fixed_point_range() {
+        let mut dst = [0_u8; 1];
+        blend_u8_scalar(&mut dst, &[0], &[u8::MAX], 257);
+    }
     #[test]
     #[should_panic]
     fn mixed_width_f32_u8_checked_conversions_reject_invalid_inputs() {

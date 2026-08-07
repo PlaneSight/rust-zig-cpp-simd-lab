@@ -95,6 +95,38 @@ element. This is 3 bytes for `u8`/`i8`, 6 for `u16`/`i16`, 12 for
 `u32`/`i32`, and 24 for `u64`/`i64`. The scalar/autovec label changes the
 implementation under test, not the traffic contract.
 
+## Stage 8 blend and short-convolution rows
+
+Stage 8 benchmark rows are semantic workload definitions, not a benchmark
+result bundle. The shared rows are named `blend-u8/scalar-autovec`,
+`convolve3-u8/scalar-autovec`, and `convolve5-u8/scalar-autovec` in Rust,
+Zig, and C++23. Zig additionally has `blend-u8/native-vector`,
+`convolve3-u8/native-vector`, and `convolve5-u8/native-vector`; those labels
+mean Zig `@Vector` source, not an ISA-specific implementation.
+
+The blend row uses the nontrivial scalar `weight = 77` and the exact integer
+formula `(u16(a) * (256 - weight) + u16(b) * weight + 128) >> 8`, with
+`weight` asserted in `0..=256` and a sufficiently wide unsigned accumulator.
+It reports two u8 input streams plus one u8 output stream: `3*n` effective
+bytes and the same `3*n`-byte working-set model per element.
+
+The convolution rows use one u8 source stream plus one u8 destination stream:
+`2*n` effective bytes and `2*n` working-set bytes per element. Fixed
+coefficients are constants and are excluded from those figures. `conv3`
+uses `[1, 2, 1] / 4` with clamp-to-edge indexing and `+2` before `>> 2`;
+`conv5` uses `[1, 4, 6, 4, 1] / 16` with the same border rule and `+8`
+before `>> 4`. Both filters widen unsigned samples before accumulation.
+
+Correctness and timing remain separate. Independent references cover equal
+lengths, length zero, lengths `1..5`, vector-boundary lengths, arbitrary
+tails, and every output border; the convolution border is the repeated
+edge sample, and scalar tails use the same rounding as the main path. No
+allocation occurs in the timed closure. Rust and C++ are scalar/autovec
+baselines, while Zig's vector rows retain scalar borders and tails. This
+contract does not claim alpha blending, generic signed coefficients,
+ISA-specific paths, measured Stage 8 results, or a reviewed baseline.
+
+
 
 AXPY's 12-byte figure is not necessarily physical memory-bus traffic. A normal cached store can trigger a read-for-ownership/write-allocate transaction for `dst`, making a cold streaming pass closer to 16 bytes per element before eviction writeback details. If `dst` is already resident, the extra read may not reach DRAM; non-temporal stores would change the model again. Treat the reported figure as effective bandwidth and use hardware counters when making physical-bandwidth claims.
 

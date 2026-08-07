@@ -40,6 +40,34 @@ that an x86 lowering exists or does not exist. Keep x86 claims tied to the
 reviewed CI manifest, and use the AArch64 profiles above for locally generated
 Stage 7 evidence.
 
+Cross-target manifests for Stage 8, including `aarch64-neon`,
+`aarch64-fp16`, and `wasm-simd128`, are generated evidence pending manual
+review. They are not known-good baselines or regression baselines, and no
+Stage 8 cross-target lowering is authoritative. The only authoritative
+reviewed known-good x86 baseline remains
+`results/codegen/known-good/manifest-x86-64-v3.json`.
+
+### Stage 8 generated interpretation
+
+The 2026-08-07 local generation used Homebrew Clang 22.1.8 and Zig 0.16.0
+on `macOS-26.6-arm64`. The integer-only image probes lowered identically in
+the `aarch64-neon` and `aarch64-fp16` profiles, as expected:
+
+- Clang C++: 402 whole-file instructions, 15 classified vector instructions,
+  with `ushll`, `uaddl`, `umlal`, and `rshrn` widening/MAC/narrowing signals.
+- Zig: 574 whole-file instructions, 14 classified vector instructions, with
+  `ushll`, `uaddl`, `umull`/`umlal`, and `rshrn` signals.
+- wasm-simd128: Clang C++ emitted 988 whole-file instructions with 84
+  classified vector instructions; Zig emitted 1624 with 201. Both contain
+  `i8x16`/`i16x8` families, and Zig's u32 blend path also contains `i32x4`.
+
+The AArch64 assembly therefore provides evidence that both frontends select
+widening arithmetic and rounded narrowing for these contracts. The larger
+Zig and wasm whole-file counts warrant per-function investigation; they are
+not runtime-performance conclusions. These counts cover all exports in each
+probe file, not individual kernels, and do not establish an ISA-specialized
+production implementation or a reviewed baseline.
+
 ## Output
 
 Snapshots are written under `results/codegen/`. Every manifest uses schema `simd-lab-codegen-v1` and records:
@@ -47,6 +75,7 @@ Snapshots are written under `results/codegen/`. Every manifest uses schema `simd
 - exact compile command;
 - compiler first-line version string;
 - target profile;
+- source revision;
 - host metadata;
 - assembly path;
 - instruction count;
@@ -93,6 +122,23 @@ vector exports provide a portable-vector comparison; Rust and C++ scalar
 sources test ordinary autovectorization. Do not promote a specific conversion
 or pack instruction from one compiler snapshot without checking tails and
 the documented saturation/rounding policy.
+
+### Stage 8 blend and short convolution
+
+Stage 8 snapshots may record the scalar/autovec blend and fixed 3-/5-tap
+u8 convolution probes for all three languages, plus Zig's explicit
+`@Vector` forms. Review the generated output for explicit unsigned widening,
+fixed-coefficient multiply/add structure, the `+128 >> 8`, `+2 >> 2`, and
+`+8 >> 4` rounding points, clamp-to-edge border handling, and bounded scalar
+tails. These are semantic/code-generation checks, not requirements for a
+particular x86, Arm, or wasm instruction.
+
+The Stage 8 contract supplies no ISA-specific implementation, measured
+benchmark result bundle, or reviewed baseline. A generated manifest can be
+compared as evidence only; it must not be promoted to a known-good baseline
+until compiler metadata, semantic equivalence, and assembly have been
+manually reviewed.
+
 
 
 ## Comparing snapshots

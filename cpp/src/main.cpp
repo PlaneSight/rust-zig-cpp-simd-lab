@@ -364,6 +364,116 @@ bool run_saturating_add_case(std::size_t length, XorShift64& rng,
            check(i64_actual, i64_expected, "i64");
 }
 
+std::uint8_t blend_u8_reference(std::uint8_t a, std::uint8_t b,
+                                std::uint16_t weight) noexcept {
+    const auto weighted_b = static_cast<std::uint32_t>(weight);
+    const auto weighted_a = 256U - weighted_b;
+    const auto sum =
+        static_cast<std::uint32_t>(a) * weighted_a +
+        static_cast<std::uint32_t>(b) * weighted_b + 128U;
+    return static_cast<std::uint8_t>(sum >> 8U);
+}
+
+std::uint8_t convolve3_u8_reference(const std::vector<std::uint8_t>& src,
+                                    std::size_t i) noexcept {
+    const auto left = i == 0U ? 0U : i - 1U;
+    const auto right = i + 1U < src.size() ? i + 1U : src.size() - 1U;
+    const auto sum =
+        static_cast<std::uint32_t>(src[left]) +
+        2U * static_cast<std::uint32_t>(src[i]) +
+        static_cast<std::uint32_t>(src[right]) + 2U;
+    return static_cast<std::uint8_t>(sum >> 2U);
+}
+
+std::uint8_t convolve5_u8_reference(const std::vector<std::uint8_t>& src,
+                                    std::size_t i) noexcept {
+    const auto sample = [&src](std::int64_t index) {
+        if (index < 0) return static_cast<std::uint32_t>(src.front());
+        const auto unsigned_index = static_cast<std::size_t>(index);
+        return static_cast<std::uint32_t>(
+            src[std::min(unsigned_index, src.size() - 1U)]);
+    };
+    const auto center = static_cast<std::int64_t>(i);
+    const auto sum =
+        sample(center - 2) + 4U * sample(center - 1) +
+        6U * sample(center) + 4U * sample(center + 1) +
+        sample(center + 2) + 8U;
+    return static_cast<std::uint8_t>(sum >> 4U);
+}
+
+bool run_image_kernel_case(std::size_t length, XorShift64& rng,
+                           bool extrema) {
+    constexpr std::array<std::uint8_t, 8> values{
+        0, 1, 2, 127, 128, 253, 254, 255};
+    constexpr std::array<std::uint16_t, 7> weights{
+        0, 1, 77, 128, 255, 256, 173};
+    std::vector<std::uint8_t> a(length), b(length), src(length);
+    for (std::size_t i = 0; i < length; ++i) {
+        if (extrema) {
+            a[i] = values[i & 7U];
+            b[i] = values[(i + 3U) & 7U];
+            src[i] = values[(i + 5U) & 7U];
+        } else {
+            a[i] = static_cast<std::uint8_t>(rng.next());
+            b[i] = static_cast<std::uint8_t>(rng.next());
+            src[i] = static_cast<std::uint8_t>(rng.next());
+        }
+    }
+
+    std::vector<std::uint8_t> expected(length), actual(length);
+    for (const auto weight : weights) {
+        for (std::size_t i = 0; i < length; ++i) {
+            expected[i] = blend_u8_reference(a[i], b[i], weight);
+        }
+        std::fill(actual.begin(), actual.end(), std::uint8_t{0xa5});
+        simd_lab::blend_u8_scalar(actual, a, b, weight);
+        if (actual != expected) {
+            std::cerr << "u8 blend mismatch at length " << length
+                      << ", weight " << weight << '\n';
+            return false;
+        }
+    }
+
+    for (std::size_t i = 0; i < length; ++i) {
+        expected[i] = convolve3_u8_reference(src, i);
+    }
+    std::fill(actual.begin(), actual.end(), std::uint8_t{0xa5});
+    simd_lab::convolve3_u8_scalar(actual, src);
+    if (actual != expected) {
+        std::cerr << "u8 3-tap convolution mismatch at length " << length
+                  << '\n';
+        return false;
+    }
+
+    for (std::size_t i = 0; i < length; ++i) {
+        expected[i] = convolve5_u8_reference(src, i);
+    }
+    std::fill(actual.begin(), actual.end(), std::uint8_t{0xa5});
+    simd_lab::convolve5_u8_scalar(actual, src);
+    if (actual != expected) {
+        std::cerr << "u8 5-tap convolution mismatch at length " << length
+                  << '\n';
+        return false;
+    }
+    return true;
+}
+
+bool run_image_kernel_tests() {
+    constexpr std::array<std::size_t, 24> pathological_lengths{
+        0, 1, 2, 3, 4, 5, 7, 8, 9, 15, 16, 17,
+        31, 32, 33, 63, 64, 65, 127, 128, 129, 255, 256, 257};
+    XorShift64 rng{0x6d2b79f5a4c38127ULL};
+    for (const auto length : pathological_lengths) {
+        if (!run_image_kernel_case(length, rng, true)) return false;
+    }
+    for (std::size_t trial = 0; trial < 256; ++trial) {
+        const auto length = trial < 96U ? trial : rng.next() % 2050U;
+        if (!run_image_kernel_case(length, rng, false)) return false;
+    }
+    return true;
+}
+
+
 
 bool run_randomized_differential_tests() {
     constexpr std::array<std::size_t, 20> pathological_lengths{
@@ -741,7 +851,8 @@ int main() {
                                 std::max(std::abs(scalar), 1.0);
 
     if (relative_error > 1e-12 || !run_randomized_differential_tests() ||
-        !run_exhaustive_saturating_add_test() || !run_mixed_width_tests()) {
+        !run_exhaustive_saturating_add_test() || !run_mixed_width_tests() ||
+        !run_image_kernel_tests()) {
         return 1;
     }
 
@@ -749,6 +860,7 @@ int main() {
               << "Dispatch tier: " << simd_lab::dispatch_tier() << '\n'
               << "Saturating-add tier: "
               << simd_lab::sat_add_u8_dispatch_tier() << '\n'
+              << "Image kernel checks: passed\n"
               << "AXPY checksum: " << checksum << '\n'
               << "Squared error scalar: " << scalar << '\n'
               << "Squared error best:   " << best << '\n';

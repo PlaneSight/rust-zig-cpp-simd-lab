@@ -48,6 +48,87 @@ Every kernel starts with a scalar reference and should be implemented with equiv
 | Blend | lerp / weighted blend | representative video/image arithmetic |
 | Squared error | `(a-b)^2` reduction | MSE/PSNR-style workload |
 | Convolution | short 3/5/7/8-tap kernels | realistic multiply-accumulate pressure |
+
+## Stage 8: `u8` blend and short horizontal filters
+
+Stage 8 uses one shared integer contract in Rust, Zig 0.16, and C++23. Each
+public slice API requires equal logical lengths, accepts length zero, and writes
+every output for every non-zero length. All transforms are out-of-place:
+destinations must not overlap inputs; Rust enforces this through borrowing,
+while Zig and C++ make it a caller precondition. The arithmetic is unsigned
+and widened explicitly; no signed intermediate or overflowing narrow
+accumulator is part of the contract.
+
+### Mathematical contract
+
+For `n > 0`, `blend_u8_scalar(dst, a, b, weight)` computes, for every
+`0 <= i < n`:
+
+```text
+dst[i] = (u16(a[i]) * (256 - weight) + u16(b[i]) * weight + 128) >> 8
+```
+
+`weight` is a `u16` value asserted to be in `0..=256`. The displayed `u16`
+casts define the lane widening; the products and their sum must be held in a
+sufficiently wide unsigned accumulator (`u32` is sufficient) before the
+right shift and final `u8` store. The `+128` term gives integer
+round-to-nearest with upward ties for the denominator 256. The result is
+already in the `u8` range for the permitted inputs; this is not an alpha-blend
+or generic signed-coefficient operation.
+
+For a non-empty source, define the clamp-to-edge index
+`edge(j, n) = min(max(j, 0), n - 1)`. The 3-tap operation is:
+
+```text
+convolve3_u8_scalar(dst, src):
+dst[i] = (u32(src[edge(i - 1, n)])
+        + 2 * u32(src[edge(i, n)])
+        + u32(src[edge(i + 1, n)]) + 2) >> 2
+```
+
+The 5-tap operation is:
+
+```text
+convolve5_u8_scalar(dst, src):
+dst[i] = (u32(src[edge(i - 2, n)])
+        + 4 * u32(src[edge(i - 1, n)])
+        + 6 * u32(src[edge(i, n)])
+        + 4 * u32(src[edge(i + 1, n)])
+        + u32(src[edge(i + 2, n)]) + 8) >> 4
+```
+
+The fixed coefficient vectors are `[1, 2, 1] / 4` and `[1, 4, 6, 4, 1] /
+16`. `+2` and `+8` are applied before the shifts, respectively, so both
+filters use non-negative integer round-to-nearest with upward ties. The
+clamp-to-edge rule writes the first and last pixels as well as the interior;
+for `n = 1..4` repeated edge samples are intentional.
+
+### Length, traffic, and implementation tiers
+
+All three operations require equal-length input and output slices. Length zero
+returns without dereferencing a pointer. Lengths `1..5`, vector-boundary
+lengths, and arbitrary remainders are valid; no element may be skipped,
+over-read, or left unwritten. Convolution borders use the same formula as the
+interior, with the index clamp above, and scalar tails use exactly the same
+rounding and narrowing semantics as vectorized chunks.
+
+The fixed filters use explicit unsigned widening for their fixed taps. This
+scope does not introduce a generic signed-coefficient API or claim arbitrary
+filter-kernel support.
+
+| Operation | Rust | Zig 0.16 | C++23 | Effective traffic |
+|---|---|---|---|---:|
+| weighted blend / lerp | scalar/autovec | scalar/autovec and `@Vector` | scalar/autovec | `3*n` bytes |
+| 3-tap horizontal convolution | scalar/autovec | scalar/autovec and `@Vector` | scalar/autovec | `2*n` bytes |
+| 5-tap horizontal convolution | scalar/autovec | scalar/autovec and `@Vector` | scalar/autovec | `2*n` bytes |
+
+Blend traffic is two u8 reads plus one u8 write. Convolution traffic is one
+u8 read plus one u8 write; the fixed coefficient constants are excluded from
+the traffic and working-set figures. The Rust and C++ rows are ordinary
+scalar-source/autovectorization baselines. Zig's explicit vector rows retain
+scalar border and tail handling. No ISA-specific implementation tier is
+claimed by Stage 8.
+
 ## Saturating-add family
 
 The fixed-width saturation family computes each output from the mathematical

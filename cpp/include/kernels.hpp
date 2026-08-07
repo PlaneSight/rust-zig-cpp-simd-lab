@@ -25,6 +25,17 @@ std::uint64_t sad_u8_best(std::span<const std::uint8_t> a,
 void sat_add_u8_scalar(std::span<std::uint8_t> dst,
                        std::span<const std::uint8_t> a,
                        std::span<const std::uint8_t> b);
+// These image transforms are out-of-place: dst must not overlap their inputs.
+void blend_u8_scalar(std::span<std::uint8_t> dst,
+                     std::span<const std::uint8_t> a,
+                     std::span<const std::uint8_t> b,
+                     std::uint16_t weight);
+
+void convolve3_u8_scalar(std::span<std::uint8_t> dst,
+                         std::span<const std::uint8_t> src);
+
+void convolve5_u8_scalar(std::span<std::uint8_t> dst,
+                         std::span<const std::uint8_t> src);
 
 void sat_add_i8_scalar(std::span<std::int8_t> dst,
                        std::span<const std::int8_t> a,

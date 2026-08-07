@@ -154,6 +154,99 @@ bool run_sat_add_case(std::string_view name, std::size_t n,
     return true;
 }
 
+std::uint8_t blend_u8_bench_reference(std::uint8_t a, std::uint8_t b,
+                                      std::uint16_t weight) noexcept {
+    const auto weighted_b = static_cast<std::uint32_t>(weight);
+    const auto weighted_a = 256U - weighted_b;
+    const auto sum =
+        static_cast<std::uint32_t>(a) * weighted_a +
+        static_cast<std::uint32_t>(b) * weighted_b + 128U;
+    return static_cast<std::uint8_t>(sum >> 8U);
+}
+
+std::uint8_t convolve3_u8_bench_reference(
+    const std::vector<std::uint8_t>& src, std::size_t i) noexcept {
+    const auto left = i == 0U ? 0U : i - 1U;
+    const auto right = i + 1U < src.size() ? i + 1U : src.size() - 1U;
+    const auto sum =
+        static_cast<std::uint32_t>(src[left]) +
+        2U * static_cast<std::uint32_t>(src[i]) +
+        static_cast<std::uint32_t>(src[right]) + 2U;
+    return static_cast<std::uint8_t>(sum >> 2U);
+}
+
+std::uint8_t convolve5_u8_bench_reference(
+    const std::vector<std::uint8_t>& src, std::size_t i) noexcept {
+    const auto sample = [&src](std::int64_t index) {
+        if (index < 0) return static_cast<std::uint32_t>(src.front());
+        const auto unsigned_index = static_cast<std::size_t>(index);
+        return static_cast<std::uint32_t>(
+            src[std::min(unsigned_index, src.size() - 1U)]);
+    };
+    const auto center = static_cast<std::int64_t>(i);
+    const auto sum =
+        sample(center - 2) + 4U * sample(center - 1) +
+        6U * sample(center) + 4U * sample(center + 1) +
+        sample(center + 2) + 8U;
+    return static_cast<std::uint8_t>(sum >> 4U);
+}
+
+bool run_image_kernel_benchmarks(std::size_t n) {
+    if (n == 0U) return true;
+    constexpr std::uint16_t weight = 77;
+    std::vector<std::uint8_t> a(n), b(n), src(n);
+    std::vector<std::uint8_t> blend_expected(n), convolve3_expected(n),
+        convolve5_expected(n);
+    std::vector<std::uint8_t> blend_dst(n), convolve3_dst(n),
+        convolve5_dst(n);
+    for (std::size_t i = 0; i < n; ++i) {
+        a[i] = static_cast<std::uint8_t>((i * 29U + 11U) & 255U);
+        b[i] = static_cast<std::uint8_t>((i * 47U + 23U) & 255U);
+        src[i] = static_cast<std::uint8_t>((i * 73U + 5U) & 255U);
+    }
+    for (std::size_t i = 0; i < n; ++i) {
+        blend_expected[i] = blend_u8_bench_reference(a[i], b[i], weight);
+        convolve3_expected[i] = convolve3_u8_bench_reference(src, i);
+        convolve5_expected[i] = convolve5_u8_bench_reference(src, i);
+    }
+
+    simd_lab::blend_u8_scalar(blend_dst, a, b, weight);
+    if (blend_dst != blend_expected) {
+        std::cerr << "blend-u8/scalar-autovec validation failed\n";
+        return false;
+    }
+    simd_lab::convolve3_u8_scalar(convolve3_dst, src);
+    if (convolve3_dst != convolve3_expected) {
+        std::cerr << "convolve3-u8/scalar-autovec validation failed\n";
+        return false;
+    }
+    simd_lab::convolve5_u8_scalar(convolve5_dst, src);
+    if (convolve5_dst != convolve5_expected) {
+        std::cerr << "convolve5-u8/scalar-autovec validation failed\n";
+        return false;
+    }
+
+    auto result = measure(n, [&] {
+        simd_lab::blend_u8_scalar(blend_dst, a, b, weight);
+        sink_u64 = blend_dst[n - 1U];
+    });
+    report("blend-u8/scalar-autovec", n, n * 3U, n * 3U, result);
+
+    result = measure(n, [&] {
+        simd_lab::convolve3_u8_scalar(convolve3_dst, src);
+        sink_u64 = convolve3_dst[n - 1U];
+    });
+    report("convolve3-u8/scalar-autovec", n, n * 2U, n * 2U, result);
+
+    result = measure(n, [&] {
+        simd_lab::convolve5_u8_scalar(convolve5_dst, src);
+        sink_u64 = convolve5_dst[n - 1U];
+    });
+    report("convolve5-u8/scalar-autovec", n, n * 2U, n * 2U, result);
+    return true;
+}
+
+
 bool run_mixed_width_benchmarks(std::size_t n) {
     if (n == 0) return true;
 
@@ -651,6 +744,9 @@ int main() {
             });
             report("widen-mul-i32-i64/scalar-autovec", n, n * 16, n * 16,
                    result);
+            if (!run_image_kernel_benchmarks(n)) {
+                return 1;
+            }
             if (!run_mixed_width_benchmarks(n)) {
                 return 1;
             }

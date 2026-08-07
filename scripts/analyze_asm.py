@@ -63,6 +63,8 @@ TRACKED_PREFIXES = (
     "uabd",
     "uabal",
     "uadalp",
+    "uaddl",
+    "saddl",
     "uaddlp",
     "uaddlv",
     "sadalp",
@@ -108,16 +110,21 @@ TRACKED_PREFIXES = (
     "f32x4",
     "f64x2",
 )
+TRACKED_PREFIXES_LONGEST_FIRST = tuple(
+    sorted(TRACKED_PREFIXES, key=len, reverse=True)
+)
 
-LABEL_RE = re.compile(r"^[.$A-Za-z_][\w.$@]*:\s*(?:[#;].*)?$")
+LABEL_RE = re.compile(r"^[.$A-Za-z_][\w.$@]*:\s*(?:(?:[#;]|//).*)?$")
 DIRECTIVE_RE = re.compile(r"^\s*\.")
 COMMENT_RE = re.compile(r"^\s*(?:[#;]|//)")
 INSTRUCTION_RE = re.compile(r"^\s*([A-Za-z][A-Za-z0-9_.]*)\b")
+SYMBOL_ASSIGN_RE = re.compile(r"^[.$A-Za-z_][\w.$@]*\s*=\s*")
 
 WASM_VECTOR_PREFIXES = ("v128", "i8x16", "i16x8", "i32x4", "i64x2", "f32x4", "f64x2")
 ARM_VECTOR_HINTS = {
     "fmin", "fmax", "fcvt", "scvtf", "ucvtf", "fcvtz", "fcvtn", "fcvta",
-    "uabd", "uabal", "uadalp", "uaddlp", "uaddlv", "sadalp", "saddlp",
+    "uabd", "uabal", "uadalp", "uaddl", "uaddlp", "uaddlv", "sadalp", "saddlp",
+    "saddl",
     "saddlv", "ushll", "sshll", "uqadd", "sqadd", "xtn", "uqxtn", "sqxtn",
     "shrn", "rshrn", "smull", "umull", "smlal", "umlal", "sdot", "udot",
     "usdot", "zip", "uzp", "fmla", "fmul",
@@ -134,7 +141,13 @@ def analyze(text: str) -> dict[str, object]:
 
     for raw in text.splitlines():
         line = raw.strip()
-        if not line or LABEL_RE.match(line) or DIRECTIVE_RE.match(line) or COMMENT_RE.match(line):
+        if (
+            not line
+            or LABEL_RE.match(line)
+            or DIRECTIVE_RE.match(line)
+            or COMMENT_RE.match(line)
+            or SYMBOL_ASSIGN_RE.match(line)
+        ):
             continue
 
         match = INSTRUCTION_RE.match(raw)
@@ -144,7 +157,7 @@ def analyze(text: str) -> dict[str, object]:
         raw_mnemonic = match.group(1).lower()
         mnemonic = normalize_mnemonic(raw_mnemonic)
         instructions[mnemonic] += 1
-        for prefix in TRACKED_PREFIXES:
+        for prefix in TRACKED_PREFIXES_LONGEST_FIRST:
             if raw_mnemonic.startswith(prefix) or mnemonic.startswith(prefix):
                 tracked[prefix] += 1
                 break

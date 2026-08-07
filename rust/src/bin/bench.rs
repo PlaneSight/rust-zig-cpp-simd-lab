@@ -1,5 +1,6 @@
 use simd_lab_rust::{
-    axpy_scalar, convert_f32_u8_round_scalar, convert_f32_u8_sat_scalar,
+    axpy_scalar, blend_u8_scalar, convolve3_u8_scalar, convolve5_u8_scalar,
+    convert_f32_u8_round_scalar, convert_f32_u8_sat_scalar,
     convert_f32_u8_trunc_scalar, convert_i16_to_f32_scalar, convert_u16_to_f32_scalar,
     convert_u8_f32_affine_scalar, dispatch_tier, dot_f32_scalar, dot_f64_scalar, dot_i16_scalar,
     dot_u8_i8_scalar, f16c::clamp_f16c, f32_to_u16_sat_scalar, narrow_u16_to_u8_round_scalar,
@@ -296,6 +297,9 @@ fn main() {
             assert_eq!(sad_u8_scalar(&a, &b), sad_u8_best(&a, &b));
             let mut sat_reference = vec![0_u8; n];
             let mut sat_dst = vec![0_u8; n];
+            let mut blend_dst = vec![0_u8; n];
+            let mut convolve3_dst = vec![0_u8; n];
+            let mut convolve5_dst = vec![0_u8; n];
             sat_add_u8_scalar(&mut sat_reference, &a, &b);
             sat_add_u8_best(&mut sat_dst, &a, &b);
             assert_eq!(sat_dst, sat_reference);
@@ -395,6 +399,49 @@ fn main() {
             assert_eq!(i16_dst, i16_expected);
             assert_eq!(u32_dst, u32_expected);
             assert_eq!(i32_dst, i32_expected);
+            let blend_weight = 77_u16;
+            let blend_weight_u32 = u32::from(blend_weight);
+            let blend_expected: Vec<u8> = a
+                .iter()
+                .zip(&b)
+                .map(|(&lhs, &rhs)| {
+                    ((u32::from(lhs) * (256 - blend_weight_u32)
+                        + u32::from(rhs) * blend_weight_u32
+                        + 128)
+                        >> 8) as u8
+                })
+                .collect();
+            blend_u8_scalar(&mut blend_dst, &a, &b, blend_weight);
+            assert_eq!(blend_dst, blend_expected);
+
+            let mut convolve3_expected = vec![0_u8; n];
+            let mut convolve5_expected = vec![0_u8; n];
+            if n != 0 {
+                let last = n - 1;
+                for i in 0..n {
+                    let left = a[i.saturating_sub(1)];
+                    let right = a[i.saturating_add(1).min(last)];
+                    convolve3_expected[i] =
+                        ((u32::from(left) + 2 * u32::from(a[i]) + u32::from(right) + 2) >> 2)
+                            as u8;
+
+                    let left2 = a[i.saturating_sub(2)];
+                    let right2 = a[i.saturating_add(2).min(last)];
+                    convolve5_expected[i] = ((
+                        u32::from(left2)
+                            + 4 * u32::from(left)
+                            + 6 * u32::from(a[i])
+                            + 4 * u32::from(right)
+                            + u32::from(right2)
+                            + 8
+                    ) >> 4) as u8;
+                }
+            }
+            convolve3_u8_scalar(&mut convolve3_dst, &a);
+            convolve5_u8_scalar(&mut convolve5_dst, &a);
+            assert_eq!(convolve3_dst, convolve3_expected);
+            assert_eq!(convolve5_dst, convolve5_expected);
+
             let measurement = measure(n, || {
                 black_box(sad_u8_scalar(black_box(&a), black_box(&b)));
             });
@@ -404,6 +451,29 @@ fn main() {
                 black_box(sad_u8_best(black_box(&a), black_box(&b)));
             });
             report("sad-u8/best-dispatch", n, n * 2, n * 2, &measurement);
+            let measurement = measure(n, || {
+                blend_u8_scalar(
+                    black_box(&mut blend_dst),
+                    black_box(&a),
+                    black_box(&b),
+                    black_box(blend_weight),
+                );
+                black_box(&blend_dst);
+            });
+            report("blend-u8/scalar-autovec", n, n * 3, n * 3, &measurement);
+
+            let measurement = measure(n, || {
+                convolve3_u8_scalar(black_box(&mut convolve3_dst), black_box(&a));
+                black_box(&convolve3_dst);
+            });
+            report("convolve3-u8/scalar-autovec", n, n * 2, n * 2, &measurement);
+
+            let measurement = measure(n, || {
+                convolve5_u8_scalar(black_box(&mut convolve5_dst), black_box(&a));
+                black_box(&convolve5_dst);
+            });
+            report("convolve5-u8/scalar-autovec", n, n * 2, n * 2, &measurement);
+
 
             let measurement = measure(n, || {
                 sat_add_u8_scalar(black_box(&mut sat_dst), black_box(&a), black_box(&b));

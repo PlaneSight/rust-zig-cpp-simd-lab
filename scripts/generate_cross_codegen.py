@@ -58,6 +58,13 @@ def version(exe: str) -> str:
     except Exception:
         return "unavailable"
 
+def source_revision() -> str:
+    try:
+        return run(["git", "rev-parse", "HEAD"])
+    except Exception:
+        return "unavailable"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--target", required=True, choices=sorted(PROFILES))
@@ -69,6 +76,7 @@ def main() -> None:
     if shutil.which("clang++"):
         sources = [
             ("dot", ROOT / "probes/cpp/dot.cpp"),
+            ("image_kernels", ROOT / "probes/cpp/image_kernels.cpp"),
             ("sad-portable", ROOT / "probes/cpp/sad_portable.cpp"),
             ("sat-add-portable", ROOT / "probes/cpp/sat_add_portable.cpp"),
             ("widen-mul", ROOT / "probes/cpp/widen_mul.cpp"),
@@ -86,7 +94,7 @@ def main() -> None:
                          "assembly": str(out.relative_to(ROOT)), "command": cmd})
 
     if shutil.which("zig"):
-        for probe in ["clamp", "dot", "mixed_width", "sad", "sat_add", "widen_mul"]:
+        for probe in ["clamp", "dot", "image_kernels", "mixed_width", "sad", "sat_add", "widen_mul"]:
             source = ROOT / f"probes/zig/{probe}.zig"
             out = OUT / f"zig-{probe}-{args.target}.s"
             obj = OUT / f"zig-{probe}-{args.target}.o"
@@ -105,6 +113,7 @@ def main() -> None:
     metadata = {
         "schema": "simd-lab-codegen-v1",
         "target_profile": args.target,
+        "source_revision": source_revision(),
         "host": platform.platform(),
         "versions": {"zig": version("zig"), "clang": version("clang++")},
         "jobs": jobs,

@@ -78,6 +78,35 @@ tails. Widened or checked scalar implementations are compared by semantics;
 the generated assembly is evidence of the compiler's lowering, not an exact
 instruction fixture.
 
+## Stage 8 image-kernel probes
+
+The Stage 8 probe family is tagged `image_kernels`. Raw-pointer
+entry points with the element count last, matching the public slice
+semantics:
+
+```text
+blend_u8_scalar(dst, a, b, weight, len)
+convolve3_u8_scalar(dst, src, len)
+convolve5_u8_scalar(dst, src, len)
+```
+
+Rust, Zig, and C++23 expose the three scalar/autovec forms. Zig additionally
+exports `blend_u8_vector`, `convolve3_u8_vector`, and `convolve5_u8_vector`.
+`weight` is an asserted `u16` in `0..=256`; the blend uses
+`(u16(a) * (256 - weight) + u16(b) * weight + 128) >> 8`. The convolution
+probes use clamp-to-edge borders, fixed `[1, 2, 1] / 4` and
+`[1, 4, 6, 4, 1] / 16` filters, and apply `+2 >> 2` and `+8 >> 4`
+rounding before the final u8 store.
+
+Every probe handles `len == 0` without dereferencing, produces all outputs
+for lengths `1..5` and arbitrary tails, and keeps the scalar border/tail
+semantics identical to the public API. Rust probes must check `len == 0`
+before constructing slices from raw pointers. These probes remain tiny
+code-generation evidence: they do not allocate, perform I/O, measure
+runtime, or claim an ISA-specific instruction sequence. They also do not
+expand the contract to alpha blending or generic signed coefficients.
+
+
 
 ## Generate assembly
 
@@ -99,7 +128,7 @@ clang++ -std=c++23 -O3 -S -masm=intel probes/cpp/sad.cpp -o cpp-clang-sad.s
 g++ -std=c++23 -O3 -S -masm=intel probes/cpp/sad.cpp -o cpp-gcc-sad.s
 ```
 
-Generate the Stage 7 probes with the same target-profile pipeline:
+Generate the Stage 7 and Stage 8 probes with the same target-profile pipeline:
 
 ```bash
 python3 scripts/generate_codegen_snapshots.py --target x86-64-v3
@@ -116,7 +145,10 @@ python scripts/analyze_asm.py --pretty zig-clamp.s rust-clamp.s cpp-clang-clamp.
 python scripts/analyze_asm.py --pretty zig-sad.s rust-sad.s cpp-clang-sad.s
 ```
 
-The analyzer records total instruction-looking lines, vector-looking instructions, top mnemonics, and selected SIMD families including FP16 conversions. These are regression signals, not a performance model.
+The analyzer excludes comments, directives, labels, and symbol aliases, then
+records total instruction-looking lines, vector-looking instructions, top
+mnemonics, and selected SIMD families including FP16 conversions. These are
+regression signals, not a performance model.
 
 For SAD, also inspect specifically for `vpsadbw` / `psadbw`, widening instructions, lane-crossing shuffles, and scalar extraction around reductions.
 

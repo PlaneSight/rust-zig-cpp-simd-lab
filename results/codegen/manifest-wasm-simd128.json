@@ -1,7 +1,8 @@
 {
   "schema": "simd-lab-codegen-v1",
   "target_profile": "wasm-simd128",
-  "host": "macOS-26.6-arm64-64bit",
+  "source_revision": "d157e9d2e5cdc5a779ad89fc6a15e5f529a21512",
+  "host": "macOS-26.6-arm64-arm-64bit-Mach-O",
   "versions": {
     "zig": "0.16.0",
     "clang": "Homebrew clang version 22.1.8"
@@ -21,6 +22,22 @@
         "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/cpp/dot.cpp",
         "-o",
         "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-dot-wasm-simd128.s"
+      ]
+    },
+    {
+      "toolchain": "clang",
+      "probe": "image_kernels",
+      "assembly": "results/codegen/clang-image_kernels-wasm-simd128.s",
+      "command": [
+        "clang++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "--target=wasm32-unknown-unknown",
+        "-msimd128",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/cpp/image_kernels.cpp",
+        "-o",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-image_kernels-wasm-simd128.s"
       ]
     },
     {
@@ -119,6 +136,23 @@
         "-mcpu=baseline+simd128",
         "-femit-asm=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-dot-wasm-simd128.s",
         "-femit-bin=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-dot-wasm-simd128.o"
+      ]
+    },
+    {
+      "toolchain": "zig",
+      "probe": "image_kernels",
+      "assembly": "results/codegen/zig-image_kernels-wasm-simd128.s",
+      "command": [
+        "zig",
+        "build-obj",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/zig/image_kernels.zig",
+        "-O",
+        "ReleaseFast",
+        "-target",
+        "wasm32-freestanding",
+        "-mcpu=baseline+simd128",
+        "-femit-asm=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-image_kernels-wasm-simd128.s",
+        "-femit-bin=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-image_kernels-wasm-simd128.o"
       ]
     },
     {
@@ -223,6 +257,32 @@
       },
       "unique_mnemonics": 19,
       "vector_instruction_count": 24
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-image_kernels-wasm-simd128.s": {
+      "instruction_count": 988,
+      "top_mnemonics": {
+        "block": 17,
+        "br": 2,
+        "br_if": 29,
+        "br_table": 1,
+        "end_block": 17,
+        "end_function": 3,
+        "end_loop": 6,
+        "i16x8": 58,
+        "i32": 487,
+        "i8x16": 3,
+        "local": 334,
+        "loop": 6,
+        "return": 2,
+        "v128": 23
+      },
+      "tracked": {
+        "i16x8": 58,
+        "i8x16": 3,
+        "v128": 23
+      },
+      "unique_mnemonics": 14,
+      "vector_instruction_count": 84
     },
     "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-mixed-width-wasm-simd128.s": {
       "instruction_count": 2754,
@@ -335,12 +395,9 @@
       "vector_instruction_count": 24
     },
     "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-clamp-wasm-simd128.s": {
-      "instruction_count": 558,
+      "instruction_count": 555,
       "top_mnemonics": {
         "call": 128,
-        "clamp_f32x8": 1,
-        "clamp_u16x16": 1,
-        "clamp_u8x32": 1,
         "end_function": 3,
         "f32x4": 80,
         "i16x8": 32,
@@ -354,16 +411,15 @@
         "i8x16": 32,
         "v128": 6
       },
-      "unique_mnemonics": 10,
+      "unique_mnemonics": 7,
       "vector_instruction_count": 150
     },
     "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-dot-wasm-simd128.s": {
-      "instruction_count": 1445,
+      "instruction_count": 1437,
       "top_mnemonics": {
         "block": 38,
         "br": 12,
         "br_if": 48,
-        "dot_u8_i8_vector": 1,
         "end_block": 38,
         "end_function": 8,
         "end_loop": 18,
@@ -389,11 +445,39 @@
         "i8x16": 14,
         "v128": 20
       },
-      "unique_mnemonics": 27,
+      "unique_mnemonics": 19,
       "vector_instruction_count": 121
     },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-image_kernels-wasm-simd128.s": {
+      "instruction_count": 1624,
+      "top_mnemonics": {
+        "block": 19,
+        "br": 1,
+        "br_if": 32,
+        "br_table": 1,
+        "end_block": 19,
+        "end_function": 6,
+        "end_loop": 9,
+        "i16x8": 54,
+        "i32": 757,
+        "i32x4": 30,
+        "i8x16": 93,
+        "local": 567,
+        "loop": 9,
+        "return": 3,
+        "v128": 24
+      },
+      "tracked": {
+        "i16x8": 54,
+        "i32x4": 30,
+        "i8x16": 93,
+        "v128": 24
+      },
+      "unique_mnemonics": 15,
+      "vector_instruction_count": 201
+    },
     "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-mixed_width-wasm-simd128.s": {
-      "instruction_count": 4032,
+      "instruction_count": 4008,
       "top_mnemonics": {
         "block": 86,
         "br": 6,
@@ -409,11 +493,6 @@
         "i8x16": 1,
         "local": 1454,
         "loop": 49,
-        "narrow_u16_to_u8_round_scalar": 1,
-        "narrow_u16_to_u8_sat_scalar": 1,
-        "narrow_u16_to_u8_trunc_scalar": 1,
-        "pack_u8x4_to_u32_scalar": 1,
-        "unpack_u32_to_u8x4_scalar": 1,
         "v128": 21
       },
       "tracked": {
@@ -423,31 +502,28 @@
         "i8x16": 1,
         "v128": 21
       },
-      "unique_mnemonics": 39,
+      "unique_mnemonics": 15,
       "vector_instruction_count": 66
     },
     "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-sad-wasm-simd128.s": {
-      "instruction_count": 81,
+      "instruction_count": 78,
       "top_mnemonics": {
-        "absdiff_u8x32": 1,
         "end_function": 3,
         "i16x8": 15,
         "i8x16": 15,
         "local": 39,
-        "sad_u8x32": 1,
-        "v128": 6,
-        "widen_u8_to_u16x32": 1
+        "v128": 6
       },
       "tracked": {
         "i16x8": 15,
         "i8x16": 15,
         "v128": 6
       },
-      "unique_mnemonics": 8,
+      "unique_mnemonics": 5,
       "vector_instruction_count": 36
     },
     "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-sat_add-wasm-simd128.s": {
-      "instruction_count": 1267,
+      "instruction_count": 1258,
       "top_mnemonics": {
         "block": 22,
         "br_if": 38,
@@ -459,26 +535,17 @@
         "i8x16": 2,
         "local": 503,
         "loop": 8,
-        "sat_add_i16_scalar": 1,
-        "sat_add_i32_scalar": 1,
-        "sat_add_i64_scalar": 1,
-        "sat_add_i8_scalar": 1,
-        "sat_add_u16_scalar": 1,
-        "sat_add_u32_scalar": 1,
-        "sat_add_u64_scalar": 1,
-        "sat_add_u8_scalar": 1,
-        "sat_add_u8x32": 1,
         "v128": 2
       },
       "tracked": {
         "i8x16.add_sat_u": 2,
         "v128": 2
       },
-      "unique_mnemonics": 20,
+      "unique_mnemonics": 11,
       "vector_instruction_count": 4
     },
     "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-widen_mul-wasm-simd128.s": {
-      "instruction_count": 1922,
+      "instruction_count": 1910,
       "top_mnemonics": {
         "block": 42,
         "br_if": 72,
@@ -492,14 +559,7 @@
         "i64x2": 4,
         "local": 760,
         "loop": 18,
-        "v128": 24,
-        "widen_mul_i16_i32_scalar": 1,
-        "widen_mul_i16_i32_vector": 1,
-        "widen_mul_i32_i64_scalar": 1,
-        "widen_mul_i32_i64_vector": 1,
-        "widen_mul_u16_u32_vector": 1,
-        "widen_mul_u32_u64_scalar": 1,
-        "widen_mul_u32_u64_vector": 1
+        "v128": 24
       },
       "tracked": {
         "i16x8.extmul_high_i8x16_s": 1,
@@ -513,7 +573,7 @@
         "i64x2": 4,
         "v128": 24
       },
-      "unique_mnemonics": 25,
+      "unique_mnemonics": 13,
       "vector_instruction_count": 36
     }
   },

@@ -60,6 +60,147 @@ void sat_add_u8_scalar(std::span<std::uint8_t> dst,
     }
 }
 
+void blend_u8_scalar(std::span<std::uint8_t> dst,
+                     std::span<const std::uint8_t> a,
+                     std::span<const std::uint8_t> b,
+                     std::uint16_t weight) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    assert(weight <= 256U);
+    const auto weighted_b = static_cast<std::uint32_t>(weight);
+    const auto weighted_a = 256U - weighted_b;
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto sum =
+            static_cast<std::uint32_t>(a[i]) * weighted_a +
+            static_cast<std::uint32_t>(b[i]) * weighted_b + 128U;
+        dst[i] = static_cast<std::uint8_t>(sum >> 8U);
+    }
+}
+
+void convolve3_u8_scalar(std::span<std::uint8_t> dst,
+                         std::span<const std::uint8_t> src) {
+    assert(dst.size() == src.size());
+    const auto n = src.size();
+    if (n == 0U) return;
+    if (n == 1U) {
+        dst[0] = src[0];
+        return;
+    }
+
+    dst[0] = static_cast<std::uint8_t>(
+        (3U * static_cast<std::uint32_t>(src[0]) +
+         static_cast<std::uint32_t>(src[1]) + 2U) >>
+        2U);
+    for (std::size_t i = 1; i + 1U < n; ++i) {
+        const auto sum =
+            static_cast<std::uint32_t>(src[i - 1U]) +
+            2U * static_cast<std::uint32_t>(src[i]) +
+            static_cast<std::uint32_t>(src[i + 1U]) + 2U;
+        dst[i] = static_cast<std::uint8_t>(sum >> 2U);
+    }
+    dst[n - 1U] = static_cast<std::uint8_t>(
+        (static_cast<std::uint32_t>(src[n - 2U]) +
+         3U * static_cast<std::uint32_t>(src[n - 1U]) + 2U) >>
+        2U);
+}
+
+void convolve5_u8_scalar(std::span<std::uint8_t> dst,
+                         std::span<const std::uint8_t> src) {
+    assert(dst.size() == src.size());
+    const auto n = src.size();
+    if (n == 0U) return;
+    if (n == 1U) {
+        dst[0] = src[0];
+        return;
+    }
+    if (n == 2U) {
+        dst[0] = static_cast<std::uint8_t>(
+            (11U * static_cast<std::uint32_t>(src[0]) +
+             5U * static_cast<std::uint32_t>(src[1]) + 8U) >>
+            4U);
+        dst[1] = static_cast<std::uint8_t>(
+            (5U * static_cast<std::uint32_t>(src[0]) +
+             11U * static_cast<std::uint32_t>(src[1]) + 8U) >>
+            4U);
+        return;
+    }
+    if (n == 3U) {
+        dst[0] = static_cast<std::uint8_t>(
+            (11U * static_cast<std::uint32_t>(src[0]) +
+             4U * static_cast<std::uint32_t>(src[1]) +
+             static_cast<std::uint32_t>(src[2]) + 8U) >>
+            4U);
+        dst[1] = static_cast<std::uint8_t>(
+            (5U * static_cast<std::uint32_t>(src[0]) +
+             6U * static_cast<std::uint32_t>(src[1]) +
+             5U * static_cast<std::uint32_t>(src[2]) + 8U) >>
+            4U);
+        dst[2] = static_cast<std::uint8_t>(
+            (static_cast<std::uint32_t>(src[0]) +
+             4U * static_cast<std::uint32_t>(src[1]) +
+             11U * static_cast<std::uint32_t>(src[2]) + 8U) >>
+            4U);
+        return;
+    }
+    if (n == 4U) {
+        dst[0] = static_cast<std::uint8_t>(
+            (11U * static_cast<std::uint32_t>(src[0]) +
+             4U * static_cast<std::uint32_t>(src[1]) +
+             static_cast<std::uint32_t>(src[2]) + 8U) >>
+            4U);
+        dst[1] = static_cast<std::uint8_t>(
+            (5U * static_cast<std::uint32_t>(src[0]) +
+             6U * static_cast<std::uint32_t>(src[1]) +
+             4U * static_cast<std::uint32_t>(src[2]) +
+             static_cast<std::uint32_t>(src[3]) + 8U) >>
+            4U);
+        dst[2] = static_cast<std::uint8_t>(
+            (static_cast<std::uint32_t>(src[0]) +
+             4U * static_cast<std::uint32_t>(src[1]) +
+             6U * static_cast<std::uint32_t>(src[2]) +
+             5U * static_cast<std::uint32_t>(src[3]) + 8U) >>
+            4U);
+        dst[3] = static_cast<std::uint8_t>(
+            (static_cast<std::uint32_t>(src[1]) +
+             4U * static_cast<std::uint32_t>(src[2]) +
+             11U * static_cast<std::uint32_t>(src[3]) + 8U) >>
+            4U);
+        return;
+    }
+
+    dst[0] = static_cast<std::uint8_t>(
+        (11U * static_cast<std::uint32_t>(src[0]) +
+         4U * static_cast<std::uint32_t>(src[1]) +
+         static_cast<std::uint32_t>(src[2]) + 8U) >>
+        4U);
+    dst[1] = static_cast<std::uint8_t>(
+        (5U * static_cast<std::uint32_t>(src[0]) +
+         6U * static_cast<std::uint32_t>(src[1]) +
+         4U * static_cast<std::uint32_t>(src[2]) +
+         static_cast<std::uint32_t>(src[3]) + 8U) >>
+        4U);
+    for (std::size_t i = 2; i + 2U < n; ++i) {
+        const auto sum =
+            static_cast<std::uint32_t>(src[i - 2U]) +
+            4U * static_cast<std::uint32_t>(src[i - 1U]) +
+            6U * static_cast<std::uint32_t>(src[i]) +
+            4U * static_cast<std::uint32_t>(src[i + 1U]) +
+            static_cast<std::uint32_t>(src[i + 2U]) + 8U;
+        dst[i] = static_cast<std::uint8_t>(sum >> 4U);
+    }
+    dst[n - 2U] = static_cast<std::uint8_t>(
+        (static_cast<std::uint32_t>(src[n - 4U]) +
+         4U * static_cast<std::uint32_t>(src[n - 3U]) +
+         6U * static_cast<std::uint32_t>(src[n - 2U]) +
+         5U * static_cast<std::uint32_t>(src[n - 1U]) + 8U) >>
+        4U);
+    dst[n - 1U] = static_cast<std::uint8_t>(
+        (static_cast<std::uint32_t>(src[n - 3U]) +
+         4U * static_cast<std::uint32_t>(src[n - 2U]) +
+         11U * static_cast<std::uint32_t>(src[n - 1U]) + 8U) >>
+        4U);
+}
+
+
 void sat_add_i8_scalar(std::span<std::int8_t> dst,
                        std::span<const std::int8_t> a,
                        std::span<const std::int8_t> b) {

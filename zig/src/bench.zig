@@ -744,6 +744,56 @@ pub fn main() !void {
         }
 
         {
+            const blend_a = try allocator.alloc(u8, n);
+            defer allocator.free(blend_a);
+            const blend_b = try allocator.alloc(u8, n);
+            defer allocator.free(blend_b);
+            const blend_scalar = try allocator.alloc(u8, n);
+            defer allocator.free(blend_scalar);
+            const blend_vector = try allocator.alloc(u8, n);
+            defer allocator.free(blend_vector);
+            const convolution_src = try allocator.alloc(u8, n);
+            defer allocator.free(convolution_src);
+            const convolve3_scalar = try allocator.alloc(u8, n);
+            defer allocator.free(convolve3_scalar);
+            const convolve3_vector = try allocator.alloc(u8, n);
+            defer allocator.free(convolve3_vector);
+            const convolve5_scalar = try allocator.alloc(u8, n);
+            defer allocator.free(convolve5_scalar);
+            const convolve5_vector = try allocator.alloc(u8, n);
+            defer allocator.free(convolve5_vector);
+
+            for (blend_a, blend_b, convolution_src, 0..) |*a, *b, *source, i| {
+                a.* = @truncate(i * 37 + 11);
+                b.* = @truncate(i * 53 + 7);
+                source.* = @truncate(i * 29 + 3);
+            }
+            const weight: u16 = 77;
+            kernels.blendU8Scalar(blend_scalar, blend_a, blend_b, weight);
+            kernels.blendU8Vector(blend_vector, blend_a, blend_b, weight);
+            std.debug.assert(std.mem.eql(u8, blend_scalar, blend_vector));
+            kernels.convolve3U8Scalar(convolve3_scalar, convolution_src);
+            kernels.convolve3U8Vector(convolve3_vector, convolution_src);
+            std.debug.assert(std.mem.eql(u8, convolve3_scalar, convolve3_vector));
+            kernels.convolve5U8Scalar(convolve5_scalar, convolution_src);
+            kernels.convolve5U8Vector(convolve5_vector, convolution_src);
+            std.debug.assert(std.mem.eql(u8, convolve5_scalar, convolve5_vector));
+
+            var result = try measure(io, kernels.blendU8Scalar, .{ blend_scalar, blend_a, blend_b, weight }, n);
+            report("blend-u8/scalar-autovec", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.blendU8Vector, .{ blend_vector, blend_a, blend_b, weight }, n);
+            report("blend-u8/native-vector", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.convolve3U8Scalar, .{ convolve3_scalar, convolution_src }, n);
+            report("convolve3-u8/scalar-autovec", n, n * 2, n * 2, result);
+            result = try measure(io, kernels.convolve3U8Vector, .{ convolve3_vector, convolution_src }, n);
+            report("convolve3-u8/native-vector", n, n * 2, n * 2, result);
+            result = try measure(io, kernels.convolve5U8Scalar, .{ convolve5_scalar, convolution_src }, n);
+            report("convolve5-u8/scalar-autovec", n, n * 2, n * 2, result);
+            result = try measure(io, kernels.convolve5U8Vector, .{ convolve5_vector, convolution_src }, n);
+            report("convolve5-u8/native-vector", n, n * 2, n * 2, result);
+        }
+
+        {
             const c = try allocator.alloc(f16, n);
             defer allocator.free(c);
             const lo = try allocator.alloc(f16, n);

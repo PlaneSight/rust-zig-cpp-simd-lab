@@ -754,6 +754,173 @@ pub fn clampF16PromoteOnce(dst: []f16, c: []const f16, lo: []const f16, hi: []co
         dst[i] = @floatCast(@max(wlo, @min(wc, whi)));
     }
 }
+fn blendU8Element(a: u8, b: u8, weight: u16) u8 {
+    const weight_wide: u32 = @intCast(weight);
+    const inverse_weight: u32 = 256 - weight_wide;
+    const value = @as(u32, a) * inverse_weight +
+        @as(u32, b) * weight_wide + 128;
+    return @intCast(value >> 8);
+}
+
+/// The slices must have equal lengths, and `dst` must not overlap either input.
+pub fn blendU8Scalar(dst: []u8, a: []const u8, b: []const u8, weight: u16) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    std.debug.assert(weight <= 256);
+    for (dst, a, b) |*out, x, y| {
+        out.* = blendU8Element(x, y, weight);
+    }
+}
+
+/// The slices must have equal lengths, and `dst` must not overlap either input.
+pub fn blendU8Vector(dst: []u8, a: []const u8, b: []const u8, weight: u16) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    std.debug.assert(weight <= 256);
+    const Input = @Vector(16, u8);
+    const Wide = @Vector(16, u32);
+    const weight_wide: Wide = @splat(@as(u32, weight));
+    const inverse_weight: Wide = @splat(@as(u32, 256 - weight));
+    const rounding: Wide = @splat(128);
+    var i: usize = 0;
+
+    while (i + 16 <= dst.len) : (i += 16) {
+        const va: Input = a[i..][0..16].*;
+        const vb: Input = b[i..][0..16].*;
+        const wide_a: Wide = @intCast(va);
+        const wide_b: Wide = @intCast(vb);
+        const weighted: Wide = wide_a * inverse_weight + wide_b * weight_wide + rounding;
+        const normalized: Wide = weighted >> @splat(8);
+        const narrowed: Input = @intCast(normalized);
+        dst[i..][0..16].* = narrowed;
+    }
+
+    while (i < dst.len) : (i += 1) {
+        dst[i] = blendU8Element(a[i], b[i], weight);
+    }
+}
+
+fn convolve3U8Element(src: []const u8, index: usize) u8 {
+    const last = src.len - 1;
+    const left_index = if (index == 0) 0 else index - 1;
+    const right_index = if (index < last) index + 1 else last;
+    const sum: u16 = @as(u16, src[left_index]) +
+        @as(u16, src[index]) * 2 +
+        @as(u16, src[right_index]) + 2;
+    return @intCast(sum >> 2);
+}
+
+/// The slices must have equal lengths, and `dst` must not overlap `src`.
+pub fn convolve3U8Scalar(dst: []u8, src: []const u8) void {
+    std.debug.assert(dst.len == src.len);
+    if (dst.len == 0) return;
+    for (dst, 0..) |*out, index| {
+        out.* = convolve3U8Element(src, index);
+    }
+}
+
+/// The slices must have equal lengths, and `dst` must not overlap `src`.
+pub fn convolve3U8Vector(dst: []u8, src: []const u8) void {
+    std.debug.assert(dst.len == src.len);
+    if (dst.len == 0) return;
+
+    dst[0] = convolve3U8Element(src, 0);
+    if (dst.len == 1) return;
+
+    const Input = @Vector(16, u8);
+    const Wide = @Vector(16, u16);
+    const two: Wide = @splat(2);
+    const rounding: Wide = @splat(2);
+    const last = dst.len - 1;
+    var i: usize = 1;
+
+    while (i + 16 <= last) : (i += 16) {
+        const left: Input = src[(i - 1)..][0..16].*;
+        const center: Input = src[i..][0..16].*;
+        const right: Input = src[(i + 1)..][0..16].*;
+        const wide_left: Wide = @intCast(left);
+        const wide_center: Wide = @intCast(center);
+        const wide_right: Wide = @intCast(right);
+        const weighted: Wide = wide_left + wide_center * two + wide_right + rounding;
+        const normalized: Wide = weighted >> @splat(2);
+        const narrowed: Input = @intCast(normalized);
+        dst[i..][0..16].* = narrowed;
+    }
+
+    while (i < last) : (i += 1) {
+        dst[i] = convolve3U8Element(src, i);
+    }
+    dst[last] = convolve3U8Element(src, last);
+}
+
+fn convolve5U8Element(src: []const u8, index: usize) u8 {
+    const last = src.len - 1;
+    const left2_index = if (index >= 2) index - 2 else 0;
+    const left1_index = if (index >= 1) index - 1 else 0;
+    const right1_index = if (index < last) index + 1 else last;
+    const right2_index = if (last - index >= 2) index + 2 else last;
+    const sum: u16 = @as(u16, src[left2_index]) +
+        @as(u16, src[left1_index]) * 4 +
+        @as(u16, src[index]) * 6 +
+        @as(u16, src[right1_index]) * 4 +
+        @as(u16, src[right2_index]) + 8;
+    return @intCast(sum >> 4);
+}
+
+/// The slices must have equal lengths, and `dst` must not overlap `src`.
+pub fn convolve5U8Scalar(dst: []u8, src: []const u8) void {
+    std.debug.assert(dst.len == src.len);
+    if (dst.len == 0) return;
+    for (dst, 0..) |*out, index| {
+        out.* = convolve5U8Element(src, index);
+    }
+}
+
+/// The slices must have equal lengths, and `dst` must not overlap `src`.
+pub fn convolve5U8Vector(dst: []u8, src: []const u8) void {
+    std.debug.assert(dst.len == src.len);
+    if (dst.len == 0) return;
+    if (dst.len <= 2) {
+        for (dst, 0..) |*out, index| {
+            out.* = convolve5U8Element(src, index);
+        }
+        return;
+    }
+
+    dst[0] = convolve5U8Element(src, 0);
+    dst[1] = convolve5U8Element(src, 1);
+
+    const Input = @Vector(16, u8);
+    const Wide = @Vector(16, u16);
+    const four: Wide = @splat(4);
+    const six: Wide = @splat(6);
+    const rounding: Wide = @splat(8);
+    const last = dst.len - 1;
+    const interior_end = last - 1;
+    var i: usize = 2;
+
+    while (i + 16 <= interior_end) : (i += 16) {
+        const left2: Input = src[(i - 2)..][0..16].*;
+        const left1: Input = src[(i - 1)..][0..16].*;
+        const center: Input = src[i..][0..16].*;
+        const right1: Input = src[(i + 1)..][0..16].*;
+        const right2: Input = src[(i + 2)..][0..16].*;
+        const wide_left2: Wide = @intCast(left2);
+        const wide_left1: Wide = @intCast(left1);
+        const wide_center: Wide = @intCast(center);
+        const wide_right1: Wide = @intCast(right1);
+        const wide_right2: Wide = @intCast(right2);
+        const weighted: Wide = wide_left2 + wide_left1 * four +
+            wide_center * six + wide_right1 * four + wide_right2 + rounding;
+        const normalized: Wide = weighted >> @splat(4);
+        const narrowed: Input = @intCast(normalized);
+        dst[i..][0..16].* = narrowed;
+    }
+
+    while (i < interior_end) : (i += 1) {
+        dst[i] = convolve5U8Element(src, i);
+    }
+    dst[last - 1] = convolve5U8Element(src, last - 1);
+    dst[last] = convolve5U8Element(src, last);
+}
 
 const XorShift64 = struct {
     state: u64,
@@ -1429,5 +1596,100 @@ test "mixed-width packing and unpacking use logical little-endian groups" {
         }
         unpackU32ToU8x4Scalar(unpacked[0 .. groups * 4], words[0..groups]);
         try std.testing.expectEqualSlices(u8, bytes[0 .. groups * 4], unpacked[0 .. groups * 4]);
+    }
+}
+
+test "u8 blend and convolution vectors match independent references" {
+    const max_len = 257;
+    var a: [max_len]u8 = undefined;
+    var b: [max_len]u8 = undefined;
+    var source: [max_len]u8 = undefined;
+    var blend_expected: [max_len]u8 = undefined;
+    var blend_scalar: [max_len]u8 = undefined;
+    var blend_vector: [max_len]u8 = undefined;
+    var convolve3_expected: [max_len]u8 = undefined;
+    var convolve3_scalar: [max_len]u8 = undefined;
+    var convolve3_vector: [max_len]u8 = undefined;
+    var convolve5_expected: [max_len]u8 = undefined;
+    var convolve5_scalar: [max_len]u8 = undefined;
+    var convolve5_vector: [max_len]u8 = undefined;
+
+    const deterministic_lengths = [_]usize{
+        0,  1,  2,  3,  4,  5,  7,   8,   9,   15,  16,  17,  18,
+        31, 32, 33, 63, 64, 65, 127, 128, 129, 255, 256, 257,
+    };
+    var lengths: [deterministic_lengths.len + 96]usize = undefined;
+    for (deterministic_lengths, 0..) |length, index| {
+        lengths[index] = length;
+    }
+    var rng = XorShift64{ .state = 0x6d2f_18a4_c907_53be };
+    for (lengths[deterministic_lengths.len..]) |*length| {
+        length.* = @intCast(rng.next() % (max_len + 1));
+    }
+
+    const edge_values = [_]u8{ 0, 1, 2, 127, 128, 253, 254, 255 };
+    const edge_pairs = [_]usize{ 7, 6, 5, 4, 3, 2, 1, 0 };
+    const weights = [_]u16{ 0, 1, 2, 127, 128, 255, 256 };
+
+    for (lengths, 0..) |len, trial| {
+        for (0..len) |i| {
+            const lane = (i + trial) % 11;
+            if (lane < edge_values.len) {
+                const edge_index = (i + trial) % edge_values.len;
+                a[i] = edge_values[edge_index];
+                b[i] = edge_values[edge_pairs[edge_index]];
+                source[i] = edge_values[(edge_index + 3) % edge_values.len];
+            } else {
+                a[i] = @truncate(rng.next());
+                b[i] = @truncate(rng.next());
+                source[i] = @truncate(rng.next());
+            }
+        }
+        const weight = weights[trial % weights.len];
+
+        for (blend_expected[0..len], a[0..len], b[0..len]) |*out, x, y| {
+            const wide_weight: u32 = @intCast(weight);
+            const wide_inverse: u32 = 256 - wide_weight;
+            const sum: u32 = @as(u32, x) * wide_inverse +
+                @as(u32, y) * wide_weight + 128;
+            out.* = @intCast(sum >> 8);
+        }
+
+        if (len != 0) {
+            const last = len - 1;
+            for (0..len) |i| {
+                const left_index = if (i == 0) 0 else i - 1;
+                const right_index = if (i < last) i + 1 else last;
+                const sum3: u16 = @as(u16, source[left_index]) +
+                    @as(u16, source[i]) * 2 +
+                    @as(u16, source[right_index]) + 2;
+                convolve3_expected[i] = @intCast(sum3 >> 2);
+
+                const left2_index = if (i >= 2) i - 2 else 0;
+                const left1_index = if (i >= 1) i - 1 else 0;
+                const right1_index = if (i < last) i + 1 else last;
+                const right2_index = if (last - i >= 2) i + 2 else last;
+                const sum5: u16 = @as(u16, source[left2_index]) +
+                    @as(u16, source[left1_index]) * 4 +
+                    @as(u16, source[i]) * 6 +
+                    @as(u16, source[right1_index]) * 4 +
+                    @as(u16, source[right2_index]) + 8;
+                convolve5_expected[i] = @intCast(sum5 >> 4);
+            }
+        }
+
+        blendU8Scalar(blend_scalar[0..len], a[0..len], b[0..len], weight);
+        blendU8Vector(blend_vector[0..len], a[0..len], b[0..len], weight);
+        convolve3U8Scalar(convolve3_scalar[0..len], source[0..len]);
+        convolve3U8Vector(convolve3_vector[0..len], source[0..len]);
+        convolve5U8Scalar(convolve5_scalar[0..len], source[0..len]);
+        convolve5U8Vector(convolve5_vector[0..len], source[0..len]);
+
+        try std.testing.expectEqualSlices(u8, blend_expected[0..len], blend_scalar[0..len]);
+        try std.testing.expectEqualSlices(u8, blend_expected[0..len], blend_vector[0..len]);
+        try std.testing.expectEqualSlices(u8, convolve3_expected[0..len], convolve3_scalar[0..len]);
+        try std.testing.expectEqualSlices(u8, convolve3_expected[0..len], convolve3_vector[0..len]);
+        try std.testing.expectEqualSlices(u8, convolve5_expected[0..len], convolve5_scalar[0..len]);
+        try std.testing.expectEqualSlices(u8, convolve5_expected[0..len], convolve5_vector[0..len]);
     }
 }
