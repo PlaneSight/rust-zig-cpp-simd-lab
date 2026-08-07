@@ -30,8 +30,16 @@ def run(cmd: list[str], cwd: Path = ROOT) -> str:
 
 
 def version(exe: str) -> str:
+    args = ["version"] if exe == "zig" else ["--version"]
     try:
-        return run([exe, "--version"]).splitlines()[0]
+        return run([exe, *args]).splitlines()[0]
+    except Exception:
+        return "unavailable"
+
+
+def source_revision() -> str:
+    try:
+        return run(["git", "rev-parse", "HEAD"])
     except Exception:
         return "unavailable"
 
@@ -87,6 +95,7 @@ def main() -> None:
     metadata = {
         "schema": "simd-lab-codegen-v1",
         "target_profile": args.target,
+        "source_revision": source_revision(),
         "host": platform.platform(),
         "versions": {k: version(v) for k, v in {"rustc": "rustc", "zig": "zig", "clang": "clang++", "gcc": "g++"}.items()},
         "jobs": jobs,

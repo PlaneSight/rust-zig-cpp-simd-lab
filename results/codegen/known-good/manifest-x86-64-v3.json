@@ -1,0 +1,601 @@
+{
+  "schema": "simd-lab-codegen-v1",
+  "target_profile": "x86-64-v3",
+  "host": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+  "versions": {
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "zig": "unavailable",
+    "clang": "Ubuntu clang version 18.1.3 (1ubuntu1)",
+    "gcc": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0"
+  },
+  "jobs": [
+    {
+      "toolchain": "rustc",
+      "probe": "clamp",
+      "assembly": "results/codegen/rust-clamp-x86-64-v3.s",
+      "command": [
+        "rustc",
+        "--edition=2021",
+        "-O",
+        "--crate-type=lib",
+        "--emit=asm",
+        "-C",
+        "target-cpu=x86-64-v3",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/rust/clamp.rs",
+        "-o",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/rust-clamp-x86-64-v3.s"
+      ]
+    },
+    {
+      "toolchain": "rustc",
+      "probe": "sad",
+      "assembly": "results/codegen/rust-sad-x86-64-v3.s",
+      "command": [
+        "rustc",
+        "--edition=2021",
+        "-O",
+        "--crate-type=lib",
+        "--emit=asm",
+        "-C",
+        "target-cpu=x86-64-v3",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/rust/sad.rs",
+        "-o",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/rust-sad-x86-64-v3.s"
+      ]
+    },
+    {
+      "toolchain": "rustc",
+      "probe": "sat_add",
+      "assembly": "results/codegen/rust-sat_add-x86-64-v3.s",
+      "command": [
+        "rustc",
+        "--edition=2021",
+        "-O",
+        "--crate-type=lib",
+        "--emit=asm",
+        "-C",
+        "target-cpu=x86-64-v3",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/rust/sat_add.rs",
+        "-o",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/rust-sat_add-x86-64-v3.s"
+      ]
+    },
+    {
+      "toolchain": "clang",
+      "probe": "clamp",
+      "assembly": "results/codegen/clang-clamp-x86-64-v3.s",
+      "command": [
+        "clang++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "-masm=intel",
+        "-march=x86-64-v3",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/cpp/clamp.cpp",
+        "-o",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/clang-clamp-x86-64-v3.s"
+      ]
+    },
+    {
+      "toolchain": "clang",
+      "probe": "sad",
+      "assembly": "results/codegen/clang-sad-x86-64-v3.s",
+      "command": [
+        "clang++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "-masm=intel",
+        "-march=x86-64-v3",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/cpp/sad.cpp",
+        "-o",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/clang-sad-x86-64-v3.s"
+      ]
+    },
+    {
+      "toolchain": "clang",
+      "probe": "sat_add",
+      "assembly": "results/codegen/clang-sat_add-x86-64-v3.s",
+      "command": [
+        "clang++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "-masm=intel",
+        "-march=x86-64-v3",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/cpp/sat_add.cpp",
+        "-o",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/clang-sat_add-x86-64-v3.s"
+      ]
+    },
+    {
+      "toolchain": "gcc",
+      "probe": "clamp",
+      "assembly": "results/codegen/gcc-clamp-x86-64-v3.s",
+      "command": [
+        "g++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "-masm=intel",
+        "-march=x86-64-v3",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/cpp/clamp.cpp",
+        "-o",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/gcc-clamp-x86-64-v3.s"
+      ]
+    },
+    {
+      "toolchain": "gcc",
+      "probe": "sad",
+      "assembly": "results/codegen/gcc-sad-x86-64-v3.s",
+      "command": [
+        "g++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "-masm=intel",
+        "-march=x86-64-v3",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/cpp/sad.cpp",
+        "-o",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/gcc-sad-x86-64-v3.s"
+      ]
+    },
+    {
+      "toolchain": "gcc",
+      "probe": "sat_add",
+      "assembly": "results/codegen/gcc-sat_add-x86-64-v3.s",
+      "command": [
+        "g++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "-masm=intel",
+        "-march=x86-64-v3",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/cpp/sat_add.cpp",
+        "-o",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/gcc-sat_add-x86-64-v3.s"
+      ]
+    },
+    {
+      "toolchain": "zig",
+      "probe": "clamp",
+      "assembly": "results/codegen/zig-clamp-x86-64-v3.s",
+      "command": [
+        "zig",
+        "build-obj",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/zig/clamp.zig",
+        "-O",
+        "ReleaseFast",
+        "-mcpu=x86_64_v3",
+        "-femit-asm=/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/zig-clamp-x86-64-v3.s",
+        "-femit-bin=/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/zig-clamp-x86-64-v3.o"
+      ]
+    },
+    {
+      "toolchain": "zig",
+      "probe": "sad",
+      "assembly": "results/codegen/zig-sad-x86-64-v3.s",
+      "command": [
+        "zig",
+        "build-obj",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/zig/sad.zig",
+        "-O",
+        "ReleaseFast",
+        "-mcpu=x86_64_v3",
+        "-femit-asm=/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/zig-sad-x86-64-v3.s",
+        "-femit-bin=/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/zig-sad-x86-64-v3.o"
+      ]
+    },
+    {
+      "toolchain": "zig",
+      "probe": "sat_add",
+      "assembly": "results/codegen/zig-sat_add-x86-64-v3.s",
+      "command": [
+        "zig",
+        "build-obj",
+        "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/probes/zig/sat_add.zig",
+        "-O",
+        "ReleaseFast",
+        "-mcpu=x86_64_v3",
+        "-femit-asm=/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/zig-sat_add-x86-64-v3.s",
+        "-femit-bin=/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/zig-sat_add-x86-64-v3.o"
+      ]
+    }
+  ],
+  "metrics": {
+    "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/clang-clamp-x86-64-v3.s": {
+      "instruction_count": 233,
+      "top_mnemonics": {
+        "cmova": 16,
+        "cmovae": 4,
+        "cmovb": 22,
+        "cmovbe": 10,
+        "cmp": 56,
+        "ja": 2,
+        "jb": 2,
+        "mov": 45,
+        "movzx": 14,
+        "pop": 12,
+        "push": 12,
+        "ret": 4,
+        "vmaxsd": 8,
+        "vmaxss": 8,
+        "vminsd": 8,
+        "vminss": 8,
+        "vmovsd": 1,
+        "vmovss": 1
+      },
+      "tracked": {
+        "vmax": 16,
+        "vmin": 16
+      },
+      "unique_mnemonics": 18,
+      "vector_instruction_count": 34
+    },
+    "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/clang-sad-x86-64-v3.s": {
+      "instruction_count": 199,
+      "top_mnemonics": {
+        "add": 9,
+        "and": 4,
+        "cmp": 11,
+        "jae": 4,
+        "je": 4,
+        "jmp": 4,
+        "jne": 7,
+        "mov": 13,
+        "sub": 6,
+        "test": 4,
+        "vmovd": 8,
+        "vmovdqu": 9,
+        "vpaddq": 21,
+        "vpcmpeqb": 4,
+        "vpminub": 4,
+        "vpmovzxbd": 8,
+        "vpsadbw": 9,
+        "vpsubd": 8,
+        "vpxor": 10,
+        "xor": 7
+      },
+      "tracked": {
+        "vpadd": 21,
+        "vpmin": 4,
+        "vpmovsx": 8,
+        "vpmovzx": 8,
+        "vpsadbw": 9,
+        "vpshuf": 3,
+        "vpsub": 8
+      },
+      "unique_mnemonics": 37,
+      "vector_instruction_count": 107
+    },
+    "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/clang-sat_add-x86-64-v3.s": {
+      "instruction_count": 307,
+      "top_mnemonics": {
+        "add": 22,
+        "and": 10,
+        "cmovae": 10,
+        "cmp": 31,
+        "jae": 7,
+        "je": 7,
+        "jmp": 7,
+        "jne": 13,
+        "mov": 40,
+        "movzx": 20,
+        "sub": 11,
+        "test": 6,
+        "vmovdqu": 14,
+        "vpackusdw": 6,
+        "vpaddd": 12,
+        "vpaddusb": 5,
+        "vpermq": 6,
+        "vpminud": 12,
+        "vpmovzxbd": 24,
+        "xor": 8
+      },
+      "tracked": {
+        "vpack": 10,
+        "vpadd": 12,
+        "vpaddusb": 5,
+        "vperm": 6,
+        "vpmin": 12,
+        "vpmovzx": 24,
+        "vpshuf": 2
+      },
+      "unique_mnemonics": 35,
+      "vector_instruction_count": 93
+    },
+    "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/gcc-clamp-x86-64-v3.s": {
+      "instruction_count": 128,
+      "top_mnemonics": {
+        "cmova": 14,
+        "cmovb": 16,
+        "cmovbe": 2,
+        "cmp": 32,
+        "endbr64": 4,
+        "mov": 10,
+        "movzx": 10,
+        "ret": 4,
+        "vmaxsd": 8,
+        "vmaxss": 8,
+        "vminsd": 8,
+        "vminss": 8,
+        "vmovaps": 1,
+        "vmovsd": 2,
+        "vmovss": 1
+      },
+      "tracked": {
+        "vmax": 16,
+        "vmin": 16
+      },
+      "unique_mnemonics": 15,
+      "vector_instruction_count": 36
+    },
+    "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/gcc-sad-x86-64-v3.s": {
+      "instruction_count": 897,
+      "top_mnemonics": {
+        "add": 40,
+        "cdqe": 15,
+        "cmp": 69,
+        "jmp": 36,
+        "jnb": 56,
+        "lea": 36,
+        "mov": 20,
+        "movsx": 45,
+        "movzx": 61,
+        "sub": 63,
+        "vextracti128": 45,
+        "vpaddq": 39,
+        "vpblendvb": 32,
+        "vpmovsxdq": 96,
+        "vpmovsxwd": 16,
+        "vpmovzxbw": 16,
+        "vpmovzxwd": 32,
+        "vpsrldq": 46,
+        "vpsubd": 32,
+        "xor": 12
+      },
+      "tracked": {
+        "vpadd": 39,
+        "vpmovsx": 120,
+        "vpmovzx": 48,
+        "vpsadbw": 1,
+        "vpsub": 36
+      },
+      "unique_mnemonics": 40,
+      "vector_instruction_count": 410
+    },
+    "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/gcc-sat_add-x86-64-v3.s": {
+      "instruction_count": 513,
+      "top_mnemonics": {
+        "add": 39,
+        "and": 6,
+        "cmova": 32,
+        "cmp": 78,
+        "jbe": 11,
+        "je": 5,
+        "jnb": 30,
+        "lea": 39,
+        "mov": 89,
+        "movzx": 64,
+        "pop": 6,
+        "ret": 6,
+        "sub": 7,
+        "vmovdqu": 14,
+        "vpaddw": 8,
+        "vpand": 8,
+        "vpminuw": 8,
+        "vpmovzxbw": 16,
+        "vzeroupper": 6,
+        "xor": 4
+      },
+      "tracked": {
+        "vpack": 4,
+        "vpadd": 8,
+        "vpaddusb": 1,
+        "vperm": 2,
+        "vpmin": 8,
+        "vpmovzx": 16
+      },
+      "unique_mnemonics": 33,
+      "vector_instruction_count": 83
+    },
+    "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/rust-clamp-x86-64-v3.s": {
+      "instruction_count": 176,
+      "top_mnemonics": {
+        "cmovael": 1,
+        "cmoval": 14,
+        "cmovbl": 15,
+        "cmpb": 15,
+        "cmpw": 15,
+        "jae": 1,
+        "jb": 1,
+        "movl": 9,
+        "movzbl": 2,
+        "retq": 5,
+        "vblendvpd": 16,
+        "vblendvps": 16,
+        "vcmpunordsd": 16,
+        "vcmpunordss": 16,
+        "vmaxsd": 8,
+        "vmaxss": 8,
+        "vminsd": 8,
+        "vminss": 8,
+        "vmovsd": 1,
+        "vmovss": 1
+      },
+      "tracked": {
+        "vmax": 16,
+        "vmin": 16
+      },
+      "unique_mnemonics": 20,
+      "vector_instruction_count": 98
+    },
+    "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/rust-sad-x86-64-v3.s": {
+      "instruction_count": 223,
+      "top_mnemonics": {
+        "addq": 11,
+        "cmpq": 13,
+        "jae": 5,
+        "je": 5,
+        "jmp": 7,
+        "jne": 6,
+        "movq": 10,
+        "movzbl": 6,
+        "subq": 4,
+        "vextracti128": 5,
+        "vmovd": 20,
+        "vmovq": 8,
+        "vpaddq": 27,
+        "vpmaxub": 10,
+        "vpminub": 10,
+        "vpmovzxbq": 10,
+        "vpshufd": 5,
+        "vpsubb": 10,
+        "vpxor": 8,
+        "xorl": 10
+      },
+      "tracked": {
+        "vpadd": 27,
+        "vpmax": 10,
+        "vpmin": 10,
+        "vpmovzx": 10,
+        "vpsadbw": 1,
+        "vpshuf": 5,
+        "vpsub": 10
+      },
+      "unique_mnemonics": 36,
+      "vector_instruction_count": 117
+    },
+    "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/rust-sat_add-x86-64-v3.s": {
+      "instruction_count": 223,
+      "top_mnemonics": {
+        "addb": 10,
+        "addq": 11,
+        "andq": 4,
+        "cmovbl": 10,
+        "cmpq": 21,
+        "jae": 3,
+        "je": 10,
+        "jmp": 6,
+        "jne": 9,
+        "leaq": 4,
+        "movb": 10,
+        "movl": 6,
+        "movq": 16,
+        "movzbl": 20,
+        "setb": 4,
+        "subq": 10,
+        "vmovdqu": 18,
+        "vmovq": 6,
+        "vpaddusb": 11,
+        "xorl": 7
+      },
+      "tracked": {
+        "vpaddusb": 11
+      },
+      "unique_mnemonics": 34,
+      "vector_instruction_count": 37
+    },
+    "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/zig-clamp-x86-64-v3.s": {
+      "instruction_count": 1929,
+      "top_mnemonics": {
+        "call": 256,
+        "mov": 10,
+        "vblendvps": 48,
+        "vcmpunordps": 36,
+        "vcvtph2ps": 402,
+        "vcvtps2ph": 258,
+        "vextractf128": 8,
+        "vextracti128": 8,
+        "vmaxps": 24,
+        "vminps": 24,
+        "vmovaps": 534,
+        "vmovdqa": 91,
+        "vmovshdup": 16,
+        "vpermilpd": 16,
+        "vpermilps": 16,
+        "vpsrld": 18,
+        "vpsrldq": 36,
+        "vpsrlq": 18,
+        "vpunpcklwd": 8,
+        "vzeroupper": 26
+      },
+      "tracked": {
+        "vcvtph2ps": 402,
+        "vcvtps2ph": 258,
+        "vmax": 24,
+        "vmin": 24,
+        "vperm": 32,
+        "vpmax": 16,
+        "vpmin": 16,
+        "vpunpck": 13
+      },
+      "unique_mnemonics": 39,
+      "vector_instruction_count": 1633
+    },
+    "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/zig-sad-x86-64-v3.s": {
+      "instruction_count": 29,
+      "top_mnemonics": {
+        "absdiff_u8x32": 1,
+        "mov": 3,
+        "pop": 3,
+        "push": 3,
+        "ret": 3,
+        "sad_u8x32": 1,
+        "vextracti128": 2,
+        "vmovd": 1,
+        "vmovdqa": 1,
+        "vpaddq": 2,
+        "vpmaxub": 1,
+        "vpminub": 1,
+        "vpmovzxbw": 2,
+        "vpsadbw": 1,
+        "vpshufd": 1,
+        "vpsubb": 1,
+        "vzeroupper": 1,
+        "widen_u8_to_u16x32": 1
+      },
+      "tracked": {
+        "vpadd": 2,
+        "vpmax": 1,
+        "vpmin": 1,
+        "vpmovzx": 2,
+        "vpsadbw": 1,
+        "vpshuf": 1,
+        "vpsub": 1
+      },
+      "unique_mnemonics": 18,
+      "vector_instruction_count": 14
+    },
+    "/home/runner/work/rust-zig-cpp-simd-lab/rust-zig-cpp-simd-lab/results/codegen/zig-sat_add-x86-64-v3.s": {
+      "instruction_count": 60,
+      "top_mnemonics": {
+        "add": 9,
+        "and": 2,
+        "cmovb": 5,
+        "cmp": 3,
+        "inc": 1,
+        "jae": 1,
+        "je": 2,
+        "jmp": 1,
+        "jne": 2,
+        "mov": 10,
+        "movzx": 10,
+        "pop": 2,
+        "push": 2,
+        "ret": 2,
+        "sat_add_u8_scalar": 1,
+        "sat_add_u8x32": 1,
+        "test": 2,
+        "vpaddusb": 1,
+        "xor": 3
+      },
+      "tracked": {
+        "vpaddusb": 1
+      },
+      "unique_mnemonics": 19,
+      "vector_instruction_count": 1
+    }
+  },
+  "source_revision": "0055cd3b74017746d501d8973b3441490b154625"
+}

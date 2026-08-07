@@ -436,8 +436,8 @@ These are the bridge from microbenchmarks to realistic workloads.
 - [x] GCC x86 snapshots
 - [x] AArch64 cross-target snapshots
 - [x] wasm cross-target snapshots
-- [ ] inspect and document x86-64-v3 SAD lowering
-- [ ] inspect and document x86-64-v3 saturation lowering
+- [x] inspect and document x86-64-v3 SAD lowering
+- [x] inspect and document x86-64-v3 saturation lowering
 - [ ] inspect and document x86 FP16 conversion counts
 - [ ] inspect Sapphire Rapids native-half lowering
 - [ ] inspect AArch64 SAD idiom lowering (`UABD`/widening/reduction)
@@ -445,8 +445,8 @@ These are the bridge from microbenchmarks to realistic workloads.
 - [ ] inspect AArch64 half arithmetic
 - [ ] inspect wasm saturating add opcode selection
 - [ ] inspect wasm widening/reduction cost
-- [ ] promote manually reviewed manifests to known-good baselines
-- [ ] store a concise human-readable interpretation beside each reviewed baseline
+- [x] promote manually reviewed manifests to known-good baselines
+- [x] store a concise human-readable interpretation beside each reviewed baseline
 
 # 18. Numerical-correctness framework
 

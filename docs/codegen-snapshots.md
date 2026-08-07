@@ -93,6 +93,43 @@ python3 scripts/check_codegen_regressions.py \
 
 A known-good manifest should only be promoted after manual inspection of compiler versions, semantic equivalence, and the generated assembly. Policy thresholds are safeguards, not a substitute for reviewing a new baseline.
 
+## Reviewed x86-64-v3 probe baseline
+
+The x86-64-v3 snapshot from CI run `31142383190` (source revision
+`0055cd3b74017746d501d8973b3441490b154625`) was manually reviewed on
+2026-08-07. The host was `Linux-6.17.0-1020-azure-x86_64`; the recorded
+toolchains were rustc 1.97.1, Clang 18.1.3, and GCC 13.3.0. The manifest
+contains Zig jobs and assembly, but records Zig as `unavailable` because the
+pre-fix generator queried `zig --version` instead of Zig's `zig version`
+command. Its assembly is retained as evidence, but that artifact's Zig
+compiler version is not treated as known.
+
+The reviewed manifest is checked in at
+`results/codegen/known-good/manifest-x86-64-v3.json`. It is a loose baseline,
+not an exact-assembly fixture. Symbol-local counts below were obtained by
+restricting the existing analyzer to each exported function body; the checked
+manifest still contains whole-file aggregates and therefore does not claim to
+separate vector loops from tails.
+
+| Family | Reviewed symbol evidence | Interpretation |
+|---|---|---|
+| FP16 clamp | Zig `clamp_f16x16_native`: 384 `vcvtph2ps`, 256 `vcvtps2ph`; Zig `clamp_f16x16_promote_once`: 18 and 2 | Native half arithmetic repeatedly bounces through f32 on x86-64-v3. Promote-once reduces conversion traffic to boundary conversions, but it remains a deliberate numerical-semantics tradeoff. The x86 probe does not include Rust or C++ F16C production kernels, so FP16 coverage remains incomplete. |
+| u8 SAD | Rust AVX2: 1 `vpsadbw`; Clang AVX2: 9 (`8` unrolled steady-state plus `1` residual); GCC AVX2: 1; Zig fixed-vector `sad_u8x32`: 1 | Explicit AVX2 paths select `VPSADBW`. Clang's extra count is unrolling, not a different operation. Scalar tails and Zig's standalone absdiff/widen probes remain separate evidence. |
+| u8 saturating add | Rust AVX2: 6 `vpaddusb`; Clang AVX2: 5; GCC AVX2: 1; Zig `sat_add_u8x32`: 1 | Explicit vector paths select `VPADDUSB`; counts differ because of unrolling and residual handling. Generic scalar-source lowering is compiler-dependent and must not be conflated with the intrinsic reference. |
+
+The baseline is accepted for the SAD and saturating-add probe families. The
+FP16 conversion finding is recorded but is not promoted to a complete
+cross-language baseline until Rust/C++ F16C and the Clang extension probe are
+included in the same target-profile workflow. Regenerate and compare it with:
+
+```bash
+python3 scripts/generate_codegen_snapshots.py --target x86-64-v3
+python3 scripts/check_codegen_regressions.py \
+  results/codegen/known-good/manifest-x86-64-v3.json \
+  results/codegen/manifest-x86-64-v3.json \
+  --policy codegen-policy.json
+```
+
 ## CI
 
 CI produces three deterministic compile/codegen artifact families:
