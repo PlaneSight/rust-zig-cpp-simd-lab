@@ -142,6 +142,13 @@ int main() {
                 std::cerr << "u8 SAD validation failed\n";
                 return 1;
             }
+            std::vector<std::uint8_t> sat_reference(n), sat_dst(n);
+            simd_lab::sat_add_u8_scalar(sat_reference, a, b);
+            simd_lab::sat_add_u8_best(sat_dst, a, b);
+            if (sat_dst != sat_reference) {
+                std::cerr << "u8 saturating-add validation failed\n";
+                return 1;
+            }
 
             auto result = measure(n, [&] {
                 sink_u64 = simd_lab::sad_u8_scalar(a, b);
@@ -152,6 +159,16 @@ int main() {
                 sink_u64 = simd_lab::sad_u8_best(a, b);
             });
             report("sad-u8/best-dispatch", n, n * 2, n * 2, result);
+
+            result = measure(n, [&] {
+                simd_lab::sat_add_u8_scalar(sat_dst, a, b);
+            });
+            report("sat-add-u8/scalar-autovec", n, n * 3, n * 3, result);
+
+            result = measure(n, [&] {
+                simd_lab::sat_add_u8_best(sat_dst, a, b);
+            });
+            report("sat-add-u8/best-dispatch", n, n * 3, n * 3, result);
         }
 
         {
@@ -186,5 +203,7 @@ int main() {
               << " warmup_samples=" << warmup_samples
               << " sample_count=" << sample_count
               << " target_elements_per_sample=" << target_elements_per_sample
-              << " dispatch_tier=" << simd_lab::dispatch_tier() << '\n';
+              << " dispatch_tier=" << simd_lab::dispatch_tier()
+              << " sat_add_u8_dispatch_tier="
+              << simd_lab::sat_add_u8_dispatch_tier() << '\n';
 }
