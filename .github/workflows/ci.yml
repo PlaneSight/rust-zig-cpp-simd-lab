@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, populate-simd-lab]
+    branches: [main]
   pull_request:
 
 jobs:
@@ -13,19 +13,36 @@ jobs:
         working-directory: rust
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
       - run: cargo test --release
       - run: cargo build --release --bin bench
       - run: cargo build --release --bin fp16_semantics
-      - run: cargo run --release
+      - run: cargo run --release --bin simd-lab-rust
 
   cpp:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - run: cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release
-      - run: cmake --build build/cpp -j2
-      - run: ctest --test-dir build/cpp --output-on-failure
+      - if: runner.os == 'Linux'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-${{ hashFiles('cpp/**') }}
+          restore-keys: ccache-${{ runner.os }}-
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ccache
+      - if: runner.os == 'Linux'
+        run: cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+      - if: runner.os == 'Windows'
+        run: cmake -S cpp -B build/cpp
+      - run: cmake --build build/cpp --config Release -j2
+      - run: ctest --test-dir build/cpp --build-config Release --output-on-failure
 
   zig:
     runs-on: ubuntu-latest
@@ -33,7 +50,16 @@ jobs:
       - uses: actions/checkout@v4
       - uses: mlugg/setup-zig@v2
         with:
-          version: 0.16.0-dev.1484+95fceed76
+          version: 0.16.0
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/zig
+            zig/.zig-cache
+          key: zig-${{ runner.os }}-${{ hashFiles('zig/**') }}
+          restore-keys: zig-${{ runner.os }}-
+      - working-directory: zig
+        run: zig build test -Doptimize=ReleaseSafe
       - working-directory: zig
         run: zig build test -Doptimize=ReleaseFast
       - working-directory: zig
@@ -45,10 +71,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
       - uses: mlugg/setup-zig@v2
         with:
-          version: 0.16.0-dev.1484+95fceed76
+          version: 0.16.0
       - run: python3 scripts/generate_codegen_snapshots.py --target x86-64-v3
       - uses: actions/upload-artifact@v4
         with:
@@ -64,7 +93,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: mlugg/setup-zig@v2
         with:
-          version: 0.16.0-dev.1484+95fceed76
+          version: 0.16.0
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/zig
+          key: zig-codegen-${{ matrix.profile }}-${{ hashFiles('probes/zig/**') }}
+          restore-keys: zig-codegen-${{ matrix.profile }}-
       - run: python3 scripts/generate_cross_codegen.py --target ${{ matrix.profile }}
       - uses: actions/upload-artifact@v4
         with:

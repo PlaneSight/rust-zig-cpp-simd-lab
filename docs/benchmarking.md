@@ -1,30 +1,74 @@
 # Runtime benchmarking
 
-The runtime harnesses intentionally use the same dataset sizes, warmup count, iteration count, and byte accounting across Rust, Zig, and C++23.
+The runtime harnesses use the same size sweep, sampling policy, byte accounting, and output protocol across Rust, Zig, and C++23. The purpose is to expose cache transitions and run-to-run noise, not to compress a machine into one headline number.
 
-## Current protocol
+## Protocol
 
-- elements: `1 << 20`
-- warmup iterations: `8`
-- measured iterations: `64`
-- report: `ns/element` and effective `GiB/s`
-- allocations happen outside the timed region
-- correctness validation happens before timing
-- dispatch checks happen in the timed function only when they are part of the public runtime path being measured
+Each kernel runs at six element counts:
 
-## Current kernel families
+| Elements | One f32 array | Typical regime |
+|---:|---:|---|
+| `1 << 10` | 4 KiB | L1-resident |
+| `1 << 13` | 32 KiB | L1 boundary |
+| `1 << 16` | 256 KiB | L2-resident |
+| `1 << 18` | 1 MiB | L2 boundary on many CPUs |
+| `1 << 20` | 4 MiB | shared cache / memory transition |
+| `1 << 22` | 16 MiB | shared cache or DRAM |
 
-### Floating point
+The actual working set depends on the kernel and is emitted for every result. AXPY has three f32 arrays; squared error has two; SAD has two byte arrays; FP16 clamp has four binary16 arrays. Cache labels are therefore orientation points, not universal classifications.
 
-- AXPY
-- squared error / MSE-style accumulation
-- FP16 clamp
+For every kernel and size:
 
-### Integer
+- three complete warmup samples run before measurement;
+- 15 independent timing samples are collected;
+- inner iterations target at least `1 << 20` processed elements per sample, with a cap of 4096 iterations;
+- allocations and correctness validation remain outside timed regions;
+- raw `ns/element` samples are preserved;
+- the human and JSON summaries report minimum, median, 95th percentile, and median absolute deviation (MAD);
+- effective `GiB/s` is derived from the median sample;
+- runtime dispatch stays inside the timed public path when that is the implementation under test.
 
-- `u8` absolute-difference / SAD
+Median is the primary comparison statistic. Minimum is useful as a low-noise estimate of attainable throughput; p95 exposes slow-tail behavior; MAD describes robust spread without letting one scheduler interruption dominate the result.
 
-The SAD family is particularly useful because it compares a generic source-level idiom against a dedicated x86 instruction family. Rust and C++23 have explicit AVX2 `_mm256_sad_epu8` implementations; Zig expresses `absdiff -> widen u8 to u16 -> reduce` with native vector operations and leaves instruction selection to the backend.
+## Correctness before timing
+
+Squared error subtracts f32 inputs with f32 semantics, then widens the difference and accumulates products in f64. This makes the scalar implementation a useful numerical oracle at large sizes while keeping the input operation aligned with the SIMD variants.
+
+Deterministic randomized differential tests cover:
+
+- random f32 and u8 inputs;
+- lengths on both sides of vector boundaries;
+- every remainder modulo eight for F16C rejection;
+- every remainder modulo 32 for byte SIMD tails;
+- transactional F16C failure: an unsupported partial block must leave `dst` unchanged.
+
+The fixed smoke datasets remain useful for readable failures, but are no longer the only correctness evidence.
+
+## CPU and ISA tiers
+
+`scripts/run_benchmarks.py --cpu` controls the autovectorization target for all three toolchains and records the selected tier in JSON:
+
+| Tier | C++ | Rust | Zig |
+|---|---|---|---|
+| `baseline` | default compiler target | default compiler target | default build target |
+| `native` | `-march=native` or `/arch:AVX2` | `-C target-cpu=native` | `-Dcpu=native` |
+| `x86-64-v3` | `-march=x86-64-v3` or `/arch:AVX2` | `-C target-cpu=x86-64-v3` | `-Dcpu=x86_64_v3` |
+| `avx2` | explicit AVX2/FMA/F16C flags | x86-64-v3 CPU tier | x86-64-v3 CPU tier |
+
+Use `baseline` to compare portable scalar/autovec code against runtime-dispatched ISA implementations. Use `x86-64-v3` or `native` when the question is whether source-level autovectorization matches intrinsics at the same ISA level. Do not merge those tiers into one ranking.
+
+C++ GCC and Clang use per-function ISA attributes for portable runtime dispatch. MSVC keeps AVX2/FMA/F16C code in a separate `/arch:AVX2` translation unit and checks CPUID plus OS YMM-state support in baseline code before entering it. Every benchmark run emits the actual dispatch tier, so Windows results cannot silently masquerade as SIMD results.
+
+## Byte accounting
+
+Reported bandwidth is effective algorithmic traffic:
+
+- AXPY: two f32 reads plus one f32 write = 12 bytes per element;
+- squared error: two f32 reads = 8 bytes per element;
+- u8 SAD: two byte reads = 2 bytes per element;
+- FP16 clamp: three binary16 reads plus one binary16 write = 8 bytes per element.
+
+AXPY's 12-byte figure is not necessarily physical memory-bus traffic. A normal cached store can trigger a read-for-ownership/write-allocate transaction for `dst`, making a cold streaming pass closer to 16 bytes per element before eviction writeback details. If `dst` is already resident, the extra read may not reach DRAM; non-temporal stores would change the model again. Treat the reported figure as effective bandwidth and use hardware counters when making physical-bandwidth claims.
 
 ## Shared FP16 dataset
 
@@ -41,79 +85,50 @@ The first FP16 runtime comparison uses identical IEEE-754 binary16 bit patterns 
 0x4400  4.0
 ```
 
-The clamp bounds are exactly `0.5 .. 2.0` (`0x3800 .. 0x4000`). These are finite, exactly representable values so the first runtime comparison isolates lowering and conversion cost rather than NaN, signed-zero, or rounding-policy differences.
+The bounds are exactly `0.5 .. 2.0` (`0x3800 .. 0x4000`). These finite, exactly representable values isolate lowering and conversion cost. The separate correctness corpus in `data/fp16-edge-corpus.json` covers signed zero, subnormals, adjacent boundary values, infinities, negative finite values, and multiple NaN encodings.
 
-A separate correctness-only edge corpus lives at `data/fp16-edge-corpus.json`. It includes signed zero, subnormals, values adjacent to clamp boundaries, infinities, negative finite values, and multiple NaN encodings. Edge cases are not mixed into the performance dataset.
+Rust and C++ store binary16 as `u16`, widen eight lanes with F16C, clamp in f32, and narrow once. Zig compares native `@Vector(16, f16)` with a promote-once f32 path. These strategies are not assumed to have identical semantics for every half value; performance claims must name the numerical contract.
 
-## FP16 paths
+## Running benchmarks
 
-### Rust / C++23 F16C
-
-Binary16 is stored as `u16`. Eight lanes are widened with F16C, the entire clamp is performed in `f32`, and the result is narrowed once with F16C.
-
-```text
-binary16 storage
-    -> vcvtph2ps
-    -> f32 min/max clamp
-    -> vcvtps2ph
-    -> binary16 storage
-```
-
-Both harnesses validate the resulting half bit patterns against the expected clamp output before timing.
-
-### Zig native f16
-
-The same binary16 bit patterns are materialized as `f16` and processed directly with `@Vector(16, f16)`.
-
-### Zig promote-once
-
-Each vector input is widened once to `@Vector(16, f32)`, the complete clamp is performed in f32, and the result is narrowed once to f16. The harness verifies native and promoted results are bit-identical on the finite exact dataset before timing either path.
-
-## Interpretation
-
-The native-f16 and promote/F16C paths are not assumed to have identical semantics for every possible half value. Runtime speed claims must be paired with the numerical contract used by the implementation. See `docs/fp16-semantics.md` and `data/fp16-edge-corpus.json`.
-
-## Running individual harnesses
-
-Rust:
+The one-command path is:
 
 ```bash
-cd rust
-cargo run --release --bin bench
+just bench
+SIMD_LAB_CPU=x86-64-v3 just bench results/local.json
 ```
 
-C++23:
+The direct equivalent is:
 
 ```bash
-cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release
+python3 scripts/run_benchmarks.py --pretty --cpu baseline
+python3 scripts/run_benchmarks.py --pretty --cpu x86-64-v3 --output results/local.json
+```
+
+Individual harnesses remain available:
+
+```bash
+(cd rust && cargo run --release --bin bench)
+(cd zig && zig build bench -Doptimize=ReleaseFast)
+cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release -DSIMD_LAB_CPU=baseline
 cmake --build build/cpp -j
 ./build/cpp/simd_lab_cpp_bench
 ```
 
-Zig 0.16:
-
-```bash
-cd zig
-zig build bench -Doptimize=ReleaseFast
-```
-
-CI compiles all benchmark targets but does not use shared-hosted runner timings as performance evidence.
+CI compiles every benchmark target but does not treat shared GitHub-hosted runner timings as performance evidence.
 
 ## Machine-readable collection
 
-`scripts/run_benchmarks.py` builds and runs the three harnesses, parses their common text protocol, captures host/toolchain metadata, and emits `simd-lab-benchmark-v1` JSON.
+The collector emits `simd-lab-benchmark-v2`. Each result includes:
 
-```bash
-python scripts/run_benchmarks.py --pretty
-python scripts/run_benchmarks.py --pretty --output results/local.json
-```
+- implementation name and element count;
+- working-set bytes and effective bytes per iteration;
+- iterations per timing sample;
+- all raw `ns/element` samples;
+- minimum, median, p95, MAD, and median effective GiB/s;
+- selected CPU tier and exact cross-toolchain target configuration;
+- actual dispatch metadata reported by language harnesses;
+- host and compiler versions;
+- explicit skip records for unavailable ISA paths.
 
-The document contains:
-
-- OS / machine metadata;
-- Rust, Cargo, Zig, Clang, GCC, CMake versions when available;
-- per-language benchmark metadata;
-- normalized `ns_per_element` and `gib_per_second` results;
-- skipped ISA-specific cases such as F16C on unsupported hosts.
-
-The JSON collector intentionally sits outside the language harnesses. This keeps benchmark source small and makes it possible to evolve the result schema without maintaining three serialization implementations.
+The collector remains outside the language binaries so benchmark timing code stays dependency-free and the JSON contract can evolve without three serialization implementations.

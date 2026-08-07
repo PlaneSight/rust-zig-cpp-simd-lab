@@ -10,8 +10,10 @@ from __future__ import annotations
 import argparse
 import json
 import platform
+import shlex
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,8 +42,12 @@ PROFILES = {
 
 
 def run(cmd: list[str]) -> str:
-    p = subprocess.run(cmd, cwd=ROOT, check=True, text=True,
+    p = subprocess.run(cmd, cwd=ROOT, check=False, text=True,
                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if p.returncode != 0:
+        print(f"command failed: {shlex.join(cmd)}", file=sys.stderr)
+        print(p.stdout, file=sys.stderr, end="" if p.stdout.endswith("\n") else "\n")
+        p.check_returncode()
     return p.stdout.strip()
 
 

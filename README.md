@@ -19,13 +19,13 @@ A major investigation track is **common integer and floating-point lowering**, m
 - runtime ISA dispatch patterns
 - inline assembly where intrinsics or vector IR are insufficient
 - generated assembly and missed-vectorization diagnostics
-- throughput, latency, tail handling, alignment, and reduction strategies
+- throughput, latency, tail handling, alignment, reductions, and cache regimes
 - code clarity and maintenance cost alongside raw speed
 
 ## Initial kernels
 
 1. **AXPY**: `dst[i] = a * x[i] + y[i]`
-2. **Squared error**: `sum((a[i] - b[i])^2)` — representative of MSE/PSNR workloads
+2. **Squared error**: `sum((a[i] - b[i])^2)` with f64 accumulation
 3. **Min/max/clamp family** — chosen to expose integer vs floating-point lowering and FP16 conversion behavior
 
 The clamp work includes:
@@ -43,12 +43,9 @@ The clamp work includes:
 ├── rust/                # Rust implementations and benchmarks
 ├── zig/                 # Zig 0.16 implementations and benchmarks
 ├── probes/              # tiny standalone codegen experiments
-│   ├── cpp/
-│   ├── rust/
-│   └── zig/
 ├── docs/                # methodology, experiment matrix, codegen notes
-├── scripts/             # helper scripts for repeatable runs and asm analysis
-└── .github/workflows/   # compile/test CI
+├── scripts/             # repeatable benchmark and asm tooling
+└── .github/workflows/   # correctness and codegen CI
 ```
 
 ## Fair-comparison rules
@@ -57,20 +54,42 @@ The clamp work includes:
 - Scalar reference implementations establish correctness.
 - Optimized implementations are compared against the reference before benchmarking.
 - Do not compare debug builds.
-- Record compiler version, target CPU, enabled ISA features, data size, iteration count, and benchmark methodology.
+- Record compiler version, target CPU, enabled ISA features, working-set size, samples, and aggregation method.
+- Preserve raw timing samples; report robust summaries rather than one aggregate mean.
 - Inspect machine code before attributing a result to a language.
 - Architecture-specific code is allowed, but must be clearly labeled.
 - A faster implementation that changes numerical semantics must say so explicitly.
 - Language-standard facilities and compiler/ISA extensions must be reported separately.
+- Portable-baseline and matched-ISA results are separate comparison tiers.
 
-## Build
+## One-command workflow
+
+[`just`](https://just.systems/) provides the repository entry points:
+
+```bash
+just test
+just bench
+just probes
+```
+
+Choose a matched compiler CPU tier with `SIMD_LAB_CPU`:
+
+```bash
+SIMD_LAB_CPU=x86-64-v3 just bench results/local.json
+SIMD_LAB_CPU=native just test
+```
+
+Supported values are `baseline`, `native`, `x86-64-v3`, and `avx2`. The benchmark JSON records the selected tier and each toolchain's concrete flags. See [`docs/benchmarking.md`](docs/benchmarking.md) before comparing tiers.
+
+## Direct builds
 
 ### Rust
+
+Rust is pinned by `rust-toolchain.toml`.
 
 ```bash
 cd rust
 cargo test --release
-cargo run --release
 cargo run --release --bin bench
 ```
 
@@ -78,19 +97,29 @@ cargo run --release --bin bench
 
 ```bash
 cd zig
-zig build test -Doptimize=ReleaseFast
-zig build run -Doptimize=ReleaseFast
+zig build test -Doptimize=ReleaseSafe
 zig build bench -Doptimize=ReleaseFast
 ```
 
 ### C++23
 
 ```bash
-cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release
+cmake -S cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release -DSIMD_LAB_CPU=baseline
 cmake --build build/cpp -j
 ctest --test-dir build/cpp --output-on-failure
-./build/cpp/simd_lab_cpp
 ./build/cpp/simd_lab_cpp_bench
+```
+
+MSVC uses a baseline dispatcher plus a separate `/arch:AVX2` translation unit. The runtime output states whether `best-dispatch` selected `avx2+fma` or `scalar`.
+
+## Runtime protocol
+
+The default sweep spans 4 KiB through 16 MiB per f32 array, covering L1/L2-resident and shared-cache/DRAM-sized inputs. Every point retains 15 independent samples and reports minimum, median, p95, MAD, and effective GiB/s. Randomized differential tests exercise vector tails and verify that rejected F16C partial blocks do not modify output.
+
+Collect all three languages into one JSON document:
+
+```bash
+python3 scripts/run_benchmarks.py --pretty --cpu baseline
 ```
 
 ## Codegen probes
@@ -101,27 +130,10 @@ The files under `probes/` are intentionally minimal exported functions for assem
 zig build-obj probes/zig/clamp.zig -O ReleaseFast -femit-asm=zig-clamp.s
 rustc -O --crate-type=lib --emit=asm probes/rust/clamp.rs -o rust-clamp.s
 clang++ -std=c++23 -O3 -S -masm=intel probes/cpp/clamp.cpp -o cpp-clang-clamp.s
-```
-
-Extract simple machine-readable metrics with:
-
-```bash
 python scripts/analyze_asm.py --pretty zig-clamp.s rust-clamp.s cpp-clang-clamp.s
 ```
 
 For the FP16 investigation, conversion counts such as `vcvtph2ps` and `vcvtps2ph` are first-class regression signals.
-
-## Runtime FP16 comparison
-
-The first runtime matrix uses the same exact binary16 values in all three languages and fixed `0.5 .. 2.0` clamp bounds. This deliberately avoids NaNs, subnormals, and rounding-boundary cases until the basic codegen/performance comparison is established.
-
-See:
-
-- `docs/roadmap.md`
-- `docs/type-operation-matrix.md`
-- `docs/codegen-probes.md`
-- `docs/benchmarking.md`
-- `docs/fp16-semantics.md`
 
 ## SIMD philosophy
 

@@ -7,6 +7,10 @@
 #include <immintrin.h>
 #endif
 
+#if defined(_MSC_VER) && defined(_M_X64)
+#include <intrin.h>
+#endif
+
 namespace simd_lab {
 
 void axpy_scalar(std::span<float> dst, std::span<const float> x,
@@ -17,12 +21,12 @@ void axpy_scalar(std::span<float> dst, std::span<const float> x,
     }
 }
 
-float squared_error_scalar(std::span<const float> a,
-                           std::span<const float> b) {
+double squared_error_scalar(std::span<const float> a,
+                            std::span<const float> b) {
     assert(a.size() == b.size());
-    float sum = 0.0f;
+    double sum = 0.0;
     for (std::size_t i = 0; i < a.size(); ++i) {
-        const float d = a[i] - b[i];
+        const auto d = static_cast<double>(a[i] - b[i]);
         sum += d * d;
     }
     return sum;
@@ -43,23 +47,26 @@ std::uint64_t sad_u8_scalar(std::span<const std::uint8_t> a,
 
 #if (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__)
 __attribute__((target("avx2,fma")))
-static float squared_error_avx2(std::span<const float> a,
-                                std::span<const float> b) {
-    __m256 acc = _mm256_setzero_ps();
+static double squared_error_avx2(std::span<const float> a,
+                                 std::span<const float> b) {
+    __m256d acc_lo = _mm256_setzero_pd();
+    __m256d acc_hi = _mm256_setzero_pd();
     std::size_t i = 0;
     for (; i + 8 <= a.size(); i += 8) {
         const __m256 va = _mm256_loadu_ps(a.data() + i);
         const __m256 vb = _mm256_loadu_ps(b.data() + i);
         const __m256 d = _mm256_sub_ps(va, vb);
-        acc = _mm256_fmadd_ps(d, d, acc);
+        const __m256d d_lo = _mm256_cvtps_pd(_mm256_castps256_ps128(d));
+        const __m256d d_hi = _mm256_cvtps_pd(_mm256_extractf128_ps(d, 1));
+        acc_lo = _mm256_fmadd_pd(d_lo, d_lo, acc_lo);
+        acc_hi = _mm256_fmadd_pd(d_hi, d_hi, acc_hi);
     }
 
-    alignas(32) float lanes[8];
-    _mm256_store_ps(lanes, acc);
-    float sum = 0.0f;
-    for (float lane : lanes) sum += lane;
+    alignas(32) double lanes[4];
+    _mm256_store_pd(lanes, _mm256_add_pd(acc_lo, acc_hi));
+    double sum = lanes[0] + lanes[1] + lanes[2] + lanes[3];
     for (; i < a.size(); ++i) {
-        const float d = a[i] - b[i];
+        const auto d = static_cast<double>(a[i] - b[i]);
         sum += d * d;
     }
     return sum;
@@ -91,12 +98,41 @@ static std::uint64_t sad_u8_avx2(std::span<const std::uint8_t> a,
 }
 #endif
 
-float squared_error_best(std::span<const float> a,
-                         std::span<const float> b) {
+#if defined(_MSC_VER) && defined(_M_X64)
+double squared_error_avx2_msvc(std::span<const float> a,
+                               std::span<const float> b) noexcept;
+std::uint64_t sad_u8_avx2_msvc(std::span<const std::uint8_t> a,
+                               std::span<const std::uint8_t> b) noexcept;
+
+static bool os_has_ymm_state() noexcept {
+    int registers[4]{};
+    __cpuidex(registers, 1, 0);
+    constexpr int osxsave = 1 << 27;
+    constexpr int avx = 1 << 28;
+    if ((registers[2] & (osxsave | avx)) != (osxsave | avx)) return false;
+    return (_xgetbv(0) & 0x6) == 0x6;
+}
+
+static bool cpu_has_avx2_fma() noexcept {
+    if (!os_has_ymm_state()) return false;
+    int registers[4]{};
+    __cpuidex(registers, 1, 0);
+    constexpr int fma = 1 << 12;
+    if ((registers[2] & fma) == 0) return false;
+    __cpuidex(registers, 7, 0);
+    constexpr int avx2 = 1 << 5;
+    return (registers[1] & avx2) != 0;
+}
+#endif
+
+double squared_error_best(std::span<const float> a,
+                          std::span<const float> b) {
 #if (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__)
     if (__builtin_cpu_supports("avx2") && __builtin_cpu_supports("fma")) {
         return squared_error_avx2(a, b);
     }
+#elif defined(_MSC_VER) && defined(_M_X64)
+    if (cpu_has_avx2_fma()) return squared_error_avx2_msvc(a, b);
 #endif
     return squared_error_scalar(a, b);
 }
@@ -104,11 +140,22 @@ float squared_error_best(std::span<const float> a,
 std::uint64_t sad_u8_best(std::span<const std::uint8_t> a,
                           std::span<const std::uint8_t> b) {
 #if (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__)
-    if (__builtin_cpu_supports("avx2")) {
-        return sad_u8_avx2(a, b);
-    }
+    if (__builtin_cpu_supports("avx2")) return sad_u8_avx2(a, b);
+#elif defined(_MSC_VER) && defined(_M_X64)
+    if (cpu_has_avx2_fma()) return sad_u8_avx2_msvc(a, b);
 #endif
     return sad_u8_scalar(a, b);
+}
+
+std::string_view dispatch_tier() noexcept {
+#if (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__)
+    if (__builtin_cpu_supports("avx2") && __builtin_cpu_supports("fma")) {
+        return "avx2+fma";
+    }
+#elif defined(_MSC_VER) && defined(_M_X64)
+    if (cpu_has_avx2_fma()) return "avx2+fma";
+#endif
+    return "scalar";
 }
 
 } // namespace simd_lab
