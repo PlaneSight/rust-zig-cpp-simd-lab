@@ -82,6 +82,9 @@ def main() -> None:
             ("widen-mul", ROOT / "probes/cpp/widen_mul.cpp"),
             ("mixed-width", ROOT / "probes/cpp/mixed_width.cpp"),
         ]
+        sat_sub_source = ROOT / "probes/cpp/sat_sub_portable.cpp"
+        if sat_sub_source.exists():
+            sources.insert(4, ("sat-sub-portable", sat_sub_source))
         if args.target == "aarch64-fp16":
             sources.append(("fp16-clang-ext", ROOT / "probes/cpp/fp16_clang.cpp"))
         for probe, source in sources:
@@ -94,8 +97,10 @@ def main() -> None:
                          "assembly": str(out.relative_to(ROOT)), "command": cmd})
 
     if shutil.which("zig"):
-        for probe in ["clamp", "dot", "image_kernels", "mixed_width", "sad", "sat_add", "widen_mul"]:
+        for probe in ["clamp", "dot", "image_kernels", "mixed_width", "sad", "sat_add", "sat_sub", "widen_mul"]:
             source = ROOT / f"probes/zig/{probe}.zig"
+            if not source.exists():
+                continue
             out = OUT / f"zig-{probe}-{args.target}.s"
             obj = OUT / f"zig-{probe}-{args.target}.o"
             cmd = ["zig", "build-obj", str(source), "-O", "ReleaseFast",

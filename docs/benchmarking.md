@@ -15,7 +15,7 @@ Each kernel runs at six element counts:
 | `1 << 20` | 4 MiB | shared cache / memory transition |
 | `1 << 22` | 16 MiB | shared cache or DRAM |
 
-The actual working set depends on the kernel and is emitted for every result. AXPY has three f32 arrays; squared error has two; u8 SAD has two byte arrays; u16 SAD has two 16-bit input arrays; u8 saturating add has two byte inputs plus one byte output; FP16 clamp has four binary16 arrays; dot products have two input arrays; widening multiply has two input arrays plus one output array. Mixed-width conversion rows use one source and one destination stream, while `u8x4 <-> u32` packing uses four bytes per group on each side. For `u32/i32 -> u64/i64` widening, that is 16 effective bytes per element. Cache labels are therefore orientation points, not universal classifications.
+The actual working set depends on the kernel and is emitted for every result. AXPY has three f32 arrays; squared error has two; u8 SAD has two byte arrays; u16 SAD has two 16-bit input arrays; u8 saturating add/subtract each have two byte inputs plus one byte output; FP16 clamp has four binary16 arrays; dot products have two input arrays; widening multiply has two input arrays plus one output array. Mixed-width conversion rows use one source and one destination stream, while `u8x4 <-> u32` packing uses four bytes per group on each side. For `u32/i32 -> u64/i64` widening, that is 16 effective bytes per element. Cache labels are therefore orientation points, not universal classifications.
 
 For every kernel and size:
 
@@ -41,6 +41,7 @@ Deterministic randomized differential tests cover:
 - every remainder modulo eight for F16C rejection;
 - every remainder modulo 32 for byte SIMD tails;
 - all 65,536 pairs of u8 inputs for the saturating-add contract;
+- independent scalar references for all eight fixed-width saturating-subtract types, including unsigned underflow, signed `MIN`/`MAX` clamps, equal-length validation, empty inputs, and arbitrary tails;
 - u16 SAD extrema (`0` and `65535`) plus vector-boundary and randomized lengths;
 - transactional F16C failure: an unsupported partial block must leave `dst` unchanged.
 
@@ -70,6 +71,7 @@ Reported bandwidth is effective algorithmic traffic:
 - u8 SAD: two byte reads = 2 bytes per element;
 - u16 SAD: two 16-bit reads = 4 bytes per element;
 - u8 saturating add: two byte reads plus one byte write = 3 bytes per element;
+- u8 saturating subtract: two byte reads plus one byte write = 3 bytes per element;
 - FP16 clamp: three binary16 reads plus one binary16 write = 8 bytes per element.
 
 Stage 7 uses the same accounting for all three languages:
@@ -91,11 +93,15 @@ group: four input bytes plus one output `u32`, or the inverse.
 The new 32-bit widening rows use two 4-byte input streams and one 8-byte output
 stream, so their effective traffic is 16 bytes per element in every language.
 
-Saturating-add rows use the same model across all eight fixed-width integer
-types: two input streams and one output stream, or `3 * sizeof(T)` bytes per
-element. This is 3 bytes for `u8`/`i8`, 6 for `u16`/`i16`, 12 for
-`u32`/`i32`, and 24 for `u64`/`i64`. The scalar/autovec label changes the
-implementation under test, not the traffic contract.
+Saturating-add and saturating-subtract rows use the same model across all
+eight fixed-width integer types: two input streams and one output stream, or
+`3 * sizeof(T)` bytes per element. This is 3 bytes for `u8`/`i8`, 6 for
+`u16`/`i16`, 12 for `u32`/`i32`, and 24 for `u64`/`i64`. For subtract,
+unsigned underflow clamps to `0`, while signed results clamp to `MIN`/`MAX`.
+Equal-length, empty, and arbitrary-tail cases use independent scalar
+references. Runtime measurements and codegen snapshots are separate evidence;
+the scalar/autovec label changes the implementation under test, not the
+traffic contract.
 
 ## Stage 8 blend and short-convolution rows
 
@@ -194,6 +200,38 @@ The collector emits `simd-lab-benchmark-v2`. Each result includes:
 - explicit skip records for unavailable ISA paths.
 
 The collector remains outside the language binaries so benchmark timing code stays dependency-free and the JSON contract can evolve without three serialization implementations.
+
+## Benchmark export
+
+The exporter accepts one or more JSON documents emitted by the collector with
+`schema: "simd-lab-benchmark-v2"`. Each document contains `runs` with language
+and result rows; a row carries its `name`, byte and iteration/sample counts,
+`statistics`, and raw `samples` whose unit is `ns/element`. Optional host
+strings become empty cells, while missing required metrics are rejected rather
+than filled with zeroes.
+
+Use these commands:
+
+```bash
+python3 scripts/export_benchmarks.py --format csv results/local.json
+python3 scripts/export_benchmarks.py --format markdown --output results/local.md results/local.json
+```
+With no `--output`, the selected format is written as UTF-8 to stdout;
+`--output PATH` writes the same output to that path. CSV columns are
+deterministic and ordered by source/timestamp/target, host identity, language,
+benchmark, implementation, element count `n`, working-set and effective-byte
+counts, iteration/sample counts, minimum/median/p95/MAD `ns/element`,
+median `GiB/s`, and compact deterministic JSON for `run_metadata`,
+`target_configuration`, and `toolchains`. A result name is split once at `/`
+into the benchmark name and implementation, and rows sort by
+`(source, benchmark, n, language, implementation)`.
+
+Markdown emits one source/environment section for each input document with
+`Language`, `Implementation`, `Median ns/element`, `p95 ns/element`, `MAD
+ns/element`, and `Median GiB/s` columns. It escapes backslashes, pipes,
+line breaks, and HTML-sensitive ampersands/angle brackets. Source and
+environment sections stay separate; the export must not rank materially
+different hosts, targets, or protocols.
 
 ## Stage 9 evidence boundary
 

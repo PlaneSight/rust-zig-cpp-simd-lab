@@ -74,6 +74,8 @@ TRACKED_PREFIXES = (
     "sshll",
     "uqadd",
     "sqadd",
+    "uqsub",
+    "sqsub",
     "xtn",
     "uqxtn",
     "sqxtn",
@@ -90,9 +92,11 @@ TRACKED_PREFIXES = (
     "uzp",
     "fmla",
     "fmul",
-    # WebAssembly SIMD exact/high-signal operations then broad families
+# WebAssembly SIMD exact/high-signal operations then broad families
     "i8x16.add_sat_u",
     "i8x16.add_sat_s",
+    "i8x16.sub_sat_u",
+    "i8x16.sub_sat_s",
     "i16x8.extmul_low_i8x16_s",
     "i16x8.extmul_high_i8x16_s",
     "i16x8.extmul_low_i8x16_u",

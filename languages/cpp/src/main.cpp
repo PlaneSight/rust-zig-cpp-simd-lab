@@ -199,6 +199,34 @@ T sat_add_reference(T lhs, T rhs) noexcept {
     }
 }
 
+template <typename T>
+T sat_sub_reference(T lhs, T rhs) noexcept {
+    static_assert(std::is_integral_v<T>);
+    if constexpr (std::is_unsigned_v<T>) {
+        const auto widened_lhs = static_cast<std::uint64_t>(lhs);
+        const auto widened_rhs = static_cast<std::uint64_t>(rhs);
+        return widened_lhs < widened_rhs
+                   ? T{0}
+                   : static_cast<T>(widened_lhs - widened_rhs);
+    } else if constexpr (sizeof(T) < sizeof(std::int64_t)) {
+        const auto difference = static_cast<std::int64_t>(lhs) -
+                                static_cast<std::int64_t>(rhs);
+        const auto min_value =
+            static_cast<std::int64_t>(std::numeric_limits<T>::min());
+        const auto max_value =
+            static_cast<std::int64_t>(std::numeric_limits<T>::max());
+        return static_cast<T>(
+            std::clamp(difference, min_value, max_value));
+    } else {
+        constexpr auto min_value = std::numeric_limits<std::int64_t>::min();
+        constexpr auto max_value = std::numeric_limits<std::int64_t>::max();
+        if (rhs > 0 && lhs < min_value + rhs) return min_value;
+        if (rhs < 0 && lhs > max_value + rhs) return max_value;
+        return lhs - rhs;
+    }
+}
+
+
 bool run_saturating_add_case(std::size_t length, XorShift64& rng,
                              bool extrema) {
     constexpr std::array<std::int8_t, 8> i8_a_values{
@@ -375,6 +403,203 @@ bool run_saturating_add_case(std::size_t length, XorShift64& rng,
            check(i64_actual, i64_expected, "i64");
 }
 
+bool run_saturating_sub_case(std::size_t length, XorShift64& rng,
+                             bool extrema) {
+    constexpr std::array<std::uint8_t, 8> u8_a_values{
+        0, 1, 127, 128, 254, 255, 3, 200};
+    constexpr std::array<std::uint8_t, 8> u8_b_values{
+        1, 255, 0, 255, 1, 0, 200, 3};
+    constexpr std::array<std::int8_t, 8> i8_a_values{
+        std::numeric_limits<std::int8_t>::min(),
+        std::numeric_limits<std::int8_t>::min() + 1, -1, 0, 1,
+        std::numeric_limits<std::int8_t>::max() - 1,
+        std::numeric_limits<std::int8_t>::max(), 42};
+    constexpr std::array<std::int8_t, 8> i8_b_values{
+        1, -1, std::numeric_limits<std::int8_t>::min(), 0, 1,
+        std::numeric_limits<std::int8_t>::max(), -1, -42};
+    constexpr std::array<std::uint16_t, 8> u16_a_values{
+        0, 1, std::numeric_limits<std::uint16_t>::max() / 2,
+        std::numeric_limits<std::uint16_t>::max() - 1,
+        std::numeric_limits<std::uint16_t>::max(), 0x8000, 17, 0xffff};
+    constexpr std::array<std::uint16_t, 8> u16_b_values{
+        std::numeric_limits<std::uint16_t>::max(), 0,
+        std::numeric_limits<std::uint16_t>::max(),
+        std::numeric_limits<std::uint16_t>::max(), 1, 0xffff, 18, 0};
+    constexpr std::array<std::int16_t, 8> i16_a_values{
+        std::numeric_limits<std::int16_t>::min(),
+        std::numeric_limits<std::int16_t>::min() + 1, -1, 0, 1,
+        std::numeric_limits<std::int16_t>::max() - 1,
+        std::numeric_limits<std::int16_t>::max(), 12345};
+    constexpr std::array<std::int16_t, 8> i16_b_values{
+        1, -1, std::numeric_limits<std::int16_t>::min(), 0, 1,
+        std::numeric_limits<std::int16_t>::max(), -1, -12345};
+    constexpr std::array<std::uint32_t, 8> u32_a_values{
+        0U, 1U, std::numeric_limits<std::uint32_t>::max() / 2,
+        std::numeric_limits<std::uint32_t>::max() - 1,
+        std::numeric_limits<std::uint32_t>::max(), 0x80000000U, 17U,
+        0x01234567U};
+    constexpr std::array<std::uint32_t, 8> u32_b_values{
+        std::numeric_limits<std::uint32_t>::max(), 0U,
+        std::numeric_limits<std::uint32_t>::max(),
+        std::numeric_limits<std::uint32_t>::max(), 1U, 0xffffffffU, 18U,
+        0U};
+    constexpr std::array<std::int32_t, 8> i32_a_values{
+        std::numeric_limits<std::int32_t>::min(),
+        std::numeric_limits<std::int32_t>::min() + 1, -1, 0, 1,
+        std::numeric_limits<std::int32_t>::max() - 1,
+        std::numeric_limits<std::int32_t>::max(), 123456789};
+    constexpr std::array<std::int32_t, 8> i32_b_values{
+        1, -1, std::numeric_limits<std::int32_t>::min(), 0, 1,
+        std::numeric_limits<std::int32_t>::max(), -1, -123456789};
+    constexpr std::array<std::uint64_t, 8> u64_a_values{
+        0, 1, std::numeric_limits<std::uint64_t>::max() / 2,
+        std::numeric_limits<std::uint64_t>::max() - 1,
+        std::numeric_limits<std::uint64_t>::max(), std::uint64_t{1} << 63,
+        17, 0x0123456789abcdefULL};
+    constexpr std::array<std::uint64_t, 8> u64_b_values{
+        std::numeric_limits<std::uint64_t>::max(), 0,
+        std::numeric_limits<std::uint64_t>::max(),
+        std::numeric_limits<std::uint64_t>::max(), 1,
+        std::numeric_limits<std::uint64_t>::max(), 18, 0};
+    constexpr std::array<std::int64_t, 8> i64_a_values{
+        std::numeric_limits<std::int64_t>::min(),
+        std::numeric_limits<std::int64_t>::min() + 1, -1, 0, 1,
+        std::numeric_limits<std::int64_t>::max() - 1,
+        std::numeric_limits<std::int64_t>::max(), 1234567890123456789LL};
+    constexpr std::array<std::int64_t, 8> i64_b_values{
+        1, -1, std::numeric_limits<std::int64_t>::min(), 0, 1,
+        std::numeric_limits<std::int64_t>::max(), -1,
+        -1234567890123456789LL};
+
+    std::vector<std::uint8_t> u8_a(length), u8_b(length);
+    std::vector<std::int8_t> i8_a(length), i8_b(length);
+    std::vector<std::uint16_t> u16_a(length), u16_b(length);
+    std::vector<std::int16_t> i16_a(length), i16_b(length);
+    std::vector<std::uint32_t> u32_a(length), u32_b(length);
+    std::vector<std::int32_t> i32_a(length), i32_b(length);
+    std::vector<std::uint64_t> u64_a(length), u64_b(length);
+    std::vector<std::int64_t> i64_a(length), i64_b(length);
+
+    const auto random_i8 = [&]() {
+        const auto magnitude =
+            static_cast<std::int8_t>(rng.next() & 0x7fU);
+        return (rng.next() & 1U) == 0
+                   ? magnitude
+                   : static_cast<std::int8_t>(-magnitude);
+    };
+    const auto random_i16 = [&]() {
+        const auto magnitude =
+            static_cast<std::int16_t>(rng.next() & 0x7fffU);
+        return (rng.next() & 1U) == 0
+                   ? magnitude
+                   : static_cast<std::int16_t>(-magnitude);
+    };
+    const auto random_i32 = [&]() {
+        const auto magnitude =
+            static_cast<std::int32_t>(rng.next() & 0x7fffffffU);
+        return (rng.next() & 1U) == 0
+                   ? magnitude
+                   : static_cast<std::int32_t>(-magnitude);
+    };
+    const auto random_i64 = [&]() {
+        const auto magnitude = static_cast<std::int64_t>(
+            rng.next() & 0x7fffffffffffffffULL);
+        return (rng.next() & 1U) == 0
+                   ? magnitude
+                   : static_cast<std::int64_t>(-magnitude);
+    };
+    for (std::size_t i = 0; i < length; ++i) {
+        if (extrema) {
+            u8_a[i] = u8_a_values[i & 7U];
+            u8_b[i] = u8_b_values[i & 7U];
+            i8_a[i] = i8_a_values[i & 7U];
+            i8_b[i] = i8_b_values[i & 7U];
+            u16_a[i] = u16_a_values[i & 7U];
+            u16_b[i] = u16_b_values[i & 7U];
+            i16_a[i] = i16_a_values[i & 7U];
+            i16_b[i] = i16_b_values[i & 7U];
+            u32_a[i] = u32_a_values[i & 7U];
+            u32_b[i] = u32_b_values[i & 7U];
+            i32_a[i] = i32_a_values[i & 7U];
+            i32_b[i] = i32_b_values[i & 7U];
+            u64_a[i] = u64_a_values[i & 7U];
+            u64_b[i] = u64_b_values[i & 7U];
+            i64_a[i] = i64_a_values[i & 7U];
+            i64_b[i] = i64_b_values[i & 7U];
+        } else {
+            u8_a[i] = static_cast<std::uint8_t>(rng.next());
+            u8_b[i] = static_cast<std::uint8_t>(rng.next());
+            i8_a[i] = random_i8();
+            i8_b[i] = random_i8();
+            u16_a[i] = static_cast<std::uint16_t>(rng.next());
+            u16_b[i] = static_cast<std::uint16_t>(rng.next());
+            i16_a[i] = random_i16();
+            i16_b[i] = random_i16();
+            u32_a[i] = static_cast<std::uint32_t>(rng.next());
+            u32_b[i] = static_cast<std::uint32_t>(rng.next());
+            i32_a[i] = random_i32();
+            i32_b[i] = random_i32();
+            u64_a[i] = rng.next();
+            u64_b[i] = rng.next();
+            i64_a[i] = random_i64();
+            i64_b[i] = random_i64();
+        }
+    }
+
+    std::vector<std::uint8_t> u8_expected(length), u8_actual(length);
+    std::vector<std::int8_t> i8_expected(length), i8_actual(length);
+    std::vector<std::uint16_t> u16_expected(length), u16_actual(length);
+    std::vector<std::int16_t> i16_expected(length), i16_actual(length);
+    std::vector<std::uint32_t> u32_expected(length), u32_actual(length);
+    std::vector<std::int32_t> i32_expected(length), i32_actual(length);
+    std::vector<std::uint64_t> u64_expected(length), u64_actual(length);
+    std::vector<std::int64_t> i64_expected(length), i64_actual(length);
+    for (std::size_t i = 0; i < length; ++i) {
+        u8_expected[i] = sat_sub_reference(u8_a[i], u8_b[i]);
+        i8_expected[i] = sat_sub_reference(i8_a[i], i8_b[i]);
+        u16_expected[i] = sat_sub_reference(u16_a[i], u16_b[i]);
+        i16_expected[i] = sat_sub_reference(i16_a[i], i16_b[i]);
+        u32_expected[i] = sat_sub_reference(u32_a[i], u32_b[i]);
+        i32_expected[i] = sat_sub_reference(i32_a[i], i32_b[i]);
+        u64_expected[i] = sat_sub_reference(u64_a[i], u64_b[i]);
+        i64_expected[i] = sat_sub_reference(i64_a[i], i64_b[i]);
+    }
+
+    simd_lab::sat_sub_u8_scalar(u8_actual, u8_a, u8_b);
+    if (u8_actual != u8_expected) {
+        std::cerr << "saturating-sub u8 scalar mismatch at length "
+                  << length << '\n';
+        return false;
+    }
+    std::fill(u8_actual.begin(), u8_actual.end(), std::uint8_t{0});
+    simd_lab::sat_sub_u8_best(u8_actual, u8_a, u8_b);
+    const auto check = [length](const auto& actual, const auto& expected,
+                                const char* type) {
+        if (actual != expected) {
+            std::cerr << "saturating-sub " << type << " mismatch at length "
+                      << length << '\n';
+            return false;
+        }
+        return true;
+    };
+    simd_lab::sat_sub_i8_scalar(i8_actual, i8_a, i8_b);
+    simd_lab::sat_sub_u16_scalar(u16_actual, u16_a, u16_b);
+    simd_lab::sat_sub_i16_scalar(i16_actual, i16_a, i16_b);
+    simd_lab::sat_sub_u32_scalar(u32_actual, u32_a, u32_b);
+    simd_lab::sat_sub_i32_scalar(i32_actual, i32_a, i32_b);
+    simd_lab::sat_sub_u64_scalar(u64_actual, u64_a, u64_b);
+    simd_lab::sat_sub_i64_scalar(i64_actual, i64_a, i64_b);
+    return check(u8_actual, u8_expected, "u8-best") &&
+           check(i8_actual, i8_expected, "i8") &&
+           check(u16_actual, u16_expected, "u16") &&
+           check(i16_actual, i16_expected, "i16") &&
+           check(u32_actual, u32_expected, "u32") &&
+           check(i32_actual, i32_expected, "i32") &&
+           check(u64_actual, u64_expected, "u64") &&
+           check(i64_actual, i64_expected, "i64");
+}
+
+
 std::uint8_t blend_u8_reference(std::uint8_t a, std::uint8_t b,
                                 std::uint16_t weight) noexcept {
     const auto weighted_b = static_cast<std::uint32_t>(weight);
@@ -495,7 +720,8 @@ bool run_randomized_differential_tests() {
     XorShift64 rng{0x8f3ca516d27b49e1ULL};
     for (const auto length : pathological_lengths) {
         if (!run_new_operation_case(length, rng, true) ||
-            !run_saturating_add_case(length, rng, true)) {
+            !run_saturating_add_case(length, rng, true) ||
+            !run_saturating_sub_case(length, rng, true)) {
             return false;
         }
     }
@@ -504,7 +730,8 @@ bool run_randomized_differential_tests() {
     for (std::size_t trial = 0; trial < 256; ++trial) {
         const std::size_t length = trial < 64 ? trial : rng.next() % 2050;
         if (!run_new_operation_case(length, rng, false) ||
-            !run_saturating_add_case(length, rng, false)) {
+            !run_saturating_add_case(length, rng, false) ||
+            !run_saturating_sub_case(length, rng, false)) {
             return false;
         }
         std::vector<float> a(length), b(length);
@@ -600,6 +827,36 @@ bool run_exhaustive_saturating_add_test() {
     }
     return true;
 }
+
+bool run_exhaustive_saturating_sub_test() {
+    constexpr std::size_t pair_count = 256 * 256;
+    std::vector<std::uint8_t> a(pair_count), b(pair_count),
+        expected(pair_count), candidate(pair_count);
+
+    for (std::size_t x = 0; x < 256; ++x) {
+        for (std::size_t y = 0; y < 256; ++y) {
+            const auto index = x * 256 + y;
+            a[index] = static_cast<std::uint8_t>(x);
+            b[index] = static_cast<std::uint8_t>(y);
+            expected[index] = static_cast<std::uint8_t>(
+                x < y ? 0U : x - y);
+        }
+    }
+
+    simd_lab::sat_sub_u8_scalar(candidate, a, b);
+    if (candidate != expected) {
+        std::cerr << "scalar saturating-sub exhaustive test failed\n";
+        return false;
+    }
+    std::fill(candidate.begin(), candidate.end(), std::uint8_t{0});
+    simd_lab::sat_sub_u8_best(candidate, a, b);
+    if (candidate != expected) {
+        std::cerr << "dispatched saturating-sub exhaustive test failed\n";
+        return false;
+    }
+    return true;
+}
+
 
 std::uint16_t f32_to_u16_sat_reference(float value) noexcept {
     constexpr float max_value =
@@ -862,8 +1119,9 @@ int main() {
                                 std::max(std::abs(scalar), 1.0);
 
     if (relative_error > 1e-12 || !run_randomized_differential_tests() ||
-        !run_exhaustive_saturating_add_test() || !run_mixed_width_tests() ||
-        !run_image_kernel_tests()) {
+        !run_exhaustive_saturating_add_test() ||
+        !run_exhaustive_saturating_sub_test() ||
+        !run_mixed_width_tests() || !run_image_kernel_tests()) {
         return 1;
     }
 
@@ -871,6 +1129,8 @@ int main() {
               << "Dispatch tier: " << simd_lab::dispatch_tier() << '\n'
               << "Saturating-add tier: "
               << simd_lab::sat_add_u8_dispatch_tier() << '\n'
+              << "Saturating-sub tier: "
+              << simd_lab::sat_sub_u8_dispatch_tier() << '\n'
               << "Image kernel checks: passed\n"
               << "AXPY checksum: " << checksum << '\n'
               << "Squared error scalar: " << scalar << '\n'

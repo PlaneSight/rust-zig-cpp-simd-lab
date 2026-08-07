@@ -83,7 +83,20 @@ Snapshots are written under `results/codegen/`. Every manifest uses schema `simd
 - top mnemonics;
 - tracked SIMD idioms.
 
-Tracked x86 signals include FP16 conversions (`vcvtph2ps`, `vcvtps2ph`), SAD (`vpsadbw`/`psadbw`), widening moves (`vpmovzx*` / `vpmovsx*`), multiply-add idioms (`vpmaddwd`, `vpmaddubsw`, and VNNI `vpdp*` families), and vector multiply families. AArch64 signals include `uabd`, widening/reduction operations such as `uaddlp`/`uaddlv`/`uadalp`, integer widening/narrowing (`ushll`/`sshll`/`smull`/`umull`/`xtn`/`uqxtn`), integer-to-float conversion (`scvtf`/`ucvtf`), dot-product (`sdot`/`udot`/`usdot`), FP min/max and conversion operations. WebAssembly tracking recognizes the `v128`, integer-lane, floating-lane, widening multiply, and dot-product opcode families.
+Tracked x86 signals include FP16 conversions (`vcvtph2ps`, `vcvtps2ph`), SAD (`vpsadbw`/`psadbw`), saturating subtract (`vpsubusb`/`vpsubsb` and other `vpsub*` forms), widening moves (`vpmovzx*` / `vpmovsx*`), multiply-add idioms (`vpmaddwd`, `vpmaddubsw`, and VNNI `vpdp*` families), and vector multiply families. AArch64 signals include `uabd`, saturating subtract (`uqsub`/`sqsub`), widening/reduction operations such as `uaddlp`/`uaddlv`/`uadalp`, integer widening/narrowing (`ushll`/`sshll`/`smull`/`umull`/`xtn`/`uqxtn`), integer-to-float conversion (`scvtf`/`ucvtf`), dot-product (`sdot`/`udot`/`usdot`), FP min/max and conversion operations. WebAssembly tracking recognizes `sub_sat` and the `v128`, integer-lane, floating-lane, widening multiply, and dot-product opcode families.
+
+The `sat_sub` x86 probe is generated beside `sat_add`; cross-target portable
+C++ and Zig entries are emitted only when their probe files exist. These
+idioms are compiler-lowering evidence, not required instructions or thresholds.
+
+### Saturating subtract
+
+- Do x86 snapshots select `vpsubusb`/`vpsubsb` or another `vpsub*` sequence?
+- Does AArch64 lowering use `uqsub`/`sqsub` for the corresponding lanes?
+- Does wasm-simd128 use a `sub_sat` opcode where the type supports it?
+
+These observations describe compiler lowering only. They do not set a
+correctness threshold or replace independent scalar-reference runtime checks.
 
 ### llvm-mca sidecars
 

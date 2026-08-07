@@ -146,6 +146,10 @@ pub fn main() !void {
             defer allocator.free(sat_reference);
             const sat_dst = try allocator.alloc(u8, n);
             defer allocator.free(sat_dst);
+            const sat_sub_reference = try allocator.alloc(u8, n);
+            defer allocator.free(sat_sub_reference);
+            const sat_sub_dst = try allocator.alloc(u8, n);
+            defer allocator.free(sat_sub_dst);
             for (a, b, 0..) |*av, *bv, i| {
                 av.* = @intCast((i * 17 + 3) & 255);
                 bv.* = @intCast((i * 29 + 11) & 255);
@@ -154,6 +158,9 @@ pub fn main() !void {
             kernels.satAddU8Scalar(sat_reference, a, b);
             kernels.satAddU8Vector(sat_dst, a, b);
             std.debug.assert(std.mem.eql(u8, sat_reference, sat_dst));
+            kernels.satSubU8Scalar(sat_sub_reference, a, b);
+            kernels.satSubU8Vector(sat_sub_dst, a, b);
+            std.debug.assert(std.mem.eql(u8, sat_sub_reference, sat_sub_dst));
 
             var result = try measure(io, kernels.sadU8Scalar, .{ a, b }, n);
             report("sad-u8/scalar-autovec", n, n * 2, n * 2, result);
@@ -164,6 +171,10 @@ pub fn main() !void {
             report("sat-add-u8/scalar-autovec", n, n * 3, n * 3, result);
             result = try measure(io, kernels.satAddU8Vector, .{ sat_dst, a, b }, n);
             report("sat-add-u8/native-vector", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.satSubU8Scalar, .{ sat_sub_dst, a, b }, n);
+            report("sat-sub-u8/scalar-autovec", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.satSubU8Vector, .{ sat_sub_dst, a, b }, n);
+            report("sat-sub-u8/native-vector", n, n * 3, n * 3, result);
         }
 
         {
@@ -353,6 +364,56 @@ pub fn main() !void {
             std.debug.assert(std.mem.eql(u64, u64_reference, u64_dst));
             kernels.satAddI64Scalar(i64_dst, i64_a, i64_b);
             std.debug.assert(std.mem.eql(i64, i64_reference, i64_dst));
+            for (i8_reference, i8_a, i8_b) |*out, a, b| {
+                const difference: i16 = @as(i16, a) - @as(i16, b);
+                const min_value: i16 = @intCast(std.math.minInt(i8));
+                const max_value: i16 = @intCast(std.math.maxInt(i8));
+                out.* = if (difference < min_value) std.math.minInt(i8) else if (difference > max_value) std.math.maxInt(i8) else @intCast(difference);
+            }
+            for (u16_reference, u16_a, u16_b) |*out, a, b| {
+                const difference: i32 = @as(i32, a) - @as(i32, b);
+                out.* = if (difference < 0) 0 else @intCast(difference);
+            }
+            for (i16_reference, i16_a, i16_b) |*out, a, b| {
+                const difference: i32 = @as(i32, a) - @as(i32, b);
+                const min_value: i32 = @intCast(std.math.minInt(i16));
+                const max_value: i32 = @intCast(std.math.maxInt(i16));
+                out.* = if (difference < min_value) std.math.minInt(i16) else if (difference > max_value) std.math.maxInt(i16) else @intCast(difference);
+            }
+            for (u32_reference, u32_a, u32_b) |*out, a, b| {
+                const difference: i64 = @as(i64, a) - @as(i64, b);
+                out.* = if (difference < 0) 0 else @intCast(difference);
+            }
+            for (i32_reference, i32_a, i32_b) |*out, a, b| {
+                const difference: i64 = @as(i64, a) - @as(i64, b);
+                const min_value: i64 = @intCast(std.math.minInt(i32));
+                const max_value: i64 = @intCast(std.math.maxInt(i32));
+                out.* = if (difference < min_value) std.math.minInt(i32) else if (difference > max_value) std.math.maxInt(i32) else @intCast(difference);
+            }
+            for (u64_reference, u64_a, u64_b) |*out, a, b| {
+                const difference: i128 = @as(i128, a) - @as(i128, b);
+                out.* = if (difference < 0) 0 else @intCast(difference);
+            }
+            for (i64_reference, i64_a, i64_b) |*out, a, b| {
+                const difference: i128 = @as(i128, a) - @as(i128, b);
+                const min_value: i128 = @intCast(std.math.minInt(i64));
+                const max_value: i128 = @intCast(std.math.maxInt(i64));
+                out.* = if (difference < min_value) std.math.minInt(i64) else if (difference > max_value) std.math.maxInt(i64) else @intCast(difference);
+            }
+            kernels.satSubI8Scalar(i8_dst, i8_a, i8_b);
+            std.debug.assert(std.mem.eql(i8, i8_reference, i8_dst));
+            kernels.satSubU16Scalar(u16_dst, u16_a, u16_b);
+            std.debug.assert(std.mem.eql(u16, u16_reference, u16_dst));
+            kernels.satSubI16Scalar(i16_dst, i16_a, i16_b);
+            std.debug.assert(std.mem.eql(i16, i16_reference, i16_dst));
+            kernels.satSubU32Scalar(u32_dst, u32_a, u32_b);
+            std.debug.assert(std.mem.eql(u32, u32_reference, u32_dst));
+            kernels.satSubI32Scalar(i32_dst, i32_a, i32_b);
+            std.debug.assert(std.mem.eql(i32, i32_reference, i32_dst));
+            kernels.satSubU64Scalar(u64_dst, u64_a, u64_b);
+            std.debug.assert(std.mem.eql(u64, u64_reference, u64_dst));
+            kernels.satSubI64Scalar(i64_dst, i64_a, i64_b);
+            std.debug.assert(std.mem.eql(i64, i64_reference, i64_dst));
 
             var result = try measure(io, kernels.satAddI8Scalar, .{ i8_dst, i8_a, i8_b }, n);
             report("sat-add-i8/scalar-autovec", n, n * 3, n * 3, result);
@@ -368,6 +429,20 @@ pub fn main() !void {
             report("sat-add-u64/scalar-autovec", n, n * 24, n * 24, result);
             result = try measure(io, kernels.satAddI64Scalar, .{ i64_dst, i64_a, i64_b }, n);
             report("sat-add-i64/scalar-autovec", n, n * 24, n * 24, result);
+            result = try measure(io, kernels.satSubI8Scalar, .{ i8_dst, i8_a, i8_b }, n);
+            report("sat-sub-i8/scalar-autovec", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.satSubU16Scalar, .{ u16_dst, u16_a, u16_b }, n);
+            report("sat-sub-u16/scalar-autovec", n, n * 6, n * 6, result);
+            result = try measure(io, kernels.satSubI16Scalar, .{ i16_dst, i16_a, i16_b }, n);
+            report("sat-sub-i16/scalar-autovec", n, n * 6, n * 6, result);
+            result = try measure(io, kernels.satSubU32Scalar, .{ u32_dst, u32_a, u32_b }, n);
+            report("sat-sub-u32/scalar-autovec", n, n * 12, n * 12, result);
+            result = try measure(io, kernels.satSubI32Scalar, .{ i32_dst, i32_a, i32_b }, n);
+            report("sat-sub-i32/scalar-autovec", n, n * 12, n * 12, result);
+            result = try measure(io, kernels.satSubU64Scalar, .{ u64_dst, u64_a, u64_b }, n);
+            report("sat-sub-u64/scalar-autovec", n, n * 24, n * 24, result);
+            result = try measure(io, kernels.satSubI64Scalar, .{ i64_dst, i64_a, i64_b }, n);
+            report("sat-sub-i64/scalar-autovec", n, n * 24, n * 24, result);
         }
 
         {

@@ -17,7 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "results" / "codegen"
-PROBES = ["clamp", "dot", "image_kernels", "mixed_width", "sad", "sat_add", "widen_mul"]
+PROBES = ["clamp", "dot", "image_kernels", "mixed_width", "sad", "sat_add", "sat_sub", "widen_mul"]
 
 
 def run(cmd: list[str], cwd: Path = ROOT) -> str:

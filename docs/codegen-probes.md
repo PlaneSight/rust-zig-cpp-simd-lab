@@ -89,6 +89,20 @@ tails. Widened or checked scalar implementations are compared by semantics;
 the generated assembly is evidence of the compiler's lowering, not an exact
 instruction fixture.
 
+## Saturating-subtract probes
+
+The matching probe covers `u8`, `i8`, `u16`, `i16`, `u32`, `i32`, `u64`, and
+`i64` with raw-pointer entry points and an explicit element count. Inputs must
+have equal lengths; `len == 0` is valid, arbitrary tails are processed, unsigned
+underflow clamps to `0`, and signed results clamp to `MIN`/`MAX`. Runtime
+harnesses compare every type with independent scalar references. These probes
+provide codegen evidence only, so runtime correctness and assembly evidence
+remain separate.
+
+Compiler evidence may include x86 `vpsubusb`/`vpsubsb` or other `vpsub*`
+lowering, AArch64 `uqsub`/`sqsub`, and wasm `sub_sat` lane opcodes. These are
+observations rather than required instruction sequences or thresholds.
+
 ## Stage 8 image-kernel probes
 
 The Stage 8 probe family is tagged `image_kernels`. Raw-pointer
@@ -137,6 +151,24 @@ zig build-obj probes/zig/sad.zig -O ReleaseFast -femit-asm=zig-sad.s
 rustc -O --crate-type=lib --emit=asm probes/rust/sad.rs -o rust-sad.s
 clang++ -std=c++23 -O3 -S -masm=intel probes/cpp/sad.cpp -o cpp-clang-sad.s
 g++ -std=c++23 -O3 -S -masm=intel probes/cpp/sad.cpp -o cpp-gcc-sad.s
+```
+
+Saturating-add probes:
+
+```bash
+zig build-obj probes/zig/sat_add.zig -O ReleaseFast -femit-asm=zig-sat_add.s
+rustc -O --crate-type=lib --emit=asm probes/rust/sat_add.rs -o rust-sat_add.s
+clang++ -std=c++23 -O3 -S -masm=intel probes/cpp/sat_add.cpp -o cpp-clang-sat_add.s
+g++ -std=c++23 -O3 -S -masm=intel probes/cpp/sat_add.cpp -o cpp-gcc-sat_add.s
+```
+
+Saturating-subtract probes:
+
+```bash
+zig build-obj probes/zig/sat_sub.zig -O ReleaseFast -femit-asm=zig-sat_sub.s
+rustc -O --crate-type=lib --emit=asm probes/rust/sat_sub.rs -o rust-sat_sub.s
+clang++ -std=c++23 -O3 -S -masm=intel probes/cpp/sat_sub.cpp -o cpp-clang-sat_sub.s
+g++ -std=c++23 -O3 -S -masm=intel probes/cpp/sat_sub.cpp -o cpp-gcc-sat_sub.s
 ```
 
 Generate the Stage 7 and Stage 8 probes with the same target-profile pipeline:

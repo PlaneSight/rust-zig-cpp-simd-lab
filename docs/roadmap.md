@@ -99,7 +99,7 @@ For each useful kernel, aim for the following implementation tiers where the lan
 - [x] `i32` saturating-add runtime/probe coverage
 - [x] `u64` saturating-add runtime/probe coverage
 - [x] `i64` saturating-add runtime/probe coverage
-- [ ] saturating subtract for the fixed-width matrix
+- [x] saturating subtract for the fixed-width matrix
 - [ ] explicit widening + clamp fallback implementations for comparison
 
 ## Shifts and bit operations
@@ -503,8 +503,8 @@ Potential candidates should emerge from evidence—for example repeated FP16 con
 
 - [x] JSON benchmark output
 - [x] JSON codegen output
-- [ ] CSV export
-- [ ] Markdown summary tables
+- [x] CSV export
+- [x] Markdown summary tables
 - [ ] benchmark comparison tables by kernel/type/ISA/language
 - [ ] codegen tables showing instruction counts and key mnemonic counts
 - [ ] plots for throughput vs data size
@@ -513,6 +513,13 @@ Potential candidates should emerge from evidence—for example repeated FP16 con
 - [ ] FP16 conversion-count visualization
 - [ ] architecture comparison reports
 - [ ] checked-in result summaries only when hardware/toolchain metadata is complete
+
+The checked reporting scope is limited to deterministic export of existing
+`simd-lab-benchmark-v2` rows. The v2 producer has no explicit type/ISA
+comparison dimensions, so comparison tables by kernel/type/ISA/language,
+regression detection, plots, histories, and architecture reports remain
+separate future work. Markdown keeps each source/environment separate, and
+exports must not rank materially different hosts, targets, or protocols.
 
 # 22. CI
 

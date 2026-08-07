@@ -47,6 +47,34 @@ T sat_add_reference(T lhs, T rhs) noexcept {
     }
 }
 
+template <typename T>
+T sat_sub_reference(T lhs, T rhs) noexcept {
+    static_assert(std::is_integral_v<T>);
+    if constexpr (std::is_unsigned_v<T>) {
+        const auto widened_lhs = static_cast<std::uint64_t>(lhs);
+        const auto widened_rhs = static_cast<std::uint64_t>(rhs);
+        return widened_lhs < widened_rhs
+                   ? T{0}
+                   : static_cast<T>(widened_lhs - widened_rhs);
+    } else if constexpr (sizeof(T) < sizeof(std::int64_t)) {
+        const auto difference = static_cast<std::int64_t>(lhs) -
+                                static_cast<std::int64_t>(rhs);
+        const auto min_value =
+            static_cast<std::int64_t>(std::numeric_limits<T>::min());
+        const auto max_value =
+            static_cast<std::int64_t>(std::numeric_limits<T>::max());
+        return static_cast<T>(
+            std::clamp(difference, min_value, max_value));
+    } else {
+        constexpr auto min_value = std::numeric_limits<std::int64_t>::min();
+        constexpr auto max_value = std::numeric_limits<std::int64_t>::max();
+        if (rhs > 0 && lhs < min_value + rhs) return min_value;
+        if (rhs < 0 && lhs > max_value + rhs) return max_value;
+        return lhs - rhs;
+    }
+}
+
+
 struct Measurement {
     std::size_t iterations_per_sample;
     std::vector<double> ns_per_element;
@@ -153,6 +181,33 @@ bool run_sat_add_case(std::string_view name, std::size_t n,
     report(name, n, n * bytes_per_element, n * bytes_per_element, result);
     return true;
 }
+
+template <typename T, typename F>
+bool run_sat_sub_case(std::string_view name, std::size_t n,
+                      const std::vector<T>& a, const std::vector<T>& b,
+                      F function, std::size_t bytes_per_element) {
+    std::vector<T> expected(n), dst(n);
+    for (std::size_t i = 0; i < n; ++i) {
+        expected[i] = sat_sub_reference(a[i], b[i]);
+    }
+    function(dst, a, b);
+    if (dst != expected) {
+        std::cerr << name << " validation failed\n";
+        return false;
+    }
+
+    const auto result = measure(n, [&] {
+        function(dst, a, b);
+        if constexpr (std::is_signed_v<T>) {
+            sink_i64 = static_cast<std::int64_t>(dst[n - 1]);
+        } else {
+            sink_u64 = static_cast<std::uint64_t>(dst[n - 1]);
+        }
+    });
+    report(name, n, n * bytes_per_element, n * bytes_per_element, result);
+    return true;
+}
+
 
 std::uint8_t blend_u8_bench_reference(std::uint8_t a, std::uint8_t b,
                                       std::uint16_t weight) noexcept {
@@ -557,6 +612,22 @@ int main() {
                 return 1;
             }
 
+            std::vector<std::uint8_t> sat_sub_expected(n), sat_sub_dst(n);
+            for (std::size_t i = 0; i < n; ++i) {
+                sat_sub_expected[i] = sat_sub_reference(a[i], b[i]);
+            }
+            simd_lab::sat_sub_u8_scalar(sat_sub_dst, a, b);
+            if (sat_sub_dst != sat_sub_expected) {
+                std::cerr << "u8 saturating-sub scalar validation failed\n";
+                return 1;
+            }
+            simd_lab::sat_sub_u8_best(sat_sub_dst, a, b);
+            if (sat_sub_dst != sat_sub_expected) {
+                std::cerr << "u8 saturating-sub best validation failed\n";
+                return 1;
+            }
+
+
             auto result = measure(n, [&] {
                 sink_u64 = simd_lab::sad_u8_scalar(a, b);
             });
@@ -586,6 +657,22 @@ int main() {
                 simd_lab::sat_add_u8_best(sat_dst, a, b);
             });
             report("sat-add-u8/best-dispatch", n, n * 3, n * 3, result);
+
+            result = measure(n, [&] {
+                simd_lab::sat_sub_u8_scalar(sat_sub_dst, a, b);
+                sink_u64 = sat_sub_dst[n - 1U];
+            });
+            report("sat-sub-u8/scalar-autovec", n,
+                   n * sizeof(std::uint8_t) * 3U,
+                   n * sizeof(std::uint8_t) * 3U, result);
+
+            result = measure(n, [&] {
+                simd_lab::sat_sub_u8_best(sat_sub_dst, a, b);
+                sink_u64 = sat_sub_dst[n - 1U];
+            });
+            report("sat-sub-u8/best-dispatch", n,
+                   n * sizeof(std::uint8_t) * 3U,
+                   n * sizeof(std::uint8_t) * 3U, result);
         }
 
         {
@@ -794,6 +881,30 @@ int main() {
                                   sizeof(std::int64_t) * 3)) {
                 return 1;
             }
+            if (!run_sat_sub_case("sat-sub-i8/scalar-autovec", n, i8_a, i8_b,
+                                  simd_lab::sat_sub_i8_scalar,
+                                  sizeof(std::int8_t) * 3) ||
+                !run_sat_sub_case("sat-sub-u16/scalar-autovec", n, u16_a,
+                                  u16_b, simd_lab::sat_sub_u16_scalar,
+                                  sizeof(std::uint16_t) * 3) ||
+                !run_sat_sub_case("sat-sub-i16/scalar-autovec", n, i16_a,
+                                  i16_b, simd_lab::sat_sub_i16_scalar,
+                                  sizeof(std::int16_t) * 3) ||
+                !run_sat_sub_case("sat-sub-u32/scalar-autovec", n, u32_a,
+                                  u32_b, simd_lab::sat_sub_u32_scalar,
+                                  sizeof(std::uint32_t) * 3) ||
+                !run_sat_sub_case("sat-sub-i32/scalar-autovec", n, i32_a,
+                                  i32_b, simd_lab::sat_sub_i32_scalar,
+                                  sizeof(std::int32_t) * 3) ||
+                !run_sat_sub_case("sat-sub-u64/scalar-autovec", n, u64_a,
+                                  u64_b, simd_lab::sat_sub_u64_scalar,
+                                  sizeof(std::uint64_t) * 3) ||
+                !run_sat_sub_case("sat-sub-i64/scalar-autovec", n, i64_a,
+                                  i64_b, simd_lab::sat_sub_i64_scalar,
+                                  sizeof(std::int64_t) * 3)) {
+                return 1;
+            }
+
 
         }
 
@@ -831,5 +942,7 @@ int main() {
               << " target_elements_per_sample=" << target_elements_per_sample
               << " dispatch_tier=" << simd_lab::dispatch_tier()
               << " sat_add_u8_dispatch_tier="
-              << simd_lab::sat_add_u8_dispatch_tier() << '\n';
+              << simd_lab::sat_add_u8_dispatch_tier()
+              << " sat_sub_u8_dispatch_tier="
+              << simd_lab::sat_sub_u8_dispatch_tier() << '\n';
 }

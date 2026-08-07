@@ -72,6 +72,18 @@ void sat_add_u8_scalar(std::span<std::uint8_t> dst,
     }
 }
 
+void sat_sub_u8_scalar(std::span<std::uint8_t> dst,
+                       std::span<const std::uint8_t> a,
+                       std::span<const std::uint8_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto lhs = static_cast<std::uint16_t>(a[i]);
+        const auto rhs = static_cast<std::uint16_t>(b[i]);
+        dst[i] = static_cast<std::uint8_t>(lhs < rhs ? 0U : lhs - rhs);
+    }
+}
+
+
 void blend_u8_scalar(std::span<std::uint8_t> dst,
                      std::span<const std::uint8_t> a,
                      std::span<const std::uint8_t> b,
@@ -314,6 +326,105 @@ void sat_add_i64_scalar(std::span<std::int64_t> dst,
         }
     }
 }
+
+void sat_sub_i8_scalar(std::span<std::int8_t> dst,
+                       std::span<const std::int8_t> a,
+                       std::span<const std::int8_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr auto min_value =
+        static_cast<std::int32_t>(std::numeric_limits<std::int8_t>::min());
+    constexpr auto max_value =
+        static_cast<std::int32_t>(std::numeric_limits<std::int8_t>::max());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto difference = static_cast<std::int32_t>(a[i]) -
+                                static_cast<std::int32_t>(b[i]);
+        dst[i] = static_cast<std::int8_t>(
+            std::clamp(difference, min_value, max_value));
+    }
+}
+
+void sat_sub_u16_scalar(std::span<std::uint16_t> dst,
+                        std::span<const std::uint16_t> a,
+                        std::span<const std::uint16_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto lhs = static_cast<std::uint32_t>(a[i]);
+        const auto rhs = static_cast<std::uint32_t>(b[i]);
+        dst[i] = static_cast<std::uint16_t>(lhs < rhs ? 0U : lhs - rhs);
+    }
+}
+
+void sat_sub_i16_scalar(std::span<std::int16_t> dst,
+                        std::span<const std::int16_t> a,
+                        std::span<const std::int16_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr auto min_value =
+        static_cast<std::int32_t>(std::numeric_limits<std::int16_t>::min());
+    constexpr auto max_value =
+        static_cast<std::int32_t>(std::numeric_limits<std::int16_t>::max());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto difference = static_cast<std::int32_t>(a[i]) -
+                                static_cast<std::int32_t>(b[i]);
+        dst[i] = static_cast<std::int16_t>(
+            std::clamp(difference, min_value, max_value));
+    }
+}
+
+void sat_sub_u32_scalar(std::span<std::uint32_t> dst,
+                        std::span<const std::uint32_t> a,
+                        std::span<const std::uint32_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto lhs = static_cast<std::uint64_t>(a[i]);
+        const auto rhs = static_cast<std::uint64_t>(b[i]);
+        dst[i] = static_cast<std::uint32_t>(lhs < rhs ? 0U : lhs - rhs);
+    }
+}
+
+void sat_sub_i32_scalar(std::span<std::int32_t> dst,
+                        std::span<const std::int32_t> a,
+                        std::span<const std::int32_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr auto min_value =
+        static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::min());
+    constexpr auto max_value =
+        static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::max());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto difference = static_cast<std::int64_t>(a[i]) -
+                                static_cast<std::int64_t>(b[i]);
+        dst[i] = static_cast<std::int32_t>(
+            std::clamp(difference, min_value, max_value));
+    }
+}
+
+void sat_sub_u64_scalar(std::span<std::uint64_t> dst,
+                        std::span<const std::uint64_t> a,
+                        std::span<const std::uint64_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        dst[i] = a[i] < b[i] ? 0U : a[i] - b[i];
+    }
+}
+
+void sat_sub_i64_scalar(std::span<std::int64_t> dst,
+                        std::span<const std::int64_t> a,
+                        std::span<const std::int64_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    constexpr auto min_value = std::numeric_limits<std::int64_t>::min();
+    constexpr auto max_value = std::numeric_limits<std::int64_t>::max();
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto lhs = a[i];
+        const auto rhs = b[i];
+        if (rhs > 0 && lhs < min_value + rhs) {
+            dst[i] = min_value;
+        } else if (rhs < 0 && lhs > max_value + rhs) {
+            dst[i] = max_value;
+        } else {
+            dst[i] = lhs - rhs;
+        }
+    }
+}
+
 
 double dot_f32_scalar(std::span<const float> a,
                       std::span<const float> b) {
@@ -738,6 +849,29 @@ static void sat_add_u8_avx2(std::span<std::uint8_t> dst,
             std::min(widened_sum, 255U));
     }
 }
+
+__attribute__((target("avx2")))
+static void sat_sub_u8_avx2(std::span<std::uint8_t> dst,
+                            std::span<const std::uint8_t> a,
+                            std::span<const std::uint8_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    std::size_t i = 0;
+    for (; i + 32 <= dst.size(); i += 32) {
+        const __m256i va = _mm256_loadu_si256(
+            reinterpret_cast<const __m256i*>(a.data() + i));
+        const __m256i vb = _mm256_loadu_si256(
+            reinterpret_cast<const __m256i*>(b.data() + i));
+        const __m256i result = _mm256_subs_epu8(va, vb);
+        _mm256_storeu_si256(
+            reinterpret_cast<__m256i*>(dst.data() + i), result);
+    }
+    for (; i < dst.size(); ++i) {
+        const auto lhs = static_cast<std::uint16_t>(a[i]);
+        const auto rhs = static_cast<std::uint16_t>(b[i]);
+        dst[i] = static_cast<std::uint8_t>(lhs < rhs ? 0U : lhs - rhs);
+    }
+}
+
 #endif
 
 #if defined(_MSC_VER) && defined(_M_X64)
@@ -748,6 +882,10 @@ std::uint64_t sad_u8_avx2_msvc(std::span<const std::uint8_t> a,
 void sat_add_u8_avx2_msvc(std::span<std::uint8_t> dst,
                           std::span<const std::uint8_t> a,
                           std::span<const std::uint8_t> b) noexcept;
+void sat_sub_u8_avx2_msvc(std::span<std::uint8_t> dst,
+                          std::span<const std::uint8_t> a,
+                          std::span<const std::uint8_t> b) noexcept;
+
 
 static bool os_has_ymm_state() noexcept {
     int registers[4]{};
@@ -822,6 +960,24 @@ void sat_add_u8_best(std::span<std::uint8_t> dst,
     sat_add_u8_scalar(dst, a, b);
 }
 
+void sat_sub_u8_best(std::span<std::uint8_t> dst,
+                     std::span<const std::uint8_t> a,
+                     std::span<const std::uint8_t> b) {
+#if (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__)
+    if (__builtin_cpu_supports("avx2")) {
+        sat_sub_u8_avx2(dst, a, b);
+        return;
+    }
+#elif defined(_MSC_VER) && defined(_M_X64)
+    if (cpu_has_avx2()) {
+        sat_sub_u8_avx2_msvc(dst, a, b);
+        return;
+    }
+#endif
+    sat_sub_u8_scalar(dst, a, b);
+}
+
+
 std::string_view dispatch_tier() noexcept {
 #if (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__)
     if (__builtin_cpu_supports("avx2") && __builtin_cpu_supports("fma")) {
@@ -841,5 +997,15 @@ std::string_view sat_add_u8_dispatch_tier() noexcept {
 #endif
     return "scalar";
 }
+
+std::string_view sat_sub_u8_dispatch_tier() noexcept {
+#if (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__)
+    if (__builtin_cpu_supports("avx2")) return "avx2";
+#elif defined(_MSC_VER) && defined(_M_X64)
+    if (cpu_has_avx2()) return "avx2";
+#endif
+    return "scalar";
+}
+
 
 } // namespace simd_lab

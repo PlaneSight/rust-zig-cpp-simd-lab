@@ -84,6 +84,28 @@ void sat_add_u8_avx2_msvc(std::span<std::uint8_t> dst,
     }
 }
 
+void sat_sub_u8_avx2_msvc(std::span<std::uint8_t> dst,
+                          std::span<const std::uint8_t> a,
+                          std::span<const std::uint8_t> b) noexcept {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    std::size_t i = 0;
+    for (; i + 32 <= dst.size(); i += 32) {
+        const __m256i va = _mm256_loadu_si256(
+            reinterpret_cast<const __m256i*>(a.data() + i));
+        const __m256i vb = _mm256_loadu_si256(
+            reinterpret_cast<const __m256i*>(b.data() + i));
+        const __m256i result = _mm256_subs_epu8(va, vb);
+        _mm256_storeu_si256(
+            reinterpret_cast<__m256i*>(dst.data() + i), result);
+    }
+    for (; i < dst.size(); ++i) {
+        const auto lhs = static_cast<std::uint16_t>(a[i]);
+        const auto rhs = static_cast<std::uint16_t>(b[i]);
+        dst[i] = static_cast<std::uint8_t>(lhs < rhs ? 0U : lhs - rhs);
+    }
+}
+
+
 void clamp_f16c_msvc(std::uint16_t* dst, const std::uint16_t* c,
                      const std::uint16_t* lo, const std::uint16_t* hi,
                      std::size_t n) noexcept {

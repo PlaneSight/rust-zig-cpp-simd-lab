@@ -187,6 +187,83 @@ pub fn satAddI64Scalar(dst: []i64, a: []const i64, b: []const i64) void {
         out.* = x +| y;
     }
 }
+/// Subtracts unsigned bytes element-wise with saturation at zero.
+/// `dst`, `a`, and `b` must have equal lengths, and `dst` must not partially
+/// overlap either input.
+pub fn satSubU8Scalar(dst: []u8, a: []const u8, b: []const u8) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        out.* = x -| y;
+    }
+}
+
+/// Subtracts unsigned bytes in native 32-lane vectors with a scalar tail.
+/// `dst`, `a`, and `b` must have equal lengths, and `dst` must not partially
+/// overlap either input.
+pub fn satSubU8Vector(dst: []u8, a: []const u8, b: []const u8) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    const Bytes = @Vector(32, u8);
+    var i: usize = 0;
+
+    while (i + 32 <= dst.len) : (i += 32) {
+        const va: Bytes = a[i..][0..32].*;
+        const vb: Bytes = b[i..][0..32].*;
+        dst[i..][0..32].* = va -| vb;
+    }
+
+    while (i < dst.len) : (i += 1) {
+        dst[i] = a[i] -| b[i];
+    }
+}
+
+pub fn satSubI8Scalar(dst: []i8, a: []const i8, b: []const i8) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        out.* = x -| y;
+    }
+}
+
+pub fn satSubU16Scalar(dst: []u16, a: []const u16, b: []const u16) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        out.* = x -| y;
+    }
+}
+
+pub fn satSubI16Scalar(dst: []i16, a: []const i16, b: []const i16) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        out.* = x -| y;
+    }
+}
+
+pub fn satSubU32Scalar(dst: []u32, a: []const u32, b: []const u32) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        out.* = x -| y;
+    }
+}
+
+pub fn satSubI32Scalar(dst: []i32, a: []const i32, b: []const i32) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        out.* = x -| y;
+    }
+}
+
+pub fn satSubU64Scalar(dst: []u64, a: []const u64, b: []const u64) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        out.* = x -| y;
+    }
+}
+
+pub fn satSubI64Scalar(dst: []i64, a: []const i64, b: []const i64) void {
+    std.debug.assert(dst.len == a.len and a.len == b.len);
+    for (dst, a, b) |*out, x, y| {
+        out.* = x -| y;
+    }
+}
 pub fn dotF32Scalar(a: []const f32, b: []const f32) f64 {
     std.debug.assert(a.len == b.len);
     var sum: f64 = 0;
@@ -993,6 +1070,8 @@ test "randomized vector paths match scalar references across tails" {
     var words_b: [max_len]u16 = undefined;
     var sat_expected: [max_len]u8 = undefined;
     var sat_candidate: [max_len]u8 = undefined;
+    var sat_sub_expected: [max_len]u8 = undefined;
+    var sat_sub_candidate: [max_len]u8 = undefined;
     var rng = XorShift64{ .state = 0x8f3c_a516_d27b_49e1 };
 
     for (0..256) |trial| {
@@ -1026,6 +1105,26 @@ test "randomized vector paths match scalar references across tails" {
         );
         if (!std.mem.eql(u8, sat_expected[0..len], sat_candidate[0..len])) {
             return error.SaturatingAddMismatch;
+        }
+        for (sat_sub_expected[0..len], bytes_a[0..len], bytes_b[0..len]) |*out, x, y| {
+            const difference: i16 = @as(i16, x) - @as(i16, y);
+            out.* = if (difference < 0) 0 else @intCast(difference);
+        }
+        satSubU8Scalar(
+            sat_sub_candidate[0..len],
+            bytes_a[0..len],
+            bytes_b[0..len],
+        );
+        if (!std.mem.eql(u8, sat_sub_expected[0..len], sat_sub_candidate[0..len])) {
+            return error.SaturatingSubtractScalarMismatch;
+        }
+        satSubU8Vector(
+            sat_sub_candidate[0..len],
+            bytes_a[0..len],
+            bytes_b[0..len],
+        );
+        if (!std.mem.eql(u8, sat_sub_expected[0..len], sat_sub_candidate[0..len])) {
+            return error.SaturatingSubtractMismatch;
         }
     }
 }
@@ -1512,6 +1611,187 @@ test "saturating add scalar paths match widened checked references" {
         satAddI64Scalar(i64_candidate[0..len], i64_a[0..len], i64_b[0..len]);
 
         try std.testing.expectEqualSlices(u8, u8_expected[0..len], u8_candidate[0..len]);
+        try std.testing.expectEqualSlices(i8, i8_expected[0..len], i8_candidate[0..len]);
+        try std.testing.expectEqualSlices(u16, u16_expected[0..len], u16_candidate[0..len]);
+        try std.testing.expectEqualSlices(i16, i16_expected[0..len], i16_candidate[0..len]);
+        try std.testing.expectEqualSlices(u32, u32_expected[0..len], u32_candidate[0..len]);
+        try std.testing.expectEqualSlices(i32, i32_expected[0..len], i32_candidate[0..len]);
+        try std.testing.expectEqualSlices(u64, u64_expected[0..len], u64_candidate[0..len]);
+        try std.testing.expectEqualSlices(i64, i64_expected[0..len], i64_candidate[0..len]);
+    }
+}
+
+test "saturating subtract scalar paths match widened checked references" {
+    const max_len = 2049;
+    var u8_a: [max_len]u8 = undefined;
+    var u8_b: [max_len]u8 = undefined;
+    var u8_expected: [max_len]u8 = undefined;
+    var u8_candidate: [max_len]u8 = undefined;
+    var i8_a: [max_len]i8 = undefined;
+    var i8_b: [max_len]i8 = undefined;
+    var i8_expected: [max_len]i8 = undefined;
+    var i8_candidate: [max_len]i8 = undefined;
+    var u16_a: [max_len]u16 = undefined;
+    var u16_b: [max_len]u16 = undefined;
+    var u16_expected: [max_len]u16 = undefined;
+    var u16_candidate: [max_len]u16 = undefined;
+    var i16_a: [max_len]i16 = undefined;
+    var i16_b: [max_len]i16 = undefined;
+    var i16_expected: [max_len]i16 = undefined;
+    var i16_candidate: [max_len]i16 = undefined;
+    var u32_a: [max_len]u32 = undefined;
+    var u32_b: [max_len]u32 = undefined;
+    var u32_expected: [max_len]u32 = undefined;
+    var u32_candidate: [max_len]u32 = undefined;
+    var i32_a: [max_len]i32 = undefined;
+    var i32_b: [max_len]i32 = undefined;
+    var i32_expected: [max_len]i32 = undefined;
+    var i32_candidate: [max_len]i32 = undefined;
+    var u64_a: [max_len]u64 = undefined;
+    var u64_b: [max_len]u64 = undefined;
+    var u64_expected: [max_len]u64 = undefined;
+    var u64_candidate: [max_len]u64 = undefined;
+    var i64_a: [max_len]i64 = undefined;
+    var i64_b: [max_len]i64 = undefined;
+    var i64_expected: [max_len]i64 = undefined;
+    var i64_candidate: [max_len]i64 = undefined;
+
+    const deterministic_lengths = [_]usize{
+        0,    1,  2,  3,   7,   8,   9,   15,  16,  17,  31,   32,   33,
+        63,   64, 65, 127, 128, 129, 255, 256, 257, 511, 1023, 1024, 2048,
+        2049,
+    };
+    var lengths: [deterministic_lengths.len + 256]usize = undefined;
+    for (deterministic_lengths, 0..) |length, index| {
+        lengths[index] = length;
+    }
+    var rng = XorShift64{ .state = 0x9b27_4e61_c8d3_f0a5 };
+    for (lengths[deterministic_lengths.len..], 0..) |*length, trial| {
+        length.* = if (trial < 64) trial else @intCast(rng.next() % (max_len + 1));
+    }
+
+    const u8_extrema = [_]u8{ 0, 1, 127, 128, 254, 255, 255 };
+    const i8_extrema = [_]i8{ -128, -127, -1, 0, 1, 126, 127 };
+    const u16_extrema = [_]u16{ 0, 1, 32767, 32768, 65534, 65535, 65535 };
+    const i16_extrema = [_]i16{ -32768, -32767, -1, 0, 1, 32766, 32767 };
+    const u32_extrema = [_]u32{ 0, 1, 2147483647, 2147483648, 4294967294, 4294967295, 4294967295 };
+    const i32_extrema = [_]i32{ -2147483648, -2147483647, -1, 0, 1, 2147483646, 2147483647 };
+    const u64_extrema = [_]u64{
+        0,
+        1,
+        0x7fff_ffff_ffff_ffff,
+        0x8000_0000_0000_0000,
+        std.math.maxInt(u64) - 1,
+        std.math.maxInt(u64),
+        std.math.maxInt(u64),
+    };
+    const i64_extrema = [_]i64{
+        std.math.minInt(i64),
+        std.math.minInt(i64) + 1,
+        -1,
+        0,
+        1,
+        std.math.maxInt(i64) - 1,
+        std.math.maxInt(i64),
+    };
+
+    const pair_indices = [_]usize{ 1, 0, 6, 2, 3, 5, 6 };
+
+    for (lengths, 0..) |len, trial| {
+        for (0..len) |i| {
+            const lane = (i + trial) % 11;
+            if (lane < 7) {
+                const pair = pair_indices[lane];
+                u8_a[i] = u8_extrema[lane];
+                u8_b[i] = u8_extrema[pair];
+                i8_a[i] = i8_extrema[lane];
+                i8_b[i] = i8_extrema[pair];
+                u16_a[i] = u16_extrema[lane];
+                u16_b[i] = u16_extrema[pair];
+                i16_a[i] = i16_extrema[lane];
+                i16_b[i] = i16_extrema[pair];
+                u32_a[i] = u32_extrema[lane];
+                u32_b[i] = u32_extrema[pair];
+                i32_a[i] = i32_extrema[lane];
+                i32_b[i] = i32_extrema[pair];
+                u64_a[i] = u64_extrema[lane];
+                u64_b[i] = u64_extrema[pair];
+                i64_a[i] = i64_extrema[lane];
+                i64_b[i] = i64_extrema[pair];
+            } else {
+                u8_a[i] = @truncate(rng.next());
+                u8_b[i] = @truncate(rng.next());
+                i8_a[i] = @bitCast(@as(u8, @truncate(rng.next())));
+                i8_b[i] = @bitCast(@as(u8, @truncate(rng.next())));
+                u16_a[i] = @truncate(rng.next());
+                u16_b[i] = @truncate(rng.next());
+                i16_a[i] = @bitCast(@as(u16, @truncate(rng.next())));
+                i16_b[i] = @bitCast(@as(u16, @truncate(rng.next())));
+                u32_a[i] = @truncate(rng.next());
+                u32_b[i] = @truncate(rng.next());
+                i32_a[i] = @bitCast(@as(u32, @truncate(rng.next())));
+                i32_b[i] = @bitCast(@as(u32, @truncate(rng.next())));
+                u64_a[i] = rng.next();
+                u64_b[i] = rng.next();
+                i64_a[i] = @bitCast(rng.next());
+                i64_b[i] = @bitCast(rng.next());
+            }
+        }
+
+        for (u8_expected[0..len], u8_a[0..len], u8_b[0..len]) |*out, x, y| {
+            const difference: i16 = @as(i16, x) - @as(i16, y);
+            out.* = if (difference < 0) 0 else @intCast(difference);
+        }
+        for (i8_expected[0..len], i8_a[0..len], i8_b[0..len]) |*out, x, y| {
+            const difference: i16 = @as(i16, x) - @as(i16, y);
+            const min_value: i16 = @intCast(std.math.minInt(i8));
+            const max_value: i16 = @intCast(std.math.maxInt(i8));
+            out.* = if (difference < min_value) std.math.minInt(i8) else if (difference > max_value) std.math.maxInt(i8) else @intCast(difference);
+        }
+        for (u16_expected[0..len], u16_a[0..len], u16_b[0..len]) |*out, x, y| {
+            const difference: i32 = @as(i32, x) - @as(i32, y);
+            out.* = if (difference < 0) 0 else @intCast(difference);
+        }
+        for (i16_expected[0..len], i16_a[0..len], i16_b[0..len]) |*out, x, y| {
+            const difference: i32 = @as(i32, x) - @as(i32, y);
+            const min_value: i32 = @intCast(std.math.minInt(i16));
+            const max_value: i32 = @intCast(std.math.maxInt(i16));
+            out.* = if (difference < min_value) std.math.minInt(i16) else if (difference > max_value) std.math.maxInt(i16) else @intCast(difference);
+        }
+        for (u32_expected[0..len], u32_a[0..len], u32_b[0..len]) |*out, x, y| {
+            const difference: i64 = @as(i64, x) - @as(i64, y);
+            out.* = if (difference < 0) 0 else @intCast(difference);
+        }
+        for (i32_expected[0..len], i32_a[0..len], i32_b[0..len]) |*out, x, y| {
+            const difference: i64 = @as(i64, x) - @as(i64, y);
+            const min_value: i64 = @intCast(std.math.minInt(i32));
+            const max_value: i64 = @intCast(std.math.maxInt(i32));
+            out.* = if (difference < min_value) std.math.minInt(i32) else if (difference > max_value) std.math.maxInt(i32) else @intCast(difference);
+        }
+        for (u64_expected[0..len], u64_a[0..len], u64_b[0..len]) |*out, x, y| {
+            const difference: i128 = @as(i128, x) - @as(i128, y);
+            out.* = if (difference < 0) 0 else @intCast(difference);
+        }
+        for (i64_expected[0..len], i64_a[0..len], i64_b[0..len]) |*out, x, y| {
+            const difference: i128 = @as(i128, x) - @as(i128, y);
+            const min_value: i128 = @intCast(std.math.minInt(i64));
+            const max_value: i128 = @intCast(std.math.maxInt(i64));
+            out.* = if (difference < min_value) std.math.minInt(i64) else if (difference > max_value) std.math.maxInt(i64) else @intCast(difference);
+        }
+
+        satSubU8Scalar(u8_candidate[0..len], u8_a[0..len], u8_b[0..len]);
+        try std.testing.expectEqualSlices(u8, u8_expected[0..len], u8_candidate[0..len]);
+        @memset(u8_candidate[0..len], 0);
+        satSubU8Vector(u8_candidate[0..len], u8_a[0..len], u8_b[0..len]);
+        try std.testing.expectEqualSlices(u8, u8_expected[0..len], u8_candidate[0..len]);
+        satSubI8Scalar(i8_candidate[0..len], i8_a[0..len], i8_b[0..len]);
+        satSubU16Scalar(u16_candidate[0..len], u16_a[0..len], u16_b[0..len]);
+        satSubI16Scalar(i16_candidate[0..len], i16_a[0..len], i16_b[0..len]);
+        satSubU32Scalar(u32_candidate[0..len], u32_a[0..len], u32_b[0..len]);
+        satSubI32Scalar(i32_candidate[0..len], i32_a[0..len], i32_b[0..len]);
+        satSubU64Scalar(u64_candidate[0..len], u64_a[0..len], u64_b[0..len]);
+        satSubI64Scalar(i64_candidate[0..len], i64_a[0..len], i64_b[0..len]);
+
         try std.testing.expectEqualSlices(i8, i8_expected[0..len], i8_candidate[0..len]);
         try std.testing.expectEqualSlices(u16, u16_expected[0..len], u16_candidate[0..len]);
         try std.testing.expectEqualSlices(i16, i16_expected[0..len], i16_candidate[0..len]);

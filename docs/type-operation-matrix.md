@@ -147,6 +147,24 @@ leave zero-length inputs valid, and process arbitrary lengths without a
 separate tail contract. Runtime rows use two input streams plus one output
 stream, with traffic of `3 * sizeof(T)` bytes per element.
 
+## Saturating-subtract family
+
+The fixed-width saturating-subtract family computes each output from the
+mathematical difference of two equal-length input streams:
+
+| Input type | Output type | Boundary behavior |
+|---|---|---|
+| `u8`, `u16`, `u32`, `u64` | same unsigned type | underflow clamps to `0` |
+| `i8`, `i16`, `i32`, `i64` | same signed type | clamp below `MIN` to `MIN` and above `MAX` to `MAX` |
+
+All languages assert equal lengths, accept empty inputs, and process arbitrary
+lengths with scalar tails. Runtime correctness uses independent scalar
+references for every fixed-width type, including extrema, cancellation, zero
+length, and tail cases. Runtime rows use two input streams plus one output
+stream, with traffic of `3 * sizeof(T)` bytes per element. Runtime results and
+codegen snapshots are separate evidence; assembly shows compiler lowering and
+does not replace the reference checks.
+
 
 ## Dot-product and widening-multiply family
 

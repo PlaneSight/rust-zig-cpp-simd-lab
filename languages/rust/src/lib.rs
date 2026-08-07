@@ -144,6 +144,110 @@ pub fn sat_add_i64_scalar(dst: &mut [i64], a: &[i64], b: &[i64]) {
         *out = x.saturating_add(y);
     }
 }
+
+/// Subtracts unsigned bytes element-wise with saturation at zero.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_sub_u8_scalar(dst: &mut [u8], a: &[u8], b: &[u8]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        *out = x.saturating_sub(y);
+    }
+}
+
+/// Subtracts signed bytes element-wise with saturation at the `i8` bounds.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_sub_i8_scalar(dst: &mut [i8], a: &[i8], b: &[i8]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        *out = x.saturating_sub(y);
+    }
+}
+
+/// Subtracts unsigned 16-bit integers element-wise with saturation at zero.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_sub_u16_scalar(dst: &mut [u16], a: &[u16], b: &[u16]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        *out = x.saturating_sub(y);
+    }
+}
+
+/// Subtracts signed 16-bit integers element-wise with saturation at the `i16` bounds.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_sub_i16_scalar(dst: &mut [i16], a: &[i16], b: &[i16]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        *out = x.saturating_sub(y);
+    }
+}
+
+/// Subtracts unsigned 32-bit integers element-wise with saturation at zero.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_sub_u32_scalar(dst: &mut [u32], a: &[u32], b: &[u32]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        *out = x.saturating_sub(y);
+    }
+}
+
+/// Subtracts signed 32-bit integers element-wise with saturation at the `i32` bounds.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_sub_i32_scalar(dst: &mut [i32], a: &[i32], b: &[i32]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        *out = x.saturating_sub(y);
+    }
+}
+
+/// Subtracts unsigned 64-bit integers element-wise with saturation at zero.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_sub_u64_scalar(dst: &mut [u64], a: &[u64], b: &[u64]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        *out = x.saturating_sub(y);
+    }
+}
+
+/// Subtracts signed 64-bit integers element-wise with saturation at the `i64` bounds.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_sub_i64_scalar(dst: &mut [i64], a: &[i64], b: &[i64]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        *out = x.saturating_sub(y);
+    }
+}
 /// Computes an f32 dot product with f64 products and accumulation.
 pub fn dot_f32_scalar(a: &[f32], b: &[f32]) -> f64 {
     assert_eq!(a.len(), b.len());
@@ -758,6 +862,41 @@ pub unsafe fn sat_add_u8_avx2(dst: &mut [u8], a: &[u8], b: &[u8]) {
     }
 }
 
+/// Subtracts unsigned bytes with AVX2 packed saturation and a scalar tail.
+///
+/// # Safety
+///
+/// The caller must ensure that the current CPU and operating system support
+/// AVX2. Slice length and non-aliasing invariants are enforced by the safe
+/// slice types and validated before the first vector load.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+pub unsafe fn sat_sub_u8_avx2(dst: &mut [u8], a: &[u8], b: &[u8]) {
+    use core::arch::x86_64::*;
+
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    let mut i = 0;
+    while i + 32 <= dst.len() {
+        // SAFETY: i..i+32 is in bounds for all three equally-sized slices.
+        // The loads and store accept unaligned addresses, and the function's
+        // target-feature contract requires AVX2.
+        unsafe {
+            let va = _mm256_loadu_si256(a.as_ptr().add(i).cast());
+            let vb = _mm256_loadu_si256(b.as_ptr().add(i).cast());
+            let result = _mm256_subs_epu8(va, vb);
+            _mm256_storeu_si256(dst.as_mut_ptr().add(i).cast(), result);
+        }
+        i += 32;
+    }
+
+    while i < dst.len() {
+        dst[i] = a[i].saturating_sub(b[i]);
+        i += 1;
+    }
+}
+
 pub fn squared_error_best(a: &[f32], b: &[f32]) -> f64 {
     #[cfg(target_arch = "x86_64")]
     {
@@ -810,6 +949,29 @@ pub fn sat_add_u8_best(dst: &mut [u8], a: &[u8], b: &[u8]) {
 }
 
 pub fn sat_add_u8_dispatch_tier() -> &'static str {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if std::arch::is_x86_feature_detected!("avx2") {
+            return "avx2";
+        }
+    }
+    "scalar"
+}
+
+pub fn sat_sub_u8_best(dst: &mut [u8], a: &[u8], b: &[u8]) {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if std::arch::is_x86_feature_detected!("avx2") {
+            // SAFETY: runtime feature detection establishes the target-feature
+            // precondition; the callee validates all slice lengths.
+            unsafe { sat_sub_u8_avx2(dst, a, b) };
+            return;
+        }
+    }
+    sat_sub_u8_scalar(dst, a, b);
+}
+
+pub fn sat_sub_u8_dispatch_tier() -> &'static str {
     #[cfg(target_arch = "x86_64")]
     {
         if std::arch::is_x86_feature_detected!("avx2") {
@@ -988,6 +1150,157 @@ mod tests {
         candidate.fill(0);
         sat_add_u8_best(&mut candidate, &a, &b);
         assert_eq!(candidate, expected);
+    }
+
+    #[test]
+    fn saturating_sub_covers_every_u8_pair() {
+        const PAIRS: usize = 256 * 256;
+        let mut a = vec![0_u8; PAIRS];
+        let mut b = vec![0_u8; PAIRS];
+        let mut expected = vec![0_u8; PAIRS];
+        let mut candidate = vec![0_u8; PAIRS];
+
+        for x in 0_u16..=u16::from(u8::MAX) {
+            for y in 0_u16..=u16::from(u8::MAX) {
+                let index = usize::from(x) * 256 + usize::from(y);
+                a[index] = x as u8;
+                b[index] = y as u8;
+                expected[index] = x.checked_sub(y).unwrap_or(0) as u8;
+            }
+        }
+
+        sat_sub_u8_scalar(&mut candidate, &a, &b);
+        assert_eq!(candidate, expected);
+        candidate.fill(0);
+        sat_sub_u8_best(&mut candidate, &a, &b);
+        assert_eq!(candidate, expected);
+    }
+
+    #[test]
+    fn saturating_sub_integer_apis_match_independent_widened_and_checked_references() {
+        const LENGTHS: [usize; 20] = [
+            0, 1, 2, 3, 5, 7, 8, 9, 11, 13, 15, 16, 17, 19, 31, 32, 33, 63, 64, 65,
+        ];
+        let mut rng = XorShift64(0xa6e4_1b29_7c53_d08f);
+
+        macro_rules! check_signed {
+            ($len:ident, $ty:ty, $wide:ty, $function:ident) => {{
+                let a: Vec<$ty> = (0..$len)
+                    .map(|i| match i {
+                        0 => <$ty>::MIN,
+                        1 => <$ty>::MIN + 1,
+                        2 => -1,
+                        3 => 0,
+                        4 => 1,
+                        5 => <$ty>::MAX - 1,
+                        6 => <$ty>::MAX,
+                        _ => rng.next() as $ty,
+                    })
+                    .collect();
+                let b: Vec<$ty> = (0..$len)
+                    .map(|i| match i {
+                        0 => <$ty>::MIN,
+                        1 => <$ty>::MAX,
+                        2 => <$ty>::MAX,
+                        3 => <$ty>::MIN,
+                        4 => -1,
+                        5 => 1,
+                        6 => <$ty>::MAX,
+                        _ => rng.next() as $ty,
+                    })
+                    .collect();
+                let expected: Vec<$ty> = a
+                    .iter()
+                    .zip(&b)
+                    .map(|(&x, &y)| {
+                        let difference = <$wide>::from(x) - <$wide>::from(y);
+                        difference
+                            .clamp(<$wide>::from(<$ty>::MIN), <$wide>::from(<$ty>::MAX))
+                            as $ty
+                    })
+                    .collect();
+                let mut candidate = vec![0 as $ty; $len];
+                $function(&mut candidate, &a, &b);
+                assert_eq!(
+                    candidate,
+                    expected,
+                    "signed type {} len={}",
+                    stringify!($ty),
+                    $len
+                );
+            }};
+        }
+        macro_rules! check_unsigned {
+            ($len:ident, $ty:ty, $wide:ty, $function:ident) => {{
+                let a: Vec<$ty> = (0..$len)
+                    .map(|i| match i {
+                        0 => 0,
+                        1 => 1,
+                        2 => 2,
+                        3 => <$ty>::MAX / 2,
+                        4 => <$ty>::MAX - 1,
+                        5 => <$ty>::MAX,
+                        6 => <$ty>::MAX,
+                        _ => rng.next() as $ty,
+                    })
+                    .collect();
+                let b: Vec<$ty> = (0..$len)
+                    .map(|i| match i {
+                        0 => <$ty>::MAX,
+                        1 => <$ty>::MAX,
+                        2 => 1,
+                        3 => <$ty>::MAX,
+                        4 => 2,
+                        5 => <$ty>::MAX,
+                        6 => 0,
+                        _ => rng.next() as $ty,
+                    })
+                    .collect();
+                let expected: Vec<$ty> = a
+                    .iter()
+                    .zip(&b)
+                    .map(|(&x, &y)| {
+                        <$wide>::from(x)
+                            .checked_sub(<$wide>::from(y))
+                            .unwrap_or(0) as $ty
+                    })
+                    .collect();
+                let mut candidate = vec![0 as $ty; $len];
+                $function(&mut candidate, &a, &b);
+                assert_eq!(
+                    candidate,
+                    expected,
+                    "unsigned type {} len={}",
+                    stringify!($ty),
+                    $len
+                );
+            }};
+        }
+
+        for &len in &LENGTHS {
+            check_signed!(len, i8, i128, sat_sub_i8_scalar);
+            check_unsigned!(len, u16, u128, sat_sub_u16_scalar);
+            check_signed!(len, i16, i128, sat_sub_i16_scalar);
+            check_unsigned!(len, u32, u128, sat_sub_u32_scalar);
+            check_signed!(len, i32, i128, sat_sub_i32_scalar);
+            check_unsigned!(len, u64, u128, sat_sub_u64_scalar);
+            check_signed!(len, i64, i128, sat_sub_i64_scalar);
+        }
+
+        for trial in 0..256 {
+            let len = if trial < 128 {
+                trial
+            } else {
+                (rng.next() as usize) % 4097
+            };
+            check_signed!(len, i8, i128, sat_sub_i8_scalar);
+            check_unsigned!(len, u16, u128, sat_sub_u16_scalar);
+            check_signed!(len, i16, i128, sat_sub_i16_scalar);
+            check_unsigned!(len, u32, u128, sat_sub_u32_scalar);
+            check_signed!(len, i32, i128, sat_sub_i32_scalar);
+            check_unsigned!(len, u64, u128, sat_sub_u64_scalar);
+            check_signed!(len, i64, i128, sat_sub_i64_scalar);
+        }
     }
 
     #[test]
