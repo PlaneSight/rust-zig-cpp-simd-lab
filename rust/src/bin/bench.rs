@@ -1,5 +1,6 @@
 use simd_lab_rust::{
     axpy_scalar, dispatch_tier, f16c::clamp_f16c, sad_u8_best, sad_u8_scalar,
+    sat_add_u8_best, sat_add_u8_dispatch_tier, sat_add_u8_scalar,
     squared_error_best, squared_error_scalar,
 };
 use std::hint::black_box;
@@ -145,6 +146,11 @@ fn main() {
             let a: Vec<u8> = (0..n).map(|i| ((i * 17 + 3) & 255) as u8).collect();
             let b: Vec<u8> = (0..n).map(|i| ((i * 29 + 11) & 255) as u8).collect();
             assert_eq!(sad_u8_scalar(&a, &b), sad_u8_best(&a, &b));
+            let mut sat_reference = vec![0_u8; n];
+            let mut sat_dst = vec![0_u8; n];
+            sat_add_u8_scalar(&mut sat_reference, &a, &b);
+            sat_add_u8_best(&mut sat_dst, &a, &b);
+            assert_eq!(sat_dst, sat_reference);
 
             let measurement = measure(n, || {
                 black_box(sad_u8_scalar(black_box(&a), black_box(&b)));
@@ -155,6 +161,38 @@ fn main() {
                 black_box(sad_u8_best(black_box(&a), black_box(&b)));
             });
             report("sad-u8/best-dispatch", n, n * 2, n * 2, &measurement);
+
+            let measurement = measure(n, || {
+                sat_add_u8_scalar(
+                    black_box(&mut sat_dst),
+                    black_box(&a),
+                    black_box(&b),
+                );
+                black_box(&sat_dst);
+            });
+            report(
+                "sat-add-u8/scalar-autovec",
+                n,
+                n * 3,
+                n * 3,
+                &measurement,
+            );
+
+            let measurement = measure(n, || {
+                sat_add_u8_best(
+                    black_box(&mut sat_dst),
+                    black_box(&a),
+                    black_box(&b),
+                );
+                black_box(&sat_dst);
+            });
+            report(
+                "sat-add-u8/best-dispatch",
+                n,
+                n * 3,
+                n * 3,
+                &measurement,
+            );
         }
 
         {
@@ -190,8 +228,10 @@ fn main() {
 
     println!(
         "META size_count={} warmup_samples={WARMUP_SAMPLES} sample_count={SAMPLE_COUNT} \
-         target_elements_per_sample={TARGET_ELEMENTS_PER_SAMPLE} dispatch_tier={}",
+         target_elements_per_sample={TARGET_ELEMENTS_PER_SAMPLE} dispatch_tier={} \
+         sat_add_u8_dispatch_tier={}",
         SIZES.len(),
         dispatch_tier(),
+        sat_add_u8_dispatch_tier(),
     );
 }

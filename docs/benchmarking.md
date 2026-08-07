@@ -15,7 +15,7 @@ Each kernel runs at six element counts:
 | `1 << 20` | 4 MiB | shared cache / memory transition |
 | `1 << 22` | 16 MiB | shared cache or DRAM |
 
-The actual working set depends on the kernel and is emitted for every result. AXPY has three f32 arrays; squared error has two; SAD has two byte arrays; FP16 clamp has four binary16 arrays. Cache labels are therefore orientation points, not universal classifications.
+The actual working set depends on the kernel and is emitted for every result. AXPY has three f32 arrays; squared error has two; SAD has two byte arrays; u8 saturating add has two byte inputs plus one byte output; FP16 clamp has four binary16 arrays. Cache labels are therefore orientation points, not universal classifications.
 
 For every kernel and size:
 
@@ -40,6 +40,7 @@ Deterministic randomized differential tests cover:
 - lengths on both sides of vector boundaries;
 - every remainder modulo eight for F16C rejection;
 - every remainder modulo 32 for byte SIMD tails;
+- all 65,536 pairs of u8 inputs for the saturating-add contract;
 - transactional F16C failure: an unsupported partial block must leave `dst` unchanged.
 
 The fixed smoke datasets remain useful for readable failures, but are no longer the only correctness evidence.
@@ -57,7 +58,7 @@ The fixed smoke datasets remain useful for readable failures, but are no longer 
 
 Use `baseline` to compare portable scalar/autovec code against runtime-dispatched ISA implementations. Use `x86-64-v3` or `native` when the question is whether source-level autovectorization matches intrinsics at the same ISA level. Do not merge those tiers into one ranking.
 
-C++ GCC and Clang use per-function ISA attributes for portable runtime dispatch. MSVC keeps AVX2/FMA/F16C code in a separate `/arch:AVX2` translation unit and checks CPUID plus OS YMM-state support in baseline code before entering it. Every benchmark run emits the actual dispatch tier, so Windows results cannot silently masquerade as SIMD results.
+C++ GCC and Clang use per-function ISA attributes for portable runtime dispatch. MSVC keeps target-specific code in a separate `/arch:AVX2` translation unit and checks CPUID plus OS YMM-state support in baseline code before entering it. AVX2-only byte kernels are not incorrectly gated on FMA. Every benchmark run emits both the floating-point dispatch tier and the u8 saturating-add tier, so Windows results cannot silently masquerade as SIMD results.
 
 ## Byte accounting
 
@@ -66,6 +67,7 @@ Reported bandwidth is effective algorithmic traffic:
 - AXPY: two f32 reads plus one f32 write = 12 bytes per element;
 - squared error: two f32 reads = 8 bytes per element;
 - u8 SAD: two byte reads = 2 bytes per element;
+- u8 saturating add: two byte reads plus one byte write = 3 bytes per element;
 - FP16 clamp: three binary16 reads plus one binary16 write = 8 bytes per element.
 
 AXPY's 12-byte figure is not necessarily physical memory-bus traffic. A normal cached store can trigger a read-for-ownership/write-allocate transaction for `dst`, making a cold streaming pass closer to 16 bytes per element before eviction writeback details. If `dst` is already resident, the extra read may not reach DRAM; non-temporal stores would change the model again. Treat the reported figure as effective bandwidth and use hardware counters when making physical-bandwidth claims.

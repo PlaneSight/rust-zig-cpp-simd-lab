@@ -22,10 +22,19 @@ std::uint64_t sad_u8_scalar(std::span<const std::uint8_t> a,
 std::uint64_t sad_u8_best(std::span<const std::uint8_t> a,
                           std::span<const std::uint8_t> b);
 
+void sat_add_u8_scalar(std::span<std::uint8_t> dst,
+                       std::span<const std::uint8_t> a,
+                       std::span<const std::uint8_t> b);
+
+void sat_add_u8_best(std::span<std::uint8_t> dst,
+                     std::span<const std::uint8_t> a,
+                     std::span<const std::uint8_t> b);
+
 bool clamp_f16c(std::uint16_t* dst, const std::uint16_t* c,
                 const std::uint16_t* lo, const std::uint16_t* hi,
                 std::size_t n);
 
 std::string_view dispatch_tier() noexcept;
+std::string_view sat_add_u8_dispatch_tier() noexcept;
 
 } // namespace simd_lab

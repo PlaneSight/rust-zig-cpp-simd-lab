@@ -34,6 +34,19 @@ pub fn sad_u8_scalar(a: &[u8], b: &[u8]) -> u64 {
         .sum()
 }
 
+/// Adds unsigned bytes element-wise with saturation at `u8::MAX`.
+///
+/// The three slices must have identical lengths. Rust's borrowing rules make
+/// this an out-of-place transform: `dst` cannot overlap either input.
+pub fn sat_add_u8_scalar(dst: &mut [u8], a: &[u8], b: &[u8]) {
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    for ((out, &x), &y) in dst.iter_mut().zip(a).zip(b) {
+        *out = x.saturating_add(y);
+    }
+}
+
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2,fma")]
 pub unsafe fn squared_error_avx2(a: &[f32], b: &[f32]) -> f64 {
@@ -111,6 +124,41 @@ pub unsafe fn sad_u8_avx2(a: &[u8], b: &[u8]) -> u64 {
     sum
 }
 
+/// Adds unsigned bytes with AVX2 packed saturation and a scalar tail.
+///
+/// # Safety
+///
+/// The caller must ensure that the current CPU and operating system support
+/// AVX2. Slice length and non-aliasing invariants are enforced by the safe
+/// slice types and validated before the first vector load.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+pub unsafe fn sat_add_u8_avx2(dst: &mut [u8], a: &[u8], b: &[u8]) {
+    use core::arch::x86_64::*;
+
+    assert_eq!(dst.len(), a.len());
+    assert_eq!(a.len(), b.len());
+
+    let mut i = 0;
+    while i + 32 <= dst.len() {
+        // SAFETY: i..i+32 is in bounds for all three equally-sized slices.
+        // The loads and store accept unaligned addresses, and the function's
+        // target-feature contract requires AVX2.
+        unsafe {
+            let va = _mm256_loadu_si256(a.as_ptr().add(i).cast());
+            let vb = _mm256_loadu_si256(b.as_ptr().add(i).cast());
+            let result = _mm256_adds_epu8(va, vb);
+            _mm256_storeu_si256(dst.as_mut_ptr().add(i).cast(), result);
+        }
+        i += 32;
+    }
+
+    while i < dst.len() {
+        dst[i] = a[i].saturating_add(b[i]);
+        i += 1;
+    }
+}
+
 pub fn squared_error_best(a: &[f32], b: &[f32]) -> f64 {
     #[cfg(target_arch = "x86_64")]
     {
@@ -136,6 +184,29 @@ pub fn sad_u8_best(a: &[u8], b: &[u8]) -> u64 {
         }
     }
     sad_u8_scalar(a, b)
+}
+
+pub fn sat_add_u8_best(dst: &mut [u8], a: &[u8], b: &[u8]) {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if std::arch::is_x86_feature_detected!("avx2") {
+            // SAFETY: runtime feature detection establishes the target-feature
+            // precondition; the callee validates all slice lengths.
+            unsafe { sat_add_u8_avx2(dst, a, b) };
+            return;
+        }
+    }
+    sat_add_u8_scalar(dst, a, b);
+}
+
+pub fn sat_add_u8_dispatch_tier() -> &'static str {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if std::arch::is_x86_feature_detected!("avx2") {
+            return "avx2";
+        }
+    }
+    "scalar"
 }
 
 pub fn dispatch_tier() -> &'static str {
@@ -208,6 +279,39 @@ mod tests {
                 sad_u8_best(&bytes_a, &bytes_b),
                 "len={len}"
             );
+
+            let mut expected = vec![0_u8; len];
+            let mut candidate = vec![0_u8; len];
+            for ((out, &x), &y) in expected.iter_mut().zip(&bytes_a).zip(&bytes_b) {
+                let widened_sum = u16::from(x) + u16::from(y);
+                *out = widened_sum.min(u16::from(u8::MAX)) as u8;
+            }
+            sat_add_u8_best(&mut candidate, &bytes_a, &bytes_b);
+            assert_eq!(candidate, expected, "len={len}");
         }
+    }
+
+    #[test]
+    fn saturating_add_covers_every_u8_pair() {
+        const PAIRS: usize = 256 * 256;
+        let mut a = vec![0_u8; PAIRS];
+        let mut b = vec![0_u8; PAIRS];
+        let mut expected = vec![0_u8; PAIRS];
+        let mut candidate = vec![0_u8; PAIRS];
+
+        for x in 0_u16..=u16::from(u8::MAX) {
+            for y in 0_u16..=u16::from(u8::MAX) {
+                let index = usize::from(x) * 256 + usize::from(y);
+                a[index] = x as u8;
+                b[index] = y as u8;
+                expected[index] = (x + y).min(u16::from(u8::MAX)) as u8;
+            }
+        }
+
+        sat_add_u8_scalar(&mut candidate, &a, &b);
+        assert_eq!(candidate, expected);
+        candidate.fill(0);
+        sat_add_u8_best(&mut candidate, &a, &b);
+        assert_eq!(candidate, expected);
     }
 }

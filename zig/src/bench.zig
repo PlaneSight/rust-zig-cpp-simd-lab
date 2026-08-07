@@ -25,8 +25,12 @@ fn iterationsFor(n: usize) usize {
 }
 
 fn invoke(comptime function: anytype, args: anytype) void {
+    // Both barriers matter for output-only kernels: their `void` result alone
+    // cannot keep repeated stores alive or ordered across timed iterations.
+    std.mem.doNotOptimizeAway(args);
     const result = @call(.auto, function, args);
     std.mem.doNotOptimizeAway(&result);
+    std.mem.doNotOptimizeAway(args);
 }
 
 fn measure(io: std.Io, comptime function: anytype, args: anytype, n: usize) !Measurement {
@@ -129,16 +133,28 @@ pub fn main() !void {
             defer allocator.free(a);
             const b = try allocator.alloc(u8, n);
             defer allocator.free(b);
+            const sat_reference = try allocator.alloc(u8, n);
+            defer allocator.free(sat_reference);
+            const sat_dst = try allocator.alloc(u8, n);
+            defer allocator.free(sat_dst);
             for (a, b, 0..) |*av, *bv, i| {
                 av.* = @intCast((i * 17 + 3) & 255);
                 bv.* = @intCast((i * 29 + 11) & 255);
             }
             std.debug.assert(kernels.sadU8Scalar(a, b) == kernels.sadU8Vector(a, b));
+            kernels.satAddU8Scalar(sat_reference, a, b);
+            kernels.satAddU8Vector(sat_dst, a, b);
+            std.debug.assert(std.mem.eql(u8, sat_reference, sat_dst));
 
             var result = try measure(io, kernels.sadU8Scalar, .{ a, b }, n);
             report("sad-u8/scalar-autovec", n, n * 2, n * 2, result);
             result = try measure(io, kernels.sadU8Vector, .{ a, b }, n);
             report("sad-u8/native-vector", n, n * 2, n * 2, result);
+
+            result = try measure(io, kernels.satAddU8Scalar, .{ sat_dst, a, b }, n);
+            report("sat-add-u8/scalar-autovec", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.satAddU8Vector, .{ sat_dst, a, b }, n);
+            report("sat-add-u8/native-vector", n, n * 3, n * 3, result);
         }
 
         {
@@ -170,7 +186,8 @@ pub fn main() !void {
     }
 
     std.debug.print(
-        "META size_count={d} warmup_samples={d} sample_count={d} target_elements_per_sample={d}\n",
+        "META size_count={d} warmup_samples={d} sample_count={d} " ++
+            "target_elements_per_sample={d} sat_add_u8_dispatch_tier=native-vector\n",
         .{ sizes.len, warmup_samples, sample_count, target_elements_per_sample },
     );
 }

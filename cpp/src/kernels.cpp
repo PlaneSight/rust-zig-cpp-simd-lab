@@ -1,5 +1,6 @@
 #include "kernels.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 
@@ -43,6 +44,18 @@ std::uint64_t sad_u8_scalar(std::span<const std::uint8_t> a,
                      : static_cast<std::uint64_t>(y - x);
     }
     return sum;
+}
+
+void sat_add_u8_scalar(std::span<std::uint8_t> dst,
+                       std::span<const std::uint8_t> a,
+                       std::span<const std::uint8_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto widened_sum = static_cast<unsigned>(a[i]) +
+                                 static_cast<unsigned>(b[i]);
+        dst[i] = static_cast<std::uint8_t>(
+            std::min(widened_sum, 255U));
+    }
 }
 
 #if (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__)
@@ -96,6 +109,29 @@ static std::uint64_t sad_u8_avx2(std::span<const std::uint8_t> a,
     }
     return sum;
 }
+
+__attribute__((target("avx2")))
+static void sat_add_u8_avx2(std::span<std::uint8_t> dst,
+                            std::span<const std::uint8_t> a,
+                            std::span<const std::uint8_t> b) {
+    assert(dst.size() == a.size() && a.size() == b.size());
+    std::size_t i = 0;
+    for (; i + 32 <= dst.size(); i += 32) {
+        const __m256i va = _mm256_loadu_si256(
+            reinterpret_cast<const __m256i*>(a.data() + i));
+        const __m256i vb = _mm256_loadu_si256(
+            reinterpret_cast<const __m256i*>(b.data() + i));
+        const __m256i result = _mm256_adds_epu8(va, vb);
+        _mm256_storeu_si256(
+            reinterpret_cast<__m256i*>(dst.data() + i), result);
+    }
+    for (; i < dst.size(); ++i) {
+        const auto widened_sum = static_cast<unsigned>(a[i]) +
+                                 static_cast<unsigned>(b[i]);
+        dst[i] = static_cast<std::uint8_t>(
+            std::min(widened_sum, 255U));
+    }
+}
 #endif
 
 #if defined(_MSC_VER) && defined(_M_X64)
@@ -103,6 +139,9 @@ double squared_error_avx2_msvc(std::span<const float> a,
                                std::span<const float> b) noexcept;
 std::uint64_t sad_u8_avx2_msvc(std::span<const std::uint8_t> a,
                                std::span<const std::uint8_t> b) noexcept;
+void sat_add_u8_avx2_msvc(std::span<std::uint8_t> dst,
+                          std::span<const std::uint8_t> a,
+                          std::span<const std::uint8_t> b) noexcept;
 
 static bool os_has_ymm_state() noexcept {
     int registers[4]{};
@@ -113,15 +152,20 @@ static bool os_has_ymm_state() noexcept {
     return (_xgetbv(0) & 0x6) == 0x6;
 }
 
-static bool cpu_has_avx2_fma() noexcept {
+static bool cpu_has_avx2() noexcept {
     if (!os_has_ymm_state()) return false;
     int registers[4]{};
-    __cpuidex(registers, 1, 0);
-    constexpr int fma = 1 << 12;
-    if ((registers[2] & fma) == 0) return false;
     __cpuidex(registers, 7, 0);
     constexpr int avx2 = 1 << 5;
     return (registers[1] & avx2) != 0;
+}
+
+static bool cpu_has_avx2_fma() noexcept {
+    if (!cpu_has_avx2()) return false;
+    int registers[4]{};
+    __cpuidex(registers, 1, 0);
+    constexpr int fma = 1 << 12;
+    return (registers[2] & fma) != 0;
 }
 #endif
 
@@ -142,9 +186,26 @@ std::uint64_t sad_u8_best(std::span<const std::uint8_t> a,
 #if (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__)
     if (__builtin_cpu_supports("avx2")) return sad_u8_avx2(a, b);
 #elif defined(_MSC_VER) && defined(_M_X64)
-    if (cpu_has_avx2_fma()) return sad_u8_avx2_msvc(a, b);
+    if (cpu_has_avx2()) return sad_u8_avx2_msvc(a, b);
 #endif
     return sad_u8_scalar(a, b);
+}
+
+void sat_add_u8_best(std::span<std::uint8_t> dst,
+                     std::span<const std::uint8_t> a,
+                     std::span<const std::uint8_t> b) {
+#if (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__)
+    if (__builtin_cpu_supports("avx2")) {
+        sat_add_u8_avx2(dst, a, b);
+        return;
+    }
+#elif defined(_MSC_VER) && defined(_M_X64)
+    if (cpu_has_avx2()) {
+        sat_add_u8_avx2_msvc(dst, a, b);
+        return;
+    }
+#endif
+    sat_add_u8_scalar(dst, a, b);
 }
 
 std::string_view dispatch_tier() noexcept {
@@ -154,6 +215,15 @@ std::string_view dispatch_tier() noexcept {
     }
 #elif defined(_MSC_VER) && defined(_M_X64)
     if (cpu_has_avx2_fma()) return "avx2+fma";
+#endif
+    return "scalar";
+}
+
+std::string_view sat_add_u8_dispatch_tier() noexcept {
+#if (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__)
+    if (__builtin_cpu_supports("avx2")) return "avx2";
+#elif defined(_MSC_VER) && defined(_M_X64)
+    if (cpu_has_avx2()) return "avx2";
 #endif
     return "scalar";
 }
