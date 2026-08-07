@@ -1,9 +1,15 @@
 use simd_lab_rust::{
-    axpy_scalar, dispatch_tier, dot_f32_scalar, dot_f64_scalar, dot_i16_scalar, dot_u8_i8_scalar,
-    f16c::clamp_f16c, sad_u8_best, sad_u8_scalar, sat_add_u8_best, sat_add_u8_dispatch_tier,
-    sat_add_u8_scalar, squared_error_best, squared_error_scalar, widen_mul_i16_i32_scalar,
+    axpy_scalar, convert_f32_u8_round_scalar, convert_f32_u8_sat_scalar,
+    convert_f32_u8_trunc_scalar, convert_i16_to_f32_scalar, convert_u16_to_f32_scalar,
+    convert_u8_f32_affine_scalar, dispatch_tier, dot_f32_scalar, dot_f64_scalar, dot_i16_scalar,
+    dot_u8_i8_scalar, f16c::clamp_f16c, f32_to_u16_sat_scalar, narrow_u16_to_u8_round_scalar,
+    narrow_u16_to_u8_sat_scalar, narrow_u16_to_u8_trunc_scalar, pack_u8x4_to_u32_scalar,
+    sad_u8_best, sad_u8_scalar, sat_add_u8_best, sat_add_u8_dispatch_tier, sat_add_u8_scalar,
+    squared_error_best, squared_error_scalar, unpack_u32_to_u8x4_scalar,
+    widen_i16_to_i32_scalar, widen_i8_to_i16_scalar, widen_mul_i16_i32_scalar,
     widen_mul_i32_i64_scalar, widen_mul_i8_i16_scalar, widen_mul_u16_u32_scalar,
-    widen_mul_u32_u64_scalar, widen_mul_u8_u16_scalar,
+    widen_mul_u32_u64_scalar, widen_mul_u8_u16_scalar, widen_u16_to_u32_scalar,
+    widen_u8_to_u16_scalar, widen_u8_to_u32_scalar,
 };
 use simd_lab_rust::{
     sat_add_i16_scalar, sat_add_i32_scalar, sat_add_i64_scalar, sat_add_i8_scalar,
@@ -702,6 +708,343 @@ fn main() {
                 &measurement,
             );
         }
+        {
+            let mixed_u8: Vec<u8> = (0..n)
+                .map(|i| ((i.wrapping_mul(37).wrapping_add(11)) & 255) as u8)
+                .collect();
+            let mixed_i8: Vec<i8> = (0..n)
+                .map(|i| (i as i8).wrapping_mul(13).wrapping_add(7))
+                .collect();
+            let mixed_u16: Vec<u16> = (0..n)
+                .map(|i| (i as u16).wrapping_mul(257).wrapping_add(3))
+                .collect();
+            let mixed_i16: Vec<i16> = (0..n)
+                .map(|i| (i as i16).wrapping_mul(521).wrapping_sub(17))
+                .collect();
+            let mixed_f32_valid: Vec<f32> = (0..n)
+                .map(|i| ((i.wrapping_mul(911) % 255_001) as f32) / 1_000.0)
+                .collect();
+            let mixed_f32_boundary: Vec<f32> = (0..n)
+                .map(|i| {
+                    [
+                        f32::NAN,
+                        f32::NEG_INFINITY,
+                        -0.5,
+                        0.5,
+                        1.75,
+                        65_534.75,
+                        65_535.0,
+                        f32::INFINITY,
+                    ][i & 7]
+                })
+                .collect();
+
+            let mut mixed_u16_from_u8 = vec![0_u16; n];
+            let mut mixed_u32_from_u8 = vec![0_u32; n];
+            let mut mixed_i16_from_i8 = vec![0_i16; n];
+            let mut mixed_u32_from_u16 = vec![0_u32; n];
+            let mut mixed_i32_from_i16 = vec![0_i32; n];
+            widen_u8_to_u16_scalar(&mut mixed_u16_from_u8, &mixed_u8);
+            widen_u8_to_u32_scalar(&mut mixed_u32_from_u8, &mixed_u8);
+            widen_i8_to_i16_scalar(&mut mixed_i16_from_i8, &mixed_i8);
+            widen_u16_to_u32_scalar(&mut mixed_u32_from_u16, &mixed_u16);
+            widen_i16_to_i32_scalar(&mut mixed_i32_from_i16, &mixed_i16);
+            assert_eq!(
+                mixed_u16_from_u8,
+                mixed_u8.iter().map(|&x| u16::from(x)).collect::<Vec<_>>()
+            );
+            assert_eq!(
+                mixed_u32_from_u8,
+                mixed_u8.iter().map(|&x| u32::from(x)).collect::<Vec<_>>()
+            );
+            assert_eq!(
+                mixed_i16_from_i8,
+                mixed_i8.iter().map(|&x| i16::from(x)).collect::<Vec<_>>()
+            );
+            assert_eq!(
+                mixed_u32_from_u16,
+                mixed_u16.iter().map(|&x| u32::from(x)).collect::<Vec<_>>()
+            );
+            assert_eq!(
+                mixed_i32_from_i16,
+                mixed_i16.iter().map(|&x| i32::from(x)).collect::<Vec<_>>()
+            );
+
+            let mut mixed_f32_from_u16 = vec![0.0_f32; n];
+            let mut mixed_f32_from_i16 = vec![0.0_f32; n];
+            let mut mixed_affine = vec![0.0_f32; n];
+            convert_u16_to_f32_scalar(&mut mixed_f32_from_u16, &mixed_u16);
+            convert_i16_to_f32_scalar(&mut mixed_f32_from_i16, &mixed_i16);
+            convert_u8_f32_affine_scalar(&mut mixed_affine, &mixed_u8, 1.25, -3.5);
+            assert_eq!(
+                mixed_f32_from_u16,
+                mixed_u16.iter().map(|&x| f32::from(x)).collect::<Vec<_>>()
+            );
+            assert_eq!(
+                mixed_f32_from_i16,
+                mixed_i16.iter().map(|&x| f32::from(x)).collect::<Vec<_>>()
+            );
+            assert_eq!(
+                mixed_affine,
+                mixed_u8
+                    .iter()
+                    .map(|&x| f32::from(x) * 1.25 - 3.5)
+                    .collect::<Vec<_>>()
+            );
+
+            let mut mixed_u16_from_f32 = vec![0_u16; n];
+            f32_to_u16_sat_scalar(&mut mixed_u16_from_f32, &mixed_f32_boundary);
+            let expected_u16_from_f32: Vec<u16> = mixed_f32_boundary
+                .iter()
+                .map(|&value| {
+                    if value.is_nan() || value <= 0.0 {
+                        0
+                    } else if value >= f32::from(u16::MAX) {
+                        u16::MAX
+                    } else {
+                        value as u16
+                    }
+                })
+                .collect();
+            assert_eq!(mixed_u16_from_f32, expected_u16_from_f32);
+
+            let mut mixed_u8_trunc = vec![0_u8; n];
+            let mut mixed_u8_round = vec![0_u8; n];
+            let mut mixed_u8_sat = vec![0_u8; n];
+            convert_f32_u8_trunc_scalar(&mut mixed_u8_trunc, &mixed_f32_valid);
+            convert_f32_u8_round_scalar(&mut mixed_u8_round, &mixed_f32_valid);
+            convert_f32_u8_sat_scalar(&mut mixed_u8_sat, &mixed_f32_boundary);
+            assert_eq!(
+                mixed_u8_trunc,
+                mixed_f32_valid.iter().map(|&x| x as u8).collect::<Vec<_>>()
+            );
+            assert_eq!(
+                mixed_u8_round,
+                mixed_f32_valid
+                    .iter()
+                    .map(|&x| (x + 0.5).floor() as u8)
+                    .collect::<Vec<_>>()
+            );
+            let expected_u8_sat: Vec<u8> = mixed_f32_boundary
+                .iter()
+                .map(|&value| {
+                    if value.is_nan() || value <= 0.0 {
+                        0
+                    } else if value >= 255.0 {
+                        u8::MAX
+                    } else {
+                        value as u8
+                    }
+                })
+                .collect();
+            assert_eq!(mixed_u8_sat, expected_u8_sat);
+
+            let mut mixed_narrow_trunc = vec![0_u8; n];
+            let mut mixed_narrow_round = vec![0_u8; n];
+            let mut mixed_narrow_sat = vec![0_u8; n];
+            narrow_u16_to_u8_trunc_scalar(&mut mixed_narrow_trunc, &mixed_u16);
+            narrow_u16_to_u8_round_scalar(&mut mixed_narrow_round, &mixed_u16);
+            narrow_u16_to_u8_sat_scalar(&mut mixed_narrow_sat, &mixed_u16);
+            assert_eq!(
+                mixed_narrow_trunc,
+                mixed_u16.iter().map(|&x| (x & 0xff) as u8).collect::<Vec<_>>()
+            );
+            assert_eq!(
+                mixed_narrow_round,
+                mixed_u16
+                    .iter()
+                    .map(|&x| ((u32::from(x) + 128) / 257) as u8)
+                    .collect::<Vec<_>>()
+            );
+            assert_eq!(
+                mixed_narrow_sat,
+                mixed_u16
+                    .iter()
+                    .map(|&x| x.min(u16::from(u8::MAX)) as u8)
+                    .collect::<Vec<_>>()
+            );
+
+            let mixed_pack_src: Vec<u8> = (0..n * 4)
+                .map(|i| ((i.wrapping_mul(73).wrapping_add(19)) & 255) as u8)
+                .collect();
+            let mut mixed_packed = vec![0_u32; n];
+            pack_u8x4_to_u32_scalar(&mut mixed_packed, &mixed_pack_src);
+            let expected_packed: Vec<u32> = mixed_pack_src
+                .chunks_exact(4)
+                .map(|chunk| {
+                    u32::from(chunk[0])
+                        | (u32::from(chunk[1]) << 8)
+                        | (u32::from(chunk[2]) << 16)
+                        | (u32::from(chunk[3]) << 24)
+                })
+                .collect();
+            assert_eq!(mixed_packed, expected_packed);
+            let mut mixed_unpacked = vec![0_u8; n * 4];
+            unpack_u32_to_u8x4_scalar(&mut mixed_unpacked, &mixed_packed);
+            assert_eq!(mixed_unpacked, mixed_pack_src);
+
+            let measurement = measure(n, || {
+                widen_u8_to_u16_scalar(
+                    black_box(&mut mixed_u16_from_u8),
+                    black_box(&mixed_u8),
+                );
+                black_box(&mixed_u16_from_u8);
+            });
+            report("widen-u8-u16/scalar-autovec", n, n * 3, n * 3, &measurement);
+
+            let measurement = measure(n, || {
+                widen_u8_to_u32_scalar(
+                    black_box(&mut mixed_u32_from_u8),
+                    black_box(&mixed_u8),
+                );
+                black_box(&mixed_u32_from_u8);
+            });
+            report("widen-u8-u32/scalar-autovec", n, n * 5, n * 5, &measurement);
+
+            let measurement = measure(n, || {
+                widen_i8_to_i16_scalar(
+                    black_box(&mut mixed_i16_from_i8),
+                    black_box(&mixed_i8),
+                );
+                black_box(&mixed_i16_from_i8);
+            });
+            report("widen-i8-i16/scalar-autovec", n, n * 3, n * 3, &measurement);
+
+            let measurement = measure(n, || {
+                widen_u16_to_u32_scalar(
+                    black_box(&mut mixed_u32_from_u16),
+                    black_box(&mixed_u16),
+                );
+                black_box(&mixed_u32_from_u16);
+            });
+            report("widen-u16-u32/scalar-autovec", n, n * 6, n * 6, &measurement);
+
+            let measurement = measure(n, || {
+                widen_i16_to_i32_scalar(
+                    black_box(&mut mixed_i32_from_i16),
+                    black_box(&mixed_i16),
+                );
+                black_box(&mixed_i32_from_i16);
+            });
+            report("widen-i16-i32/scalar-autovec", n, n * 6, n * 6, &measurement);
+
+            let measurement = measure(n, || {
+                convert_u16_to_f32_scalar(
+                    black_box(&mut mixed_f32_from_u16),
+                    black_box(&mixed_u16),
+                );
+                black_box(&mixed_f32_from_u16);
+            });
+            report("convert-u16-f32/scalar-autovec", n, n * 6, n * 6, &measurement);
+
+            let measurement = measure(n, || {
+                convert_i16_to_f32_scalar(
+                    black_box(&mut mixed_f32_from_i16),
+                    black_box(&mixed_i16),
+                );
+                black_box(&mixed_f32_from_i16);
+            });
+            report("convert-i16-f32/scalar-autovec", n, n * 6, n * 6, &measurement);
+
+            let measurement = measure(n, || {
+                convert_u8_f32_affine_scalar(
+                    black_box(&mut mixed_affine),
+                    black_box(&mixed_u8),
+                    black_box(1.25),
+                    black_box(-3.5),
+                );
+                black_box(&mixed_affine);
+            });
+            report(
+                "convert-u8-f32-affine/scalar-autovec",
+                n,
+                n * 5,
+                n * 5,
+                &measurement,
+            );
+
+            let measurement = measure(n, || {
+                f32_to_u16_sat_scalar(
+                    black_box(&mut mixed_u16_from_f32),
+                    black_box(&mixed_f32_boundary),
+                );
+                black_box(&mixed_u16_from_f32);
+            });
+            report("convert-f32-u16-sat/scalar-autovec", n, n * 6, n * 6, &measurement);
+
+            let measurement = measure(n, || {
+                convert_f32_u8_trunc_scalar(
+                    black_box(&mut mixed_u8_trunc),
+                    black_box(&mixed_f32_valid),
+                );
+                black_box(&mixed_u8_trunc);
+            });
+            report("convert-f32-u8-trunc/scalar-autovec", n, n * 5, n * 5, &measurement);
+
+            let measurement = measure(n, || {
+                convert_f32_u8_round_scalar(
+                    black_box(&mut mixed_u8_round),
+                    black_box(&mixed_f32_valid),
+                );
+                black_box(&mixed_u8_round);
+            });
+            report("convert-f32-u8-round/scalar-autovec", n, n * 5, n * 5, &measurement);
+
+            let measurement = measure(n, || {
+                convert_f32_u8_sat_scalar(
+                    black_box(&mut mixed_u8_sat),
+                    black_box(&mixed_f32_boundary),
+                );
+                black_box(&mixed_u8_sat);
+            });
+            report("convert-f32-u8-sat/scalar-autovec", n, n * 5, n * 5, &measurement);
+
+            let measurement = measure(n, || {
+                narrow_u16_to_u8_trunc_scalar(
+                    black_box(&mut mixed_narrow_trunc),
+                    black_box(&mixed_u16),
+                );
+                black_box(&mixed_narrow_trunc);
+            });
+            report("narrow-u16-u8-trunc/scalar-autovec", n, n * 3, n * 3, &measurement);
+
+            let measurement = measure(n, || {
+                narrow_u16_to_u8_round_scalar(
+                    black_box(&mut mixed_narrow_round),
+                    black_box(&mixed_u16),
+                );
+                black_box(&mixed_narrow_round);
+            });
+            report("narrow-u16-u8-round/scalar-autovec", n, n * 3, n * 3, &measurement);
+
+            let measurement = measure(n, || {
+                narrow_u16_to_u8_sat_scalar(
+                    black_box(&mut mixed_narrow_sat),
+                    black_box(&mixed_u16),
+                );
+                black_box(&mixed_narrow_sat);
+            });
+            report("narrow-u16-u8-sat/scalar-autovec", n, n * 3, n * 3, &measurement);
+
+            let measurement = measure(n, || {
+                pack_u8x4_to_u32_scalar(
+                    black_box(&mut mixed_packed),
+                    black_box(&mixed_pack_src),
+                );
+                black_box(&mixed_packed);
+            });
+            report("pack-u8x4-u32/scalar-autovec", n, n * 8, n * 8, &measurement);
+
+            let measurement = measure(n, || {
+                unpack_u32_to_u8x4_scalar(
+                    black_box(&mut mixed_unpacked),
+                    black_box(&mixed_packed),
+                );
+                black_box(&mixed_unpacked);
+            });
+            report("unpack-u32-u8x4/scalar-autovec", n, n * 8, n * 8, &measurement);
+        }
+
 
         {
             let c: Vec<u16> = (0..n).map(|i| HALF_VALUES[i & 7]).collect();

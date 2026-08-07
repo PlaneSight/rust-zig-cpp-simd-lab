@@ -51,6 +51,22 @@ are widened before multiplication, including the 32-bit input forms
 `u32 * u32 -> u64` and `i32 * i32 -> i64`, and dot reductions use the documented
 `f64` or `i64` accumulators. These probes are codegen evidence only: runtime
 correctness is exercised by the language harnesses, not by the probe source.
+
+## Mixed-width conversion probes
+
+`probes/rust/mixed_width.rs`, `probes/zig/mixed_width.zig`, and
+`probes/cpp/mixed_width.cpp` export the same scalar raw-pointer families:
+integer widening, integer-to-f32 conversion, u8 affine conversion, explicit
+f32/u16 and f32/u8 narrowing policies, u16/u8 narrowing policies, and
+little-endian u8x4/u32 packing. Zig also exports native vector widening and
+integer-to-f32 forms with scalar tails. Length is last for all entry points;
+packing and unpacking use a group count rather than a byte count.
+
+Inspect the generated output for conversion instructions, widening moves,
+vector integer-to-float lowering, and whether scalar tails remain bounded.
+The probe set deliberately does not claim dedicated dot-product or narrowing
+instructions; those require separate ISA-specific evidence.
+
 ## Saturating-add probes
 
 The saturation probe exports the scalar/autovec operation for each fixed-width

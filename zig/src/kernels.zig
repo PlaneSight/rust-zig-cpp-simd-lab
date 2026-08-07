@@ -465,6 +465,257 @@ pub fn widenMulI32I64Vector(dst: []i64, a: []const i32, b: []const i32) void {
     }
 }
 
+pub fn widenU8ToU16Scalar(dst: []u16, src: []const u8) void {
+    std.debug.assert(dst.len == src.len);
+    for (dst, src) |*out, value| {
+        out.* = @intCast(value);
+    }
+}
+
+pub fn widenU8ToU16Vector(dst: []u16, src: []const u8) void {
+    std.debug.assert(dst.len == src.len);
+    const Input = @Vector(16, u8);
+    const Output = @Vector(16, u16);
+    var i: usize = 0;
+    while (i + 16 <= dst.len) : (i += 16) {
+        const values: Input = src[i..][0..16].*;
+        const widened: Output = @intCast(values);
+        dst[i..][0..16].* = widened;
+    }
+    while (i < dst.len) : (i += 1) {
+        dst[i] = @intCast(src[i]);
+    }
+}
+
+pub fn widenU8ToU32Scalar(dst: []u32, src: []const u8) void {
+    std.debug.assert(dst.len == src.len);
+    for (dst, src) |*out, value| {
+        out.* = @intCast(value);
+    }
+}
+
+pub fn widenU8ToU32Vector(dst: []u32, src: []const u8) void {
+    std.debug.assert(dst.len == src.len);
+    const Input = @Vector(8, u8);
+    const Output = @Vector(8, u32);
+    var i: usize = 0;
+    while (i + 8 <= dst.len) : (i += 8) {
+        const values: Input = src[i..][0..8].*;
+        const widened: Output = @intCast(values);
+        dst[i..][0..8].* = widened;
+    }
+    while (i < dst.len) : (i += 1) {
+        dst[i] = @intCast(src[i]);
+    }
+}
+
+pub fn widenI8ToI16Scalar(dst: []i16, src: []const i8) void {
+    std.debug.assert(dst.len == src.len);
+    for (dst, src) |*out, value| {
+        out.* = @intCast(value);
+    }
+}
+
+pub fn widenI8ToI16Vector(dst: []i16, src: []const i8) void {
+    std.debug.assert(dst.len == src.len);
+    const Input = @Vector(16, i8);
+    const Output = @Vector(16, i16);
+    var i: usize = 0;
+    while (i + 16 <= dst.len) : (i += 16) {
+        const values: Input = src[i..][0..16].*;
+        const widened: Output = @intCast(values);
+        dst[i..][0..16].* = widened;
+    }
+    while (i < dst.len) : (i += 1) {
+        dst[i] = @intCast(src[i]);
+    }
+}
+
+pub fn widenU16ToU32Scalar(dst: []u32, src: []const u16) void {
+    std.debug.assert(dst.len == src.len);
+    for (dst, src) |*out, value| {
+        out.* = @intCast(value);
+    }
+}
+
+pub fn widenU16ToU32Vector(dst: []u32, src: []const u16) void {
+    std.debug.assert(dst.len == src.len);
+    const Input = @Vector(8, u16);
+    const Output = @Vector(8, u32);
+    var i: usize = 0;
+    while (i + 8 <= dst.len) : (i += 8) {
+        const values: Input = src[i..][0..8].*;
+        const widened: Output = @intCast(values);
+        dst[i..][0..8].* = widened;
+    }
+    while (i < dst.len) : (i += 1) {
+        dst[i] = @intCast(src[i]);
+    }
+}
+
+pub fn widenI16ToI32Scalar(dst: []i32, src: []const i16) void {
+    std.debug.assert(dst.len == src.len);
+    for (dst, src) |*out, value| {
+        out.* = @intCast(value);
+    }
+}
+
+pub fn widenI16ToI32Vector(dst: []i32, src: []const i16) void {
+    std.debug.assert(dst.len == src.len);
+    const Input = @Vector(8, i16);
+    const Output = @Vector(8, i32);
+    var i: usize = 0;
+    while (i + 8 <= dst.len) : (i += 8) {
+        const values: Input = src[i..][0..8].*;
+        const widened: Output = @intCast(values);
+        dst[i..][0..8].* = widened;
+    }
+    while (i < dst.len) : (i += 1) {
+        dst[i] = @intCast(src[i]);
+    }
+}
+
+pub fn convertU16ToF32Scalar(dst: []f32, src: []const u16) void {
+    std.debug.assert(dst.len == src.len);
+    for (dst, src) |*out, value| {
+        out.* = @floatFromInt(value);
+    }
+}
+
+pub fn convertU16ToF32Vector(dst: []f32, src: []const u16) void {
+    std.debug.assert(dst.len == src.len);
+    const Input = @Vector(8, u16);
+    const Output = @Vector(8, f32);
+    var i: usize = 0;
+    while (i + 8 <= dst.len) : (i += 8) {
+        const values: Input = src[i..][0..8].*;
+        const converted: Output = @floatFromInt(values);
+        dst[i..][0..8].* = converted;
+    }
+    while (i < dst.len) : (i += 1) {
+        dst[i] = @floatFromInt(src[i]);
+    }
+}
+
+pub fn convertI16ToF32Scalar(dst: []f32, src: []const i16) void {
+    std.debug.assert(dst.len == src.len);
+    for (dst, src) |*out, value| {
+        out.* = @floatFromInt(value);
+    }
+}
+
+pub fn convertI16ToF32Vector(dst: []f32, src: []const i16) void {
+    std.debug.assert(dst.len == src.len);
+    const Input = @Vector(8, i16);
+    const Output = @Vector(8, f32);
+    var i: usize = 0;
+    while (i + 8 <= dst.len) : (i += 8) {
+        const values: Input = src[i..][0..8].*;
+        const converted: Output = @floatFromInt(values);
+        dst[i..][0..8].* = converted;
+    }
+    while (i < dst.len) : (i += 1) {
+        dst[i] = @floatFromInt(src[i]);
+    }
+}
+
+pub fn convertU8F32AffineScalar(dst: []f32, src: []const u8, scale: f32, bias: f32) void {
+    std.debug.assert(dst.len == src.len);
+    for (dst, src) |*out, value| {
+        out.* = @as(f32, @floatFromInt(value)) * scale + bias;
+    }
+}
+
+pub fn convertF32U8TruncScalar(dst: []u8, src: []const f32) void {
+    std.debug.assert(dst.len == src.len);
+    for (dst, src) |*out, value| {
+        std.debug.assert(!std.math.isNan(value) and value >= 0.0 and value <= 255.0);
+        out.* = @intFromFloat(value);
+    }
+}
+
+pub fn convertF32U8RoundScalar(dst: []u8, src: []const f32) void {
+    std.debug.assert(dst.len == src.len);
+    for (dst, src) |*out, value| {
+        std.debug.assert(!std.math.isNan(value) and value >= 0.0 and value <= 255.0);
+        const rounded: f32 = @floor(value + 0.5);
+        out.* = @intFromFloat(rounded);
+    }
+}
+
+pub fn convertF32U8SatScalar(dst: []u8, src: []const f32) void {
+    std.debug.assert(dst.len == src.len);
+    const max_value: f32 = @floatFromInt(std.math.maxInt(u8));
+    for (dst, src) |*out, value| {
+        if (std.math.isNan(value) or value <= 0.0) {
+            out.* = 0;
+        } else if (value >= max_value) {
+            out.* = std.math.maxInt(u8);
+        } else {
+            out.* = @intFromFloat(value);
+        }
+    }
+}
+
+pub fn f32ToU16SatScalar(dst: []u16, src: []const f32) void {
+    std.debug.assert(dst.len == src.len);
+    const max_value: f32 = @floatFromInt(std.math.maxInt(u16));
+    for (dst, src) |*out, value| {
+        if (std.math.isNan(value) or value <= 0.0) {
+            out.* = 0;
+        } else if (value >= max_value) {
+            out.* = std.math.maxInt(u16);
+        } else {
+            out.* = @intFromFloat(value);
+        }
+    }
+}
+
+pub fn narrowU16ToU8TruncScalar(dst: []u8, src: []const u16) void {
+    std.debug.assert(dst.len == src.len);
+    for (dst, src) |*out, value| {
+        out.* = @intCast(value & 0xff);
+    }
+}
+
+pub fn narrowU16ToU8RoundScalar(dst: []u8, src: []const u16) void {
+    std.debug.assert(dst.len == src.len);
+    for (dst, src) |*out, value| {
+        const rounded: u32 = (@as(u32, value) + 128) / 257;
+        out.* = @intCast(rounded);
+    }
+}
+
+pub fn narrowU16ToU8SatScalar(dst: []u8, src: []const u16) void {
+    std.debug.assert(dst.len == src.len);
+    for (dst, src) |*out, value| {
+        out.* = if (value > std.math.maxInt(u8)) std.math.maxInt(u8) else @intCast(value);
+    }
+}
+
+pub fn packU8x4ToU32Scalar(dst: []u32, src: []const u8) void {
+    std.debug.assert(src.len == dst.len * 4);
+    for (dst, 0..) |*out, group| {
+        const offset = group * 4;
+        const b0: u32 = @intCast(src[offset]);
+        const b1: u32 = @intCast(src[offset + 1]);
+        const b2: u32 = @intCast(src[offset + 2]);
+        const b3: u32 = @intCast(src[offset + 3]);
+        out.* = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+    }
+}
+
+pub fn unpackU32ToU8x4Scalar(dst: []u8, src: []const u32) void {
+    std.debug.assert(dst.len == src.len * 4);
+    for (src, 0..) |value, group| {
+        const offset = group * 4;
+        dst[offset] = @truncate(value);
+        dst[offset + 1] = @truncate(value >> 8);
+        dst[offset + 2] = @truncate(value >> 16);
+        dst[offset + 3] = @truncate(value >> 24);
+    }
+}
+
 pub fn clampF16Native(dst: []f16, c: []const f16, lo: []const f16, hi: []const f16) void {
     std.debug.assert(dst.len == c.len and c.len == lo.len and lo.len == hi.len);
     const Vec = @Vector(16, f16);
@@ -871,9 +1122,9 @@ test "saturating add scalar paths match widened checked references" {
     var i64_candidate: [max_len]i64 = undefined;
 
     const deterministic_lengths = [_]usize{
-        0, 1, 2, 3, 7, 8, 9, 15, 16, 17, 31, 32, 33,
-        63, 64, 65, 127, 128, 129, 255, 256, 257, 511,
-        1023, 1024, 2048, 2049,
+        0,    1,  2,  3,   7,   8,   9,   15,  16,  17,  31,   32,   33,
+        63,   64, 65, 127, 128, 129, 255, 256, 257, 511, 1023, 1024, 2048,
+        2049,
     };
     var lengths: [deterministic_lengths.len + 256]usize = undefined;
     for (deterministic_lengths, 0..) |length, index| {
@@ -1010,5 +1261,173 @@ test "saturating add scalar paths match widened checked references" {
         try std.testing.expectEqualSlices(i32, i32_expected[0..len], i32_candidate[0..len]);
         try std.testing.expectEqualSlices(u64, u64_expected[0..len], u64_candidate[0..len]);
         try std.testing.expectEqualSlices(i64, i64_expected[0..len], i64_candidate[0..len]);
+    }
+}
+test "mixed-width widening and integer-to-f32 paths cover vector tails" {
+    const max_len = 33;
+    var u8_values: [max_len]u8 = undefined;
+    var i8_values: [max_len]i8 = undefined;
+    var u16_values: [max_len]u16 = undefined;
+    var i16_values: [max_len]i16 = undefined;
+    var u8_u16_scalar: [max_len]u16 = undefined;
+    var u8_u16_vector: [max_len]u16 = undefined;
+    var u8_u32_scalar: [max_len]u32 = undefined;
+    var u8_u32_vector: [max_len]u32 = undefined;
+    var i8_i16_scalar: [max_len]i16 = undefined;
+    var i8_i16_vector: [max_len]i16 = undefined;
+    var u16_u32_scalar: [max_len]u32 = undefined;
+    var u16_u32_vector: [max_len]u32 = undefined;
+    var i16_i32_scalar: [max_len]i32 = undefined;
+    var i16_i32_vector: [max_len]i32 = undefined;
+    var u16_f32_scalar: [max_len]f32 = undefined;
+    var u16_f32_vector: [max_len]f32 = undefined;
+    var i16_f32_scalar: [max_len]f32 = undefined;
+    var i16_f32_vector: [max_len]f32 = undefined;
+    var affine: [max_len]f32 = undefined;
+    const lengths = [_]usize{ 0, 1, 7, 8, 9, 15, 16, 17, 31, 32, 33 };
+    const u8_edges = [_]u8{ 0, 1, 127, 128, 254, 255 };
+    const i8_edges = [_]i8{ std.math.minInt(i8), -127, -1, 0, 1, std.math.maxInt(i8) };
+    const u16_edges = [_]u16{ 0, 1, 255, 256, 65534, std.math.maxInt(u16) };
+    const i16_edges = [_]i16{ std.math.minInt(i16), -32767, -1, 0, 1, std.math.maxInt(i16) };
+    var rng = XorShift64{ .state = 0x7a4c_91e2_d635_f0b1 };
+
+    for (lengths, 0..) |len, trial| {
+        for (0..len) |i| {
+            const lane = (i + trial) % 11;
+            if (lane < 6) {
+                u8_values[i] = u8_edges[(i + trial) % u8_edges.len];
+                i8_values[i] = i8_edges[(i + trial) % i8_edges.len];
+                u16_values[i] = u16_edges[(i + trial) % u16_edges.len];
+                i16_values[i] = i16_edges[(i + trial) % i16_edges.len];
+            } else {
+                u8_values[i] = @truncate(rng.next());
+                i8_values[i] = @bitCast(@as(u8, @truncate(rng.next())));
+                u16_values[i] = @truncate(rng.next());
+                i16_values[i] = @bitCast(@as(u16, @truncate(rng.next())));
+            }
+        }
+
+        widenU8ToU16Scalar(u8_u16_scalar[0..len], u8_values[0..len]);
+        widenU8ToU16Vector(u8_u16_vector[0..len], u8_values[0..len]);
+        widenU8ToU32Scalar(u8_u32_scalar[0..len], u8_values[0..len]);
+        widenU8ToU32Vector(u8_u32_vector[0..len], u8_values[0..len]);
+        widenI8ToI16Scalar(i8_i16_scalar[0..len], i8_values[0..len]);
+        widenI8ToI16Vector(i8_i16_vector[0..len], i8_values[0..len]);
+        widenU16ToU32Scalar(u16_u32_scalar[0..len], u16_values[0..len]);
+        widenU16ToU32Vector(u16_u32_vector[0..len], u16_values[0..len]);
+        widenI16ToI32Scalar(i16_i32_scalar[0..len], i16_values[0..len]);
+        widenI16ToI32Vector(i16_i32_vector[0..len], i16_values[0..len]);
+        convertU16ToF32Scalar(u16_f32_scalar[0..len], u16_values[0..len]);
+        convertU16ToF32Vector(u16_f32_vector[0..len], u16_values[0..len]);
+        convertI16ToF32Scalar(i16_f32_scalar[0..len], i16_values[0..len]);
+        convertI16ToF32Vector(i16_f32_vector[0..len], i16_values[0..len]);
+        convertU8F32AffineScalar(affine[0..len], u8_values[0..len], 1.25, -2.5);
+
+        try std.testing.expectEqualSlices(u16, u8_u16_scalar[0..len], u8_u16_vector[0..len]);
+        try std.testing.expectEqualSlices(u32, u8_u32_scalar[0..len], u8_u32_vector[0..len]);
+        try std.testing.expectEqualSlices(i16, i8_i16_scalar[0..len], i8_i16_vector[0..len]);
+        try std.testing.expectEqualSlices(u32, u16_u32_scalar[0..len], u16_u32_vector[0..len]);
+        try std.testing.expectEqualSlices(i32, i16_i32_scalar[0..len], i16_i32_vector[0..len]);
+        try std.testing.expectEqualSlices(f32, u16_f32_scalar[0..len], u16_f32_vector[0..len]);
+        try std.testing.expectEqualSlices(f32, i16_f32_scalar[0..len], i16_f32_vector[0..len]);
+        for (0..len) |i| {
+            try std.testing.expectEqual(@as(u16, u8_values[i]), u8_u16_scalar[i]);
+            try std.testing.expectEqual(@as(u32, u8_values[i]), u8_u32_scalar[i]);
+            try std.testing.expectEqual(@as(i16, i8_values[i]), i8_i16_scalar[i]);
+            try std.testing.expectEqual(@as(u32, u16_values[i]), u16_u32_scalar[i]);
+            try std.testing.expectEqual(@as(i32, i16_values[i]), i16_i32_scalar[i]);
+            try std.testing.expectEqual(@as(f32, @floatFromInt(u16_values[i])), u16_f32_scalar[i]);
+            try std.testing.expectEqual(@as(f32, @floatFromInt(i16_values[i])), i16_f32_scalar[i]);
+            const expected_affine = @as(f32, @floatFromInt(u8_values[i])) * 1.25 - 2.5;
+            try std.testing.expectEqual(expected_affine, affine[i]);
+        }
+    }
+}
+
+test "mixed-width float conversions cover fractions, NaNs, infinities, and extrema" {
+    const max_len = 33;
+    var values: [max_len]f32 = undefined;
+    var trunc: [max_len]u8 = undefined;
+    var rounded: [max_len]u8 = undefined;
+    var saturated: [max_len]u8 = undefined;
+    const lengths = [_]usize{ 0, 1, 7, 8, 9, 15, 16, 17, 31, 32, 33 };
+    const valid_edges = [_]f32{ 0.0, 0.49, 0.5, 1.49, 1.5, 127.49, 127.5, 254.5, 255.0 };
+    var rng = XorShift64{ .state = 0x11f0_5cc3_a927_6d84 };
+
+    for (lengths, 0..) |len, trial| {
+        for (0..len) |i| {
+            if ((i + trial) % 10 < valid_edges.len) {
+                values[i] = valid_edges[(i + trial) % valid_edges.len];
+            } else {
+                const integer_part: u32 = @intCast(rng.next() % 255);
+                values[i] = @as(f32, @floatFromInt(integer_part)) + 0.25;
+            }
+        }
+        convertF32U8TruncScalar(trunc[0..len], values[0..len]);
+        convertF32U8RoundScalar(rounded[0..len], values[0..len]);
+        convertF32U8SatScalar(saturated[0..len], values[0..len]);
+        for (0..len) |i| {
+            try std.testing.expectEqual(@as(u8, @intFromFloat(values[i])), trunc[i]);
+            try std.testing.expectEqual(@as(u8, @intFromFloat(@floor(values[i] + 0.5))), rounded[i]);
+            try std.testing.expectEqual(trunc[i], saturated[i]);
+        }
+    }
+
+    const nan: f32 = @bitCast(@as(u32, 0x7fc0_0000));
+    const positive_infinity: f32 = @bitCast(@as(u32, 0x7f80_0000));
+    const negative_infinity: f32 = @bitCast(@as(u32, 0xff80_0000));
+    const pathological_u8 = [_]f32{
+        nan, negative_infinity, -1.0, -0.0, 0.0, 0.5, 1.5, 254.9, 255.0, 255.1, positive_infinity,
+    };
+    const expected_u8 = [_]u8{ 0, 0, 0, 0, 0, 0, 1, 254, 255, 255, 255 };
+    convertF32U8SatScalar(saturated[0..pathological_u8.len], pathological_u8[0..]);
+    try std.testing.expectEqualSlices(u8, expected_u8[0..], saturated[0..pathological_u8.len]);
+
+    const pathological_u16 = [_]f32{
+        nan, negative_infinity, -1.0, -0.0, 0.0, 0.5, 1.5, 65534.5, 65535.0, 65535.5, positive_infinity,
+    };
+    const expected_u16 = [_]u16{ 0, 0, 0, 0, 0, 0, 1, 65534, 65535, 65535, 65535 };
+    var u16_output: [pathological_u16.len]u16 = undefined;
+    f32ToU16SatScalar(&u16_output, pathological_u16[0..]);
+    try std.testing.expectEqualSlices(u16, expected_u16[0..], u16_output[0..]);
+
+    const narrow_input = [_]u16{ 0, 1, 127, 128, 255, 256, 257, 511, 512, 1023, 65534, 65535 };
+    var narrow_trunc: [narrow_input.len]u8 = undefined;
+    var narrow_round: [narrow_input.len]u8 = undefined;
+    var narrow_sat: [narrow_input.len]u8 = undefined;
+    narrowU16ToU8TruncScalar(&narrow_trunc, narrow_input[0..]);
+    narrowU16ToU8RoundScalar(&narrow_round, narrow_input[0..]);
+    narrowU16ToU8SatScalar(&narrow_sat, narrow_input[0..]);
+    for (narrow_input, narrow_trunc, narrow_round, narrow_sat) |value, trunc_value, round_value, sat_value| {
+        try std.testing.expectEqual(@as(u8, @intCast(value & 0xff)), trunc_value);
+        try std.testing.expectEqual(@as(u8, @intCast((@as(u32, value) + 128) / 257)), round_value);
+        try std.testing.expectEqual(if (value > 255) @as(u8, 255) else @as(u8, @intCast(value)), sat_value);
+    }
+}
+
+test "mixed-width packing and unpacking use logical little-endian groups" {
+    const max_groups = 9;
+    var bytes: [max_groups * 4]u8 = undefined;
+    var unpacked: [max_groups * 4]u8 = undefined;
+    var words: [max_groups]u32 = undefined;
+    const group_counts = [_]usize{ 0, 1, 2, 5, 9 };
+    const edge_bytes = [_]u8{ 0x00, 0x01, 0x7f, 0x80, 0xfe, 0xff, 0x12, 0x34 };
+    var rng = XorShift64{ .state = 0x92b3_4de1_0f67_a8c5 };
+
+    for (group_counts, 0..) |groups, trial| {
+        for (0..groups * 4) |i| {
+            bytes[i] = if ((i + trial) % 3 == 0) edge_bytes[(i + trial) % edge_bytes.len] else @truncate(rng.next());
+        }
+        packU8x4ToU32Scalar(words[0..groups], bytes[0 .. groups * 4]);
+        for (0..groups) |group| {
+            const offset = group * 4;
+            const expected: u32 = @as(u32, bytes[offset]) |
+                (@as(u32, bytes[offset + 1]) << 8) |
+                (@as(u32, bytes[offset + 2]) << 16) |
+                (@as(u32, bytes[offset + 3]) << 24);
+            try std.testing.expectEqual(expected, words[group]);
+        }
+        unpackU32ToU8x4Scalar(unpacked[0 .. groups * 4], words[0..groups]);
+        try std.testing.expectEqualSlices(u8, bytes[0 .. groups * 4], unpacked[0 .. groups * 4]);
     }
 }

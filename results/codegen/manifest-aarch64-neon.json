@@ -1,0 +1,556 @@
+{
+  "schema": "simd-lab-codegen-v1",
+  "target_profile": "aarch64-neon",
+  "host": "macOS-26.6-arm64-64bit",
+  "versions": {
+    "zig": "0.16.0",
+    "clang": "Homebrew clang version 22.1.8"
+  },
+  "jobs": [
+    {
+      "toolchain": "clang",
+      "probe": "dot",
+      "assembly": "results/codegen/clang-dot-aarch64-neon.s",
+      "command": [
+        "clang++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "--target=aarch64-unknown-linux-gnu",
+        "-march=armv8-a+simd",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/cpp/dot.cpp",
+        "-o",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-dot-aarch64-neon.s"
+      ]
+    },
+    {
+      "toolchain": "clang",
+      "probe": "sad-portable",
+      "assembly": "results/codegen/clang-sad-portable-aarch64-neon.s",
+      "command": [
+        "clang++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "--target=aarch64-unknown-linux-gnu",
+        "-march=armv8-a+simd",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/cpp/sad_portable.cpp",
+        "-o",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-sad-portable-aarch64-neon.s"
+      ]
+    },
+    {
+      "toolchain": "clang",
+      "probe": "sat-add-portable",
+      "assembly": "results/codegen/clang-sat-add-portable-aarch64-neon.s",
+      "command": [
+        "clang++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "--target=aarch64-unknown-linux-gnu",
+        "-march=armv8-a+simd",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/cpp/sat_add_portable.cpp",
+        "-o",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-sat-add-portable-aarch64-neon.s"
+      ]
+    },
+    {
+      "toolchain": "clang",
+      "probe": "widen-mul",
+      "assembly": "results/codegen/clang-widen-mul-aarch64-neon.s",
+      "command": [
+        "clang++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "--target=aarch64-unknown-linux-gnu",
+        "-march=armv8-a+simd",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/cpp/widen_mul.cpp",
+        "-o",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-widen-mul-aarch64-neon.s"
+      ]
+    },
+    {
+      "toolchain": "clang",
+      "probe": "mixed-width",
+      "assembly": "results/codegen/clang-mixed-width-aarch64-neon.s",
+      "command": [
+        "clang++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "--target=aarch64-unknown-linux-gnu",
+        "-march=armv8-a+simd",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/cpp/mixed_width.cpp",
+        "-o",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-mixed-width-aarch64-neon.s"
+      ]
+    },
+    {
+      "toolchain": "zig",
+      "probe": "clamp",
+      "assembly": "results/codegen/zig-clamp-aarch64-neon.s",
+      "command": [
+        "zig",
+        "build-obj",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/zig/clamp.zig",
+        "-O",
+        "ReleaseFast",
+        "-target",
+        "aarch64-linux-gnu",
+        "-mcpu=baseline+neon",
+        "-femit-asm=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-clamp-aarch64-neon.s",
+        "-femit-bin=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-clamp-aarch64-neon.o"
+      ]
+    },
+    {
+      "toolchain": "zig",
+      "probe": "dot",
+      "assembly": "results/codegen/zig-dot-aarch64-neon.s",
+      "command": [
+        "zig",
+        "build-obj",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/zig/dot.zig",
+        "-O",
+        "ReleaseFast",
+        "-target",
+        "aarch64-linux-gnu",
+        "-mcpu=baseline+neon",
+        "-femit-asm=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-dot-aarch64-neon.s",
+        "-femit-bin=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-dot-aarch64-neon.o"
+      ]
+    },
+    {
+      "toolchain": "zig",
+      "probe": "mixed_width",
+      "assembly": "results/codegen/zig-mixed_width-aarch64-neon.s",
+      "command": [
+        "zig",
+        "build-obj",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/zig/mixed_width.zig",
+        "-O",
+        "ReleaseFast",
+        "-target",
+        "aarch64-linux-gnu",
+        "-mcpu=baseline+neon",
+        "-femit-asm=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-mixed_width-aarch64-neon.s",
+        "-femit-bin=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-mixed_width-aarch64-neon.o"
+      ]
+    },
+    {
+      "toolchain": "zig",
+      "probe": "sad",
+      "assembly": "results/codegen/zig-sad-aarch64-neon.s",
+      "command": [
+        "zig",
+        "build-obj",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/zig/sad.zig",
+        "-O",
+        "ReleaseFast",
+        "-target",
+        "aarch64-linux-gnu",
+        "-mcpu=baseline+neon",
+        "-femit-asm=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-sad-aarch64-neon.s",
+        "-femit-bin=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-sad-aarch64-neon.o"
+      ]
+    },
+    {
+      "toolchain": "zig",
+      "probe": "sat_add",
+      "assembly": "results/codegen/zig-sat_add-aarch64-neon.s",
+      "command": [
+        "zig",
+        "build-obj",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/zig/sat_add.zig",
+        "-O",
+        "ReleaseFast",
+        "-target",
+        "aarch64-linux-gnu",
+        "-mcpu=baseline+neon",
+        "-femit-asm=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-sat_add-aarch64-neon.s",
+        "-femit-bin=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-sat_add-aarch64-neon.o"
+      ]
+    },
+    {
+      "toolchain": "zig",
+      "probe": "widen_mul",
+      "assembly": "results/codegen/zig-widen_mul-aarch64-neon.s",
+      "command": [
+        "zig",
+        "build-obj",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/zig/widen_mul.zig",
+        "-O",
+        "ReleaseFast",
+        "-target",
+        "aarch64-linux-gnu",
+        "-mcpu=baseline+neon",
+        "-femit-asm=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-widen_mul-aarch64-neon.s",
+        "-femit-bin=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-widen_mul-aarch64-neon.o"
+      ]
+    }
+  ],
+  "metrics": {
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-dot-aarch64-neon.s": {
+      "instruction_count": 294,
+      "top_mnemonics": {
+        "add": 40,
+        "and": 14,
+        "b": 28,
+        "cbz": 6,
+        "cmp": 12,
+        "fadd": 12,
+        "fcvtl": 4,
+        "fmul": 6,
+        "ldp": 6,
+        "ldr": 10,
+        "mov": 28,
+        "movi": 23,
+        "ret": 6,
+        "saddw": 5,
+        "saddw2": 5,
+        "smlal": 6,
+        "sub": 6,
+        "subs": 8,
+        "ushll": 9,
+        "ushll2": 5
+      },
+      "tracked": {
+        "fcvt": 10,
+        "fmul": 6,
+        "smlal": 10,
+        "smull": 5,
+        "sshll": 6,
+        "ushll": 14,
+        "xtn": 4
+      },
+      "unique_mnemonics": 43,
+      "vector_instruction_count": 33
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-mixed-width-aarch64-neon.s": {
+      "instruction_count": 813,
+      "top_mnemonics": {
+        "add": 98,
+        "adds": 11,
+        "adrp": 9,
+        "and": 50,
+        "b": 147,
+        "cbz": 28,
+        "cmp": 67,
+        "fmov": 7,
+        "ldp": 14,
+        "ldr": 27,
+        "mov": 64,
+        "ret": 17,
+        "sshll": 9,
+        "stp": 22,
+        "str": 17,
+        "sub": 30,
+        "subs": 30,
+        "tbl": 13,
+        "ucvtf": 12,
+        "ushll": 13
+      },
+      "tracked": {
+        "fcvt": 4,
+        "fmla": 5,
+        "scvtf": 6,
+        "sshll": 15,
+        "ucvtf": 12,
+        "umull": 11,
+        "uqxtn": 4,
+        "ushll": 19,
+        "uzp": 10,
+        "xtn": 1
+      },
+      "unique_mnemonics": 70,
+      "vector_instruction_count": 54
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-sad-portable-aarch64-neon.s": {
+      "instruction_count": 86,
+      "top_mnemonics": {
+        "add": 10,
+        "and": 6,
+        "b": 5,
+        "bic": 4,
+        "cbz": 1,
+        "cmp": 3,
+        "ext": 4,
+        "ldr": 2,
+        "ldrb": 2,
+        "mov": 7,
+        "movi": 4,
+        "orr": 4,
+        "ret": 2,
+        "sad_u8_portable": 1,
+        "sshll": 11,
+        "sshll2": 7,
+        "sub": 3,
+        "subs": 2,
+        "ushll": 2,
+        "usubl": 2
+      },
+      "tracked": {
+        "sshll": 18,
+        "ushll": 2
+      },
+      "unique_mnemonics": 24,
+      "vector_instruction_count": 13
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-sat-add-portable-aarch64-neon.s": {
+      "instruction_count": 95,
+      "top_mnemonics": {
+        "add": 13,
+        "adrp": 2,
+        "and": 4,
+        "b": 11,
+        "cbz": 2,
+        "cmp": 7,
+        "ldp": 2,
+        "ldr": 4,
+        "ldrb": 2,
+        "mov": 5,
+        "movi": 2,
+        "sat_add_u8_portable": 1,
+        "sub": 4,
+        "subs": 2,
+        "tbl": 3,
+        "uaddl": 3,
+        "uaddl2": 2,
+        "umin": 10,
+        "ushll": 5,
+        "ushll2": 5
+      },
+      "tracked": {
+        "ushll": 10
+      },
+      "unique_mnemonics": 26,
+      "vector_instruction_count": 5
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-widen-mul-aarch64-neon.s": {
+      "instruction_count": 324,
+      "top_mnemonics": {
+        "add": 66,
+        "and": 20,
+        "b": 48,
+        "cbz": 10,
+        "ccmp": 4,
+        "cmp": 24,
+        "ldp": 12,
+        "ldr": 10,
+        "lsl": 6,
+        "mov": 16,
+        "mul": 4,
+        "ret": 6,
+        "smull": 9,
+        "smull2": 6,
+        "stp": 12,
+        "str": 8,
+        "sub": 10,
+        "subs": 12,
+        "umull": 9,
+        "umull2": 6
+      },
+      "tracked": {
+        "smull": 15,
+        "umull": 15
+      },
+      "unique_mnemonics": 35,
+      "vector_instruction_count": 18
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-clamp-aarch64-neon.s": {
+      "instruction_count": 1684,
+      "top_mnemonics": {
+        "add": 3,
+        "clamp_f32x8": 1,
+        "fcvt": 640,
+        "fcvtl": 18,
+        "fcvtl2": 18,
+        "fcvtn": 2,
+        "fcvtn2": 2,
+        "fmaxnm": 176,
+        "fminnm": 176,
+        "ldp": 86,
+        "ldr": 123,
+        "ldur": 33,
+        "mov": 150,
+        "ret": 5,
+        "stp": 61,
+        "str": 100,
+        "stur": 21,
+        "sub": 1,
+        "umax": 32,
+        "umin": 32
+      },
+      "tracked": {
+        "fcvt": 680,
+        "fmax": 176,
+        "fmin": 176
+      },
+      "unique_mnemonics": 24,
+      "vector_instruction_count": 642
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-dot-aarch64-neon.s": {
+      "instruction_count": 251,
+      "top_mnemonics": {
+        "add": 17,
+        "adds": 4,
+        "b": 26,
+        "cbz": 4,
+        "cmp": 8,
+        "fadd": 20,
+        "fcvt": 4,
+        "fcvtl": 4,
+        "fcvtl2": 4,
+        "fmul": 10,
+        "ldp": 12,
+        "ldr": 12,
+        "ldrsh": 4,
+        "mov": 39,
+        "movi": 10,
+        "ret": 12,
+        "smaddl": 4,
+        "stp": 8,
+        "sub": 3,
+        "subs": 8
+      },
+      "tracked": {
+        "fcvt": 12,
+        "fmul": 10,
+        "smlal": 2,
+        "smull": 4,
+        "sshll": 3,
+        "ushll": 3
+      },
+      "unique_mnemonics": 45,
+      "vector_instruction_count": 21
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-mixed_width-aarch64-neon.s": {
+      "instruction_count": 435,
+      "top_mnemonics": {
+        "add": 41,
+        "adds": 7,
+        "b": 66,
+        "cbz": 17,
+        "cmp": 15,
+        "fcmp": 4,
+        "ldp": 24,
+        "ldr": 15,
+        "ldrb": 6,
+        "ldrh": 6,
+        "mov": 53,
+        "negs": 4,
+        "ret": 24,
+        "scvtf": 4,
+        "stp": 31,
+        "str": 12,
+        "strb": 6,
+        "strh": 5,
+        "subs": 24,
+        "ucvtf": 5
+      },
+      "tracked": {
+        "fcvt": 4,
+        "fmul": 1,
+        "scvtf": 4,
+        "sshll": 6,
+        "ucvtf": 5,
+        "umull": 1,
+        "ushll": 6
+      },
+      "unique_mnemonics": 63,
+      "vector_instruction_count": 17
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-sad-aarch64-neon.s": {
+      "instruction_count": 36,
+      "top_mnemonics": {
+        "absdiff_u8x32": 1,
+        "add": 1,
+        "addv": 1,
+        "fmov": 1,
+        "ldp": 8,
+        "mov": 3,
+        "ret": 3,
+        "sad_u8x32": 1,
+        "stp": 6,
+        "uabd": 4,
+        "uaddl": 1,
+        "uaddl2": 1,
+        "ushll": 2,
+        "ushll2": 2,
+        "widen_u8_to_u16x32": 1
+      },
+      "tracked": {
+        "uabd": 4,
+        "ushll": 4
+      },
+      "unique_mnemonics": 15,
+      "vector_instruction_count": 6
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-sat_add-aarch64-neon.s": {
+      "instruction_count": 132,
+      "top_mnemonics": {
+        "add": 4,
+        "adds": 4,
+        "asr": 2,
+        "b": 8,
+        "cbz": 8,
+        "cmn": 2,
+        "cmp": 4,
+        "csel": 8,
+        "csinv": 2,
+        "eor": 2,
+        "ldp": 11,
+        "ldr": 8,
+        "ldrh": 2,
+        "ldrsh": 2,
+        "mov": 15,
+        "ret": 9,
+        "stp": 10,
+        "str": 4,
+        "strh": 2,
+        "subs": 8
+      },
+      "tracked": {
+        "uqadd": 2
+      },
+      "unique_mnemonics": 33,
+      "vector_instruction_count": 2
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-widen_mul-aarch64-neon.s": {
+      "instruction_count": 286,
+      "top_mnemonics": {
+        "add": 38,
+        "adds": 6,
+        "b": 40,
+        "cbz": 6,
+        "cmp": 12,
+        "ldp": 12,
+        "ldr": 16,
+        "ldrsh": 4,
+        "ldrsw": 4,
+        "lsl": 4,
+        "mov": 34,
+        "mul": 8,
+        "negs": 4,
+        "ret": 12,
+        "smull": 5,
+        "stp": 18,
+        "str": 8,
+        "sub": 4,
+        "subs": 12,
+        "umull": 5
+      },
+      "tracked": {
+        "smull": 8,
+        "umull": 8
+      },
+      "unique_mnemonics": 38,
+      "vector_instruction_count": 10
+    }
+  },
+  "notes": {
+    "cpp_fp16": "_Float16 probe is a Clang extension, not a C++23 portable facility",
+    "rust": "stable Rust cross-target portable-SIMD probe omitted until std::simd is stable or an explicit crate policy is chosen"
+  }
+}

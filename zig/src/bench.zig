@@ -528,6 +528,222 @@ pub fn main() !void {
         }
 
         {
+            const u8_src = try allocator.alloc(u8, n);
+            defer allocator.free(u8_src);
+            const i8_src = try allocator.alloc(i8, n);
+            defer allocator.free(i8_src);
+            const u16_src = try allocator.alloc(u16, n);
+            defer allocator.free(u16_src);
+            const i16_src = try allocator.alloc(i16, n);
+            defer allocator.free(i16_src);
+            const u8_u16_scalar = try allocator.alloc(u16, n);
+            defer allocator.free(u8_u16_scalar);
+            const u8_u16_vector = try allocator.alloc(u16, n);
+            defer allocator.free(u8_u16_vector);
+            const u8_u32_scalar = try allocator.alloc(u32, n);
+            defer allocator.free(u8_u32_scalar);
+            const u8_u32_vector = try allocator.alloc(u32, n);
+            defer allocator.free(u8_u32_vector);
+            const i8_i16_scalar = try allocator.alloc(i16, n);
+            defer allocator.free(i8_i16_scalar);
+            const i8_i16_vector = try allocator.alloc(i16, n);
+            defer allocator.free(i8_i16_vector);
+            const u16_u32_scalar = try allocator.alloc(u32, n);
+            defer allocator.free(u16_u32_scalar);
+            const u16_u32_vector = try allocator.alloc(u32, n);
+            defer allocator.free(u16_u32_vector);
+            const i16_i32_scalar = try allocator.alloc(i32, n);
+            defer allocator.free(i16_i32_scalar);
+            const i16_i32_vector = try allocator.alloc(i32, n);
+            defer allocator.free(i16_i32_vector);
+            const u16_f32_scalar = try allocator.alloc(f32, n);
+            defer allocator.free(u16_f32_scalar);
+            const u16_f32_vector = try allocator.alloc(f32, n);
+            defer allocator.free(u16_f32_vector);
+            const i16_f32_scalar = try allocator.alloc(f32, n);
+            defer allocator.free(i16_f32_scalar);
+            const i16_f32_vector = try allocator.alloc(f32, n);
+            defer allocator.free(i16_f32_vector);
+
+            for (u8_src, i8_src, u16_src, i16_src, 0..) |*u8_value, *i8_value, *u16_value, *i16_value, i| {
+                const byte: u8 = @truncate(i * 37 + 11);
+                u8_value.* = byte;
+                i8_value.* = @bitCast(byte);
+                u16_value.* = @truncate(i * 1021 + 17);
+                i16_value.* = @bitCast(@as(u16, @truncate(i * 1973 + 29)));
+            }
+
+            kernels.widenU8ToU16Scalar(u8_u16_scalar, u8_src);
+            kernels.widenU8ToU16Vector(u8_u16_vector, u8_src);
+            kernels.widenU8ToU32Scalar(u8_u32_scalar, u8_src);
+            kernels.widenU8ToU32Vector(u8_u32_vector, u8_src);
+            kernels.widenI8ToI16Scalar(i8_i16_scalar, i8_src);
+            kernels.widenI8ToI16Vector(i8_i16_vector, i8_src);
+            kernels.widenU16ToU32Scalar(u16_u32_scalar, u16_src);
+            kernels.widenU16ToU32Vector(u16_u32_vector, u16_src);
+            kernels.widenI16ToI32Scalar(i16_i32_scalar, i16_src);
+            kernels.widenI16ToI32Vector(i16_i32_vector, i16_src);
+            kernels.convertU16ToF32Scalar(u16_f32_scalar, u16_src);
+            kernels.convertU16ToF32Vector(u16_f32_vector, u16_src);
+            kernels.convertI16ToF32Scalar(i16_f32_scalar, i16_src);
+            kernels.convertI16ToF32Vector(i16_f32_vector, i16_src);
+
+            std.debug.assert(std.mem.eql(u16, u8_u16_scalar, u8_u16_vector));
+            std.debug.assert(std.mem.eql(u32, u8_u32_scalar, u8_u32_vector));
+            std.debug.assert(std.mem.eql(i16, i8_i16_scalar, i8_i16_vector));
+            std.debug.assert(std.mem.eql(u32, u16_u32_scalar, u16_u32_vector));
+            std.debug.assert(std.mem.eql(i32, i16_i32_scalar, i16_i32_vector));
+            std.debug.assert(std.mem.eql(f32, u16_f32_scalar, u16_f32_vector));
+            std.debug.assert(std.mem.eql(f32, i16_f32_scalar, i16_f32_vector));
+            for (u8_u16_scalar, u8_src, u8_u32_scalar) |u16_value, u8_value, u32_value| {
+                std.debug.assert(u16_value == @as(u16, u8_value));
+                std.debug.assert(u32_value == @as(u32, u8_value));
+            }
+            for (i8_i16_scalar, i8_src) |wide_value, value| {
+                std.debug.assert(wide_value == @as(i16, value));
+            }
+            for (u16_u32_scalar, u16_src, u16_f32_scalar) |u32_value, value, float_value| {
+                std.debug.assert(u32_value == @as(u32, value));
+                std.debug.assert(float_value == @as(f32, @floatFromInt(value)));
+            }
+            for (i16_i32_scalar, i16_src, i16_f32_scalar) |i32_value, value, float_value| {
+                std.debug.assert(i32_value == @as(i32, value));
+                std.debug.assert(float_value == @as(f32, @floatFromInt(value)));
+            }
+
+            var result = try measure(io, kernels.widenU8ToU16Scalar, .{ u8_u16_scalar, u8_src }, n);
+            report("widen-u8-u16/scalar", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.widenU8ToU16Vector, .{ u8_u16_vector, u8_src }, n);
+            report("widen-u8-u16/native-vector", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.widenU8ToU32Scalar, .{ u8_u32_scalar, u8_src }, n);
+            report("widen-u8-u32/scalar", n, n * 5, n * 5, result);
+            result = try measure(io, kernels.widenU8ToU32Vector, .{ u8_u32_vector, u8_src }, n);
+            report("widen-u8-u32/native-vector", n, n * 5, n * 5, result);
+            result = try measure(io, kernels.widenI8ToI16Scalar, .{ i8_i16_scalar, i8_src }, n);
+            report("widen-i8-i16/scalar", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.widenI8ToI16Vector, .{ i8_i16_vector, i8_src }, n);
+            report("widen-i8-i16/native-vector", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.widenU16ToU32Scalar, .{ u16_u32_scalar, u16_src }, n);
+            report("widen-u16-u32/scalar", n, n * 6, n * 6, result);
+            result = try measure(io, kernels.widenU16ToU32Vector, .{ u16_u32_vector, u16_src }, n);
+            report("widen-u16-u32/native-vector", n, n * 6, n * 6, result);
+            result = try measure(io, kernels.widenI16ToI32Scalar, .{ i16_i32_scalar, i16_src }, n);
+            report("widen-i16-i32/scalar", n, n * 6, n * 6, result);
+            result = try measure(io, kernels.widenI16ToI32Vector, .{ i16_i32_vector, i16_src }, n);
+            report("widen-i16-i32/native-vector", n, n * 6, n * 6, result);
+            result = try measure(io, kernels.convertU16ToF32Scalar, .{ u16_f32_scalar, u16_src }, n);
+            report("convert-u16-f32/scalar", n, n * 6, n * 6, result);
+            result = try measure(io, kernels.convertU16ToF32Vector, .{ u16_f32_vector, u16_src }, n);
+            report("convert-u16-f32/native-vector", n, n * 6, n * 6, result);
+            result = try measure(io, kernels.convertI16ToF32Scalar, .{ i16_f32_scalar, i16_src }, n);
+            report("convert-i16-f32/scalar", n, n * 6, n * 6, result);
+            result = try measure(io, kernels.convertI16ToF32Vector, .{ i16_f32_vector, i16_src }, n);
+            report("convert-i16-f32/native-vector", n, n * 6, n * 6, result);
+        }
+
+        {
+            const u8_src = try allocator.alloc(u8, n);
+            defer allocator.free(u8_src);
+            const u16_src = try allocator.alloc(u16, n);
+            defer allocator.free(u16_src);
+            const f32_src = try allocator.alloc(f32, n);
+            defer allocator.free(f32_src);
+            const affine_dst = try allocator.alloc(f32, n);
+            defer allocator.free(affine_dst);
+            const f32_u8_trunc = try allocator.alloc(u8, n);
+            defer allocator.free(f32_u8_trunc);
+            const f32_u8_round = try allocator.alloc(u8, n);
+            defer allocator.free(f32_u8_round);
+            const f32_u8_sat = try allocator.alloc(u8, n);
+            defer allocator.free(f32_u8_sat);
+            const f32_u16_sat = try allocator.alloc(u16, n);
+            defer allocator.free(f32_u16_sat);
+            const narrow_trunc = try allocator.alloc(u8, n);
+            defer allocator.free(narrow_trunc);
+            const narrow_round = try allocator.alloc(u8, n);
+            defer allocator.free(narrow_round);
+            const narrow_sat = try allocator.alloc(u8, n);
+            defer allocator.free(narrow_sat);
+
+            for (u8_src, u16_src, f32_src, 0..) |*u8_value, *u16_value, *float_value, i| {
+                u8_value.* = @truncate(i * 29 + 7);
+                u16_value.* = @truncate(i * 997 + 13);
+                const integer_part: u32 = @intCast(i % 255);
+                float_value.* = @as(f32, @floatFromInt(integer_part)) + 0.25;
+            }
+            kernels.convertU8F32AffineScalar(affine_dst, u8_src, 1.25, -2.5);
+            kernels.convertF32U8TruncScalar(f32_u8_trunc, f32_src);
+            kernels.convertF32U8RoundScalar(f32_u8_round, f32_src);
+            kernels.convertF32U8SatScalar(f32_u8_sat, f32_src);
+            kernels.f32ToU16SatScalar(f32_u16_sat, f32_src);
+            kernels.narrowU16ToU8TruncScalar(narrow_trunc, u16_src);
+            kernels.narrowU16ToU8RoundScalar(narrow_round, u16_src);
+            kernels.narrowU16ToU8SatScalar(narrow_sat, u16_src);
+
+            for (affine_dst, u8_src) |value, source| {
+                std.debug.assert(value == @as(f32, @floatFromInt(source)) * 1.25 - 2.5);
+            }
+            for (f32_u8_trunc, f32_u8_round, f32_u8_sat, f32_u16_sat, f32_src) |trunc_value, round_value, sat_value, u16_value, value| {
+                const expected_trunc: u8 = @intFromFloat(value);
+                const expected_round: u8 = @intFromFloat(@floor(value + 0.5));
+                std.debug.assert(trunc_value == expected_trunc);
+                std.debug.assert(round_value == expected_round);
+                std.debug.assert(sat_value == expected_trunc);
+                std.debug.assert(u16_value == @as(u16, @intFromFloat(value)));
+            }
+            for (narrow_trunc, narrow_round, narrow_sat, u16_src) |trunc_value, round_value, sat_value, value| {
+                std.debug.assert(trunc_value == @as(u8, @intCast(value & 0xff)));
+                std.debug.assert(round_value == @as(u8, @intCast((@as(u32, value) + 128) / 257)));
+                std.debug.assert(sat_value == if (value > 255) @as(u8, 255) else @as(u8, @intCast(value)));
+            }
+
+            var result = try measure(io, kernels.convertU8F32AffineScalar, .{ affine_dst, u8_src, @as(f32, 1.25), @as(f32, -2.5) }, n);
+            report("convert-u8-f32-affine/scalar", n, n * 5, n * 5, result);
+            result = try measure(io, kernels.convertF32U8TruncScalar, .{ f32_u8_trunc, f32_src }, n);
+            report("convert-f32-u8-trunc/scalar", n, n * 5, n * 5, result);
+            result = try measure(io, kernels.convertF32U8RoundScalar, .{ f32_u8_round, f32_src }, n);
+            report("convert-f32-u8-round/scalar", n, n * 5, n * 5, result);
+            result = try measure(io, kernels.convertF32U8SatScalar, .{ f32_u8_sat, f32_src }, n);
+            report("convert-f32-u8-sat/scalar", n, n * 5, n * 5, result);
+            result = try measure(io, kernels.f32ToU16SatScalar, .{ f32_u16_sat, f32_src }, n);
+            report("convert-f32-u16-sat/scalar", n, n * 6, n * 6, result);
+            result = try measure(io, kernels.narrowU16ToU8TruncScalar, .{ narrow_trunc, u16_src }, n);
+            report("narrow-u16-u8-trunc/scalar", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.narrowU16ToU8RoundScalar, .{ narrow_round, u16_src }, n);
+            report("narrow-u16-u8-round/scalar", n, n * 3, n * 3, result);
+            result = try measure(io, kernels.narrowU16ToU8SatScalar, .{ narrow_sat, u16_src }, n);
+            report("narrow-u16-u8-sat/scalar", n, n * 3, n * 3, result);
+        }
+
+        {
+            const pack_src = try allocator.alloc(u8, n * 4);
+            defer allocator.free(pack_src);
+            const packed_words = try allocator.alloc(u32, n);
+            defer allocator.free(packed_words);
+            const unpacked = try allocator.alloc(u8, n * 4);
+            defer allocator.free(unpacked);
+            for (pack_src, 0..) |*value, i| {
+                value.* = @truncate(i * 41 + 3);
+            }
+            kernels.packU8x4ToU32Scalar(packed_words, pack_src);
+            kernels.unpackU32ToU8x4Scalar(unpacked, packed_words);
+            for (packed_words, 0..) |value, group| {
+                const offset = group * 4;
+                const expected: u32 = @as(u32, pack_src[offset]) |
+                    (@as(u32, pack_src[offset + 1]) << 8) |
+                    (@as(u32, pack_src[offset + 2]) << 16) |
+                    (@as(u32, pack_src[offset + 3]) << 24);
+                std.debug.assert(value == expected);
+            }
+            std.debug.assert(std.mem.eql(u8, pack_src, unpacked));
+
+            var result = try measure(io, kernels.packU8x4ToU32Scalar, .{ packed_words, pack_src }, n);
+            report("pack-u8x4-u32/scalar", n, n * 8, n * 8, result);
+            result = try measure(io, kernels.unpackU32ToU8x4Scalar, .{ unpacked, packed_words }, n);
+            report("unpack-u32-u8x4/scalar", n, n * 8, n * 8, result);
+        }
+
+        {
             const c = try allocator.alloc(f16, n);
             defer allocator.free(c);
             const lo = try allocator.alloc(f16, n);

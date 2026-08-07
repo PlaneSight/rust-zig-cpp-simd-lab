@@ -277,6 +277,178 @@ pub fn widen_mul_i32_i64_scalar(dst: &mut [i64], a: &[i32], b: &[i32]) {
     }
 }
 
+/// Widens each `u8` element to `u16` without changing its numeric value.
+pub fn widen_u8_to_u16_scalar(dst: &mut [u16], src: &[u8]) {
+    assert_eq!(dst.len(), src.len());
+    for (out, &value) in dst.iter_mut().zip(src) {
+        *out = u16::from(value);
+    }
+}
+
+/// Widens each `u8` element to `u32` without changing its numeric value.
+pub fn widen_u8_to_u32_scalar(dst: &mut [u32], src: &[u8]) {
+    assert_eq!(dst.len(), src.len());
+    for (out, &value) in dst.iter_mut().zip(src) {
+        *out = u32::from(value);
+    }
+}
+
+/// Sign-extends each `i8` element to `i16`.
+pub fn widen_i8_to_i16_scalar(dst: &mut [i16], src: &[i8]) {
+    assert_eq!(dst.len(), src.len());
+    for (out, &value) in dst.iter_mut().zip(src) {
+        *out = i16::from(value);
+    }
+}
+
+/// Widens each `u16` element to `u32` without changing its numeric value.
+pub fn widen_u16_to_u32_scalar(dst: &mut [u32], src: &[u16]) {
+    assert_eq!(dst.len(), src.len());
+    for (out, &value) in dst.iter_mut().zip(src) {
+        *out = u32::from(value);
+    }
+}
+
+/// Sign-extends each `i16` element to `i32`.
+pub fn widen_i16_to_i32_scalar(dst: &mut [i32], src: &[i16]) {
+    assert_eq!(dst.len(), src.len());
+    for (out, &value) in dst.iter_mut().zip(src) {
+        *out = i32::from(value);
+    }
+}
+
+/// Converts `u16` values to exactly represented `f32` values.
+pub fn convert_u16_to_f32_scalar(dst: &mut [f32], src: &[u16]) {
+    assert_eq!(dst.len(), src.len());
+    for (out, &value) in dst.iter_mut().zip(src) {
+        *out = f32::from(value);
+    }
+}
+
+/// Converts `i16` values to exactly represented `f32` values.
+pub fn convert_i16_to_f32_scalar(dst: &mut [f32], src: &[i16]) {
+    assert_eq!(dst.len(), src.len());
+    for (out, &value) in dst.iter_mut().zip(src) {
+        *out = f32::from(value);
+    }
+}
+
+/// Applies an affine transform after converting each `u8` to `f32`.
+pub fn convert_u8_f32_affine_scalar(
+    dst: &mut [f32],
+    src: &[u8],
+    scale: f32,
+    bias: f32,
+) {
+    assert_eq!(dst.len(), src.len());
+    for (out, &value) in dst.iter_mut().zip(src) {
+        *out = f32::from(value) * scale + bias;
+    }
+}
+
+/// Converts `f32` to `u16` with total, explicit saturation.
+///
+/// NaN and values at or below zero produce zero. Values at or above 65535
+/// produce `u16::MAX`; finite values in between truncate toward zero.
+pub fn f32_to_u16_sat_scalar(dst: &mut [u16], src: &[f32]) {
+    assert_eq!(dst.len(), src.len());
+    for (out, &value) in dst.iter_mut().zip(src) {
+        *out = if value.is_nan() || value <= 0.0 {
+            0
+        } else if value >= f32::from(u16::MAX) {
+            u16::MAX
+        } else {
+            value as u16
+        };
+    }
+}
+
+/// Converts finite `f32` values in `[0, 255]` to `u8` by truncating.
+pub fn convert_f32_u8_trunc_scalar(dst: &mut [u8], src: &[f32]) {
+    assert_eq!(dst.len(), src.len());
+    for (out, &value) in dst.iter_mut().zip(src) {
+        assert!(value.is_finite() && (0.0..=255.0).contains(&value));
+        *out = value as u8;
+    }
+}
+
+/// Converts finite `f32` values in `[0, 255]` to `u8`, rounding ties upward.
+pub fn convert_f32_u8_round_scalar(dst: &mut [u8], src: &[f32]) {
+    assert_eq!(dst.len(), src.len());
+    for (out, &value) in dst.iter_mut().zip(src) {
+        assert!(value.is_finite() && (0.0..=255.0).contains(&value));
+        *out = (value + 0.5).floor() as u8;
+    }
+}
+
+/// Converts `f32` values to `u8` with explicit NaN/infinity-safe saturation.
+pub fn convert_f32_u8_sat_scalar(dst: &mut [u8], src: &[f32]) {
+    assert_eq!(dst.len(), src.len());
+    for (out, &value) in dst.iter_mut().zip(src) {
+        *out = if value.is_nan() || value <= 0.0 {
+            0
+        } else if value >= 255.0 {
+            u8::MAX
+        } else {
+            value as u8
+        };
+    }
+}
+
+/// Narrows `u16` values by retaining their low eight bits.
+pub fn narrow_u16_to_u8_trunc_scalar(dst: &mut [u8], src: &[u16]) {
+    assert_eq!(dst.len(), src.len());
+    for (out, &value) in dst.iter_mut().zip(src) {
+        *out = (value & u16::from(u8::MAX)) as u8;
+    }
+}
+
+/// Converts full-range `u16` values to `u8` with integer round-to-nearest.
+pub fn narrow_u16_to_u8_round_scalar(dst: &mut [u8], src: &[u16]) {
+    assert_eq!(dst.len(), src.len());
+    for (out, &value) in dst.iter_mut().zip(src) {
+        *out = ((u32::from(value) + 128) / 257) as u8;
+    }
+}
+
+/// Narrows `u16` values to `u8`, clamping values above 255.
+pub fn narrow_u16_to_u8_sat_scalar(dst: &mut [u8], src: &[u16]) {
+    assert_eq!(dst.len(), src.len());
+    for (out, &value) in dst.iter_mut().zip(src) {
+        *out = value.min(u16::from(u8::MAX)) as u8;
+    }
+}
+
+/// Packs four bytes per output word in logical little-endian order.
+pub fn pack_u8x4_to_u32_scalar(dst: &mut [u32], src: &[u8]) {
+    let expected_src_len = dst
+        .len()
+        .checked_mul(4)
+        .expect("destination length overflows packed source length");
+    assert_eq!(src.len(), expected_src_len);
+    for (out, bytes) in dst.iter_mut().zip(src.chunks_exact(4)) {
+        *out = u32::from(bytes[0])
+            | (u32::from(bytes[1]) << 8)
+            | (u32::from(bytes[2]) << 16)
+            | (u32::from(bytes[3]) << 24);
+    }
+}
+
+/// Unpacks logical little-endian words into four bytes per output group.
+pub fn unpack_u32_to_u8x4_scalar(dst: &mut [u8], src: &[u32]) {
+    let expected_dst_len = src
+        .len()
+        .checked_mul(4)
+        .expect("source length overflows unpacked destination length");
+    assert_eq!(dst.len(), expected_dst_len);
+    for (&word, bytes) in src.iter().zip(dst.chunks_exact_mut(4)) {
+        bytes[0] = (word & 0xff) as u8;
+        bytes[1] = ((word >> 8) & 0xff) as u8;
+        bytes[2] = ((word >> 16) & 0xff) as u8;
+        bytes[3] = ((word >> 24) & 0xff) as u8;
+    }
+}
+
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2,fma")]
 pub unsafe fn squared_error_avx2(a: &[f32], b: &[f32]) -> f64 {
@@ -887,5 +1059,334 @@ mod tests {
             i64_dst,
             [i64::MAX, i64::MIN, i64::MAX, i64::MIN, i64::MAX, i64::MIN]
         );
+    }
+    #[test]
+    fn mixed_width_scalar_edge_lengths_extrema_and_packings() {
+        const LENGTHS: [usize; 16] = [
+            0, 1, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127, 129,
+        ];
+
+        for &len in &LENGTHS {
+            let u8_src: Vec<u8> = (0..len)
+                .map(|i| [0, 1, 127, 128, 254, u8::MAX][i % 6])
+                .collect();
+            let mut u16_actual = vec![0_u16; len];
+            let mut u32_actual = vec![0_u32; len];
+            widen_u8_to_u16_scalar(&mut u16_actual, &u8_src);
+            widen_u8_to_u32_scalar(&mut u32_actual, &u8_src);
+            assert_eq!(
+                u16_actual,
+                u8_src.iter().map(|&value| u16::from(value)).collect::<Vec<_>>()
+            );
+            assert_eq!(
+                u32_actual,
+                u8_src.iter().map(|&value| u32::from(value)).collect::<Vec<_>>()
+            );
+
+            let i8_src: Vec<i8> = (0..len)
+                .map(|i| [i8::MIN, -1, 0, 1, i8::MAX][i % 5])
+                .collect();
+            let mut i16_actual = vec![0_i16; len];
+            widen_i8_to_i16_scalar(&mut i16_actual, &i8_src);
+            assert_eq!(
+                i16_actual,
+                i8_src.iter().map(|&value| i16::from(value)).collect::<Vec<_>>()
+            );
+
+            let u16_src: Vec<u16> = (0..len)
+                .map(|i| [0, 1, 255, 256, 32_768, u16::MAX][i % 6])
+                .collect();
+            let mut u32_from_u16 = vec![0_u32; len];
+            let mut f32_from_u16 = vec![0.0_f32; len];
+            widen_u16_to_u32_scalar(&mut u32_from_u16, &u16_src);
+            convert_u16_to_f32_scalar(&mut f32_from_u16, &u16_src);
+            assert_eq!(
+                u32_from_u16,
+                u16_src.iter().map(|&value| u32::from(value)).collect::<Vec<_>>()
+            );
+            assert_eq!(
+                f32_from_u16,
+                u16_src.iter().map(|&value| f32::from(value)).collect::<Vec<_>>()
+            );
+
+            let i16_src: Vec<i16> = (0..len)
+                .map(|i| [i16::MIN, -1, 0, 1, i16::MAX][i % 5])
+                .collect();
+            let mut i32_actual = vec![0_i32; len];
+            let mut f32_from_i16 = vec![0.0_f32; len];
+            widen_i16_to_i32_scalar(&mut i32_actual, &i16_src);
+            convert_i16_to_f32_scalar(&mut f32_from_i16, &i16_src);
+            assert_eq!(
+                i32_actual,
+                i16_src.iter().map(|&value| i32::from(value)).collect::<Vec<_>>()
+            );
+            assert_eq!(
+                f32_from_i16,
+                i16_src.iter().map(|&value| f32::from(value)).collect::<Vec<_>>()
+            );
+
+            let mut affine_actual = vec![0.0_f32; len];
+            convert_u8_f32_affine_scalar(&mut affine_actual, &u8_src, 1.25, -3.5);
+            let affine_expected: Vec<f32> = u8_src
+                .iter()
+                .map(|&value| f32::from(value) * 1.25 - 3.5)
+                .collect();
+            assert_eq!(affine_actual, affine_expected);
+
+            let f32_to_u16_src: Vec<f32> = (0..len)
+                .map(|i| {
+                    [
+                        f32::NAN,
+                        f32::NEG_INFINITY,
+                        -0.5,
+                        -0.0,
+                        0.5,
+                        1.75,
+                        65_534.75,
+                        65_535.0,
+                        f32::INFINITY,
+                        f32::MAX,
+                    ][i % 10]
+                })
+                .collect();
+            let mut f32_to_u16_actual = vec![0_u16; len];
+            f32_to_u16_sat_scalar(&mut f32_to_u16_actual, &f32_to_u16_src);
+            let f32_to_u16_expected: Vec<u16> = f32_to_u16_src
+                .iter()
+                .map(|&value| {
+                    if value.is_nan() || value <= 0.0 {
+                        0
+                    } else if value >= f32::from(u16::MAX) {
+                        u16::MAX
+                    } else {
+                        value as u16
+                    }
+                })
+                .collect();
+            assert_eq!(f32_to_u16_actual, f32_to_u16_expected);
+
+            let valid_f32_src: Vec<f32> = (0..len)
+                .map(|i| [0.0, 0.25, 0.5, 1.49, 1.5, 1.51, 254.5, 255.0][i % 8])
+                .collect();
+            let mut trunc_actual = vec![0_u8; len];
+            let mut round_actual = vec![0_u8; len];
+            convert_f32_u8_trunc_scalar(&mut trunc_actual, &valid_f32_src);
+            convert_f32_u8_round_scalar(&mut round_actual, &valid_f32_src);
+            assert_eq!(
+                trunc_actual,
+                valid_f32_src.iter().map(|&value| value as u8).collect::<Vec<_>>()
+            );
+            assert_eq!(
+                round_actual,
+                valid_f32_src
+                    .iter()
+                    .map(|&value| (value + 0.5).floor() as u8)
+                    .collect::<Vec<_>>()
+            );
+
+            let saturating_f32_src: Vec<f32> = (0..len)
+                .map(|i| {
+                    [
+                        f32::NAN,
+                        f32::NEG_INFINITY,
+                        -0.5,
+                        -0.0,
+                        0.5,
+                        128.75,
+                        254.99,
+                        255.0,
+                        f32::INFINITY,
+                    ][i % 9]
+                })
+                .collect();
+            let mut saturating_actual = vec![0_u8; len];
+            convert_f32_u8_sat_scalar(&mut saturating_actual, &saturating_f32_src);
+            let saturating_expected: Vec<u8> = saturating_f32_src
+                .iter()
+                .map(|&value| {
+                    if value.is_nan() || value <= 0.0 {
+                        0
+                    } else if value >= 255.0 {
+                        u8::MAX
+                    } else {
+                        value as u8
+                    }
+                })
+                .collect();
+            assert_eq!(saturating_actual, saturating_expected);
+
+            let mut narrow_trunc = vec![0_u8; len];
+            let mut narrow_round = vec![0_u8; len];
+            let mut narrow_sat = vec![0_u8; len];
+            narrow_u16_to_u8_trunc_scalar(&mut narrow_trunc, &u16_src);
+            narrow_u16_to_u8_round_scalar(&mut narrow_round, &u16_src);
+            narrow_u16_to_u8_sat_scalar(&mut narrow_sat, &u16_src);
+            assert_eq!(
+                narrow_trunc,
+                u16_src
+                    .iter()
+                    .map(|&value| (value & 0xff) as u8)
+                    .collect::<Vec<_>>()
+            );
+            assert_eq!(
+                narrow_round,
+                u16_src
+                    .iter()
+                    .map(|&value| ((u32::from(value) + 128) / 257) as u8)
+                    .collect::<Vec<_>>()
+            );
+            assert_eq!(
+                narrow_sat,
+                u16_src
+                    .iter()
+                    .map(|&value| value.min(u16::from(u8::MAX)) as u8)
+                    .collect::<Vec<_>>()
+            );
+        }
+
+        const GROUPS: [usize; 12] = [0, 1, 2, 3, 4, 7, 8, 9, 15, 16, 17, 33];
+        for &groups in &GROUPS {
+            let bytes: Vec<u8> = (0..groups * 4)
+                .map(|i| [0, 1, 2, 127, 128, 254, 255][i % 7])
+                .collect();
+            let mut packed = vec![0_u32; groups];
+            pack_u8x4_to_u32_scalar(&mut packed, &bytes);
+            let expected_packed: Vec<u32> = bytes
+                .chunks_exact(4)
+                .map(|chunk| {
+                    u32::from(chunk[0])
+                        | (u32::from(chunk[1]) << 8)
+                        | (u32::from(chunk[2]) << 16)
+                        | (u32::from(chunk[3]) << 24)
+                })
+                .collect();
+            assert_eq!(packed, expected_packed, "groups={groups}");
+
+            let mut unpacked = vec![0_u8; groups * 4];
+            unpack_u32_to_u8x4_scalar(&mut unpacked, &packed);
+            assert_eq!(unpacked, bytes, "groups={groups}");
+        }
+    }
+
+    #[test]
+    fn mixed_width_scalar_randomized_differential_coverage() {
+        let mut rng = XorShift64(0x9d4c_2a71_f803_b6e5);
+        for trial in 0..256 {
+            let len = if trial < 32 {
+                trial
+            } else {
+                (rng.next() as usize) % 258
+            };
+            let u8_src: Vec<u8> = (0..len).map(|_| rng.next() as u8).collect();
+            let u16_src: Vec<u16> = (0..len).map(|_| rng.next() as u16).collect();
+            let i8_src: Vec<i8> = (0..len).map(|_| rng.next() as i8).collect();
+            let i16_src: Vec<i16> = (0..len).map(|_| rng.next() as i16).collect();
+
+            let mut u16_actual = vec![0_u16; len];
+            let mut u32_actual = vec![0_u32; len];
+            let mut i16_actual = vec![0_i16; len];
+            let mut u32_from_u16 = vec![0_u32; len];
+            let mut i32_actual = vec![0_i32; len];
+            widen_u8_to_u16_scalar(&mut u16_actual, &u8_src);
+            widen_u8_to_u32_scalar(&mut u32_actual, &u8_src);
+            widen_i8_to_i16_scalar(&mut i16_actual, &i8_src);
+            widen_u16_to_u32_scalar(&mut u32_from_u16, &u16_src);
+            widen_i16_to_i32_scalar(&mut i32_actual, &i16_src);
+            assert_eq!(u16_actual, u8_src.iter().map(|&x| u16::from(x)).collect::<Vec<_>>());
+            assert_eq!(u32_actual, u8_src.iter().map(|&x| u32::from(x)).collect::<Vec<_>>());
+            assert_eq!(i16_actual, i8_src.iter().map(|&x| i16::from(x)).collect::<Vec<_>>());
+            assert_eq!(
+                u32_from_u16,
+                u16_src.iter().map(|&x| u32::from(x)).collect::<Vec<_>>()
+            );
+            assert_eq!(i32_actual, i16_src.iter().map(|&x| i32::from(x)).collect::<Vec<_>>());
+
+            let mut converted_u16 = vec![0.0_f32; len];
+            let mut converted_i16 = vec![0.0_f32; len];
+            convert_u16_to_f32_scalar(&mut converted_u16, &u16_src);
+            convert_i16_to_f32_scalar(&mut converted_i16, &i16_src);
+            assert_eq!(
+                converted_u16,
+                u16_src.iter().map(|&x| f32::from(x)).collect::<Vec<_>>()
+            );
+            assert_eq!(
+                converted_i16,
+                i16_src.iter().map(|&x| f32::from(x)).collect::<Vec<_>>()
+            );
+
+            let mut affine_actual = vec![0.0_f32; len];
+            convert_u8_f32_affine_scalar(&mut affine_actual, &u8_src, -0.75, 11.25);
+            for (i, &value) in u8_src.iter().enumerate() {
+                assert_eq!(affine_actual[i], f32::from(value) * -0.75 + 11.25);
+            }
+
+            let f32_u16_src: Vec<f32> = (0..len)
+                .map(|_| (rng.next() % 70_001) as f32 - 2_000.0)
+                .collect();
+            let mut f32_u16_actual = vec![0_u16; len];
+            f32_to_u16_sat_scalar(&mut f32_u16_actual, &f32_u16_src);
+            for (actual, &value) in f32_u16_actual.iter().zip(&f32_u16_src) {
+                let expected = if value <= 0.0 {
+                    0
+                } else if value >= f32::from(u16::MAX) {
+                    u16::MAX
+                } else {
+                    value as u16
+                };
+                assert_eq!(*actual, expected);
+            }
+
+            let valid_f32_src: Vec<f32> = (0..len)
+                .map(|_| (rng.next() % 255_001) as f32 / 1_000.0)
+                .collect();
+            let mut trunc_actual = vec![0_u8; len];
+            let mut round_actual = vec![0_u8; len];
+            convert_f32_u8_trunc_scalar(&mut trunc_actual, &valid_f32_src);
+            convert_f32_u8_round_scalar(&mut round_actual, &valid_f32_src);
+            for (i, &value) in valid_f32_src.iter().enumerate() {
+                assert_eq!(trunc_actual[i], value as u8);
+                assert_eq!(round_actual[i], (value + 0.5).floor() as u8);
+            }
+
+            let mut sat_actual = vec![0_u8; len];
+            convert_f32_u8_sat_scalar(&mut sat_actual, &f32_u16_src);
+            for (actual, &value) in sat_actual.iter().zip(&f32_u16_src) {
+                let expected = if value <= 0.0 {
+                    0
+                } else if value >= 255.0 {
+                    u8::MAX
+                } else {
+                    value as u8
+                };
+                assert_eq!(*actual, expected);
+            }
+
+            let mut narrow_trunc = vec![0_u8; len];
+            let mut narrow_round = vec![0_u8; len];
+            let mut narrow_sat = vec![0_u8; len];
+            narrow_u16_to_u8_trunc_scalar(&mut narrow_trunc, &u16_src);
+            narrow_u16_to_u8_round_scalar(&mut narrow_round, &u16_src);
+            narrow_u16_to_u8_sat_scalar(&mut narrow_sat, &u16_src);
+            for (i, &value) in u16_src.iter().enumerate() {
+                assert_eq!(narrow_trunc[i], (value & 0xff) as u8);
+                assert_eq!(narrow_round[i], ((u32::from(value) + 128) / 257) as u8);
+                assert_eq!(narrow_sat[i], value.min(u16::from(u8::MAX)) as u8);
+            }
+
+            let groups = (rng.next() as usize) % 66;
+            let bytes: Vec<u8> = (0..groups * 4).map(|_| rng.next() as u8).collect();
+            let mut packed = vec![0_u32; groups];
+            pack_u8x4_to_u32_scalar(&mut packed, &bytes);
+            let mut unpacked = vec![0_u8; groups * 4];
+            unpack_u32_to_u8x4_scalar(&mut unpacked, &packed);
+            assert_eq!(unpacked, bytes, "trial={trial}, groups={groups}");
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn mixed_width_f32_u8_checked_conversions_reject_invalid_inputs() {
+        let mut dst = [0_u8; 1];
+        convert_f32_u8_trunc_scalar(&mut dst, &[f32::NAN]);
     }
 }

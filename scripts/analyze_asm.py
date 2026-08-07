@@ -18,6 +18,8 @@ TRACKED_PREFIXES = (
     # x86 SIMD / FP16 / saturation
     "vcvtph2ps",
     "vcvtps2ph",
+    "vcvtdq2ps",
+    "vcvtps2dq",
     "vmin",
     "vmax",
     "vpmin",
@@ -43,10 +45,21 @@ TRACKED_PREFIXES = (
     "psadbw",
     "vpmovzx",
     "vpmovsx",
+    "vpmovwb",
+    "vpmovuswb",
+    "vpmovdw",
+    "vpmovusdw",
+    "vpmovdb",
+    "vpmovusdb",
     # AArch64 AdvSIMD / FP16 / widening-reduction / saturation
     "fmin",
     "fmax",
     "fcvt",
+    "scvtf",
+    "ucvtf",
+    "fcvtz",
+    "fcvtn",
+    "fcvta",
     "uabd",
     "uabal",
     "uadalp",
@@ -60,6 +73,10 @@ TRACKED_PREFIXES = (
     "uqadd",
     "sqadd",
     "xtn",
+    "uqxtn",
+    "sqxtn",
+    "shrn",
+    "rshrn",
     "smull",
     "umull",
     "smlal",
@@ -67,6 +84,8 @@ TRACKED_PREFIXES = (
     "sdot",
     "udot",
     "usdot",
+    "zip",
+    "uzp",
     "fmla",
     "fmul",
     # WebAssembly SIMD exact/high-signal operations then broad families
@@ -97,9 +116,11 @@ INSTRUCTION_RE = re.compile(r"^\s*([A-Za-z][A-Za-z0-9_.]*)\b")
 
 WASM_VECTOR_PREFIXES = ("v128", "i8x16", "i16x8", "i32x4", "i64x2", "f32x4", "f64x2")
 ARM_VECTOR_HINTS = {
-    "fmin", "fmax", "fcvt", "uabd", "uabal", "uadalp", "uaddlp", "uaddlv",
-    "sadalp", "saddlp", "saddlv", "ushll", "sshll", "uqadd", "sqadd", "xtn",
-    "smull", "umull", "smlal", "umlal", "sdot", "udot", "usdot", "fmla", "fmul",
+    "fmin", "fmax", "fcvt", "scvtf", "ucvtf", "fcvtz", "fcvtn", "fcvta",
+    "uabd", "uabal", "uadalp", "uaddlp", "uaddlv", "sadalp", "saddlp",
+    "saddlv", "ushll", "sshll", "uqadd", "sqadd", "xtn", "uqxtn", "sqxtn",
+    "shrn", "rshrn", "smull", "umull", "smlal", "umlal", "sdot", "udot",
+    "usdot", "zip", "uzp", "fmla", "fmul",
 }
 
 

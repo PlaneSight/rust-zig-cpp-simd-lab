@@ -1,0 +1,524 @@
+{
+  "schema": "simd-lab-codegen-v1",
+  "target_profile": "wasm-simd128",
+  "host": "macOS-26.6-arm64-64bit",
+  "versions": {
+    "zig": "0.16.0",
+    "clang": "Homebrew clang version 22.1.8"
+  },
+  "jobs": [
+    {
+      "toolchain": "clang",
+      "probe": "dot",
+      "assembly": "results/codegen/clang-dot-wasm-simd128.s",
+      "command": [
+        "clang++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "--target=wasm32-unknown-unknown",
+        "-msimd128",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/cpp/dot.cpp",
+        "-o",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-dot-wasm-simd128.s"
+      ]
+    },
+    {
+      "toolchain": "clang",
+      "probe": "sad-portable",
+      "assembly": "results/codegen/clang-sad-portable-wasm-simd128.s",
+      "command": [
+        "clang++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "--target=wasm32-unknown-unknown",
+        "-msimd128",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/cpp/sad_portable.cpp",
+        "-o",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-sad-portable-wasm-simd128.s"
+      ]
+    },
+    {
+      "toolchain": "clang",
+      "probe": "sat-add-portable",
+      "assembly": "results/codegen/clang-sat-add-portable-wasm-simd128.s",
+      "command": [
+        "clang++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "--target=wasm32-unknown-unknown",
+        "-msimd128",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/cpp/sat_add_portable.cpp",
+        "-o",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-sat-add-portable-wasm-simd128.s"
+      ]
+    },
+    {
+      "toolchain": "clang",
+      "probe": "widen-mul",
+      "assembly": "results/codegen/clang-widen-mul-wasm-simd128.s",
+      "command": [
+        "clang++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "--target=wasm32-unknown-unknown",
+        "-msimd128",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/cpp/widen_mul.cpp",
+        "-o",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-widen-mul-wasm-simd128.s"
+      ]
+    },
+    {
+      "toolchain": "clang",
+      "probe": "mixed-width",
+      "assembly": "results/codegen/clang-mixed-width-wasm-simd128.s",
+      "command": [
+        "clang++",
+        "-std=c++23",
+        "-O3",
+        "-S",
+        "--target=wasm32-unknown-unknown",
+        "-msimd128",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/cpp/mixed_width.cpp",
+        "-o",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-mixed-width-wasm-simd128.s"
+      ]
+    },
+    {
+      "toolchain": "zig",
+      "probe": "clamp",
+      "assembly": "results/codegen/zig-clamp-wasm-simd128.s",
+      "command": [
+        "zig",
+        "build-obj",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/zig/clamp.zig",
+        "-O",
+        "ReleaseFast",
+        "-target",
+        "wasm32-freestanding",
+        "-mcpu=baseline+simd128",
+        "-femit-asm=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-clamp-wasm-simd128.s",
+        "-femit-bin=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-clamp-wasm-simd128.o"
+      ]
+    },
+    {
+      "toolchain": "zig",
+      "probe": "dot",
+      "assembly": "results/codegen/zig-dot-wasm-simd128.s",
+      "command": [
+        "zig",
+        "build-obj",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/zig/dot.zig",
+        "-O",
+        "ReleaseFast",
+        "-target",
+        "wasm32-freestanding",
+        "-mcpu=baseline+simd128",
+        "-femit-asm=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-dot-wasm-simd128.s",
+        "-femit-bin=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-dot-wasm-simd128.o"
+      ]
+    },
+    {
+      "toolchain": "zig",
+      "probe": "mixed_width",
+      "assembly": "results/codegen/zig-mixed_width-wasm-simd128.s",
+      "command": [
+        "zig",
+        "build-obj",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/zig/mixed_width.zig",
+        "-O",
+        "ReleaseFast",
+        "-target",
+        "wasm32-freestanding",
+        "-mcpu=baseline+simd128",
+        "-femit-asm=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-mixed_width-wasm-simd128.s",
+        "-femit-bin=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-mixed_width-wasm-simd128.o"
+      ]
+    },
+    {
+      "toolchain": "zig",
+      "probe": "sad",
+      "assembly": "results/codegen/zig-sad-wasm-simd128.s",
+      "command": [
+        "zig",
+        "build-obj",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/zig/sad.zig",
+        "-O",
+        "ReleaseFast",
+        "-target",
+        "wasm32-freestanding",
+        "-mcpu=baseline+simd128",
+        "-femit-asm=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-sad-wasm-simd128.s",
+        "-femit-bin=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-sad-wasm-simd128.o"
+      ]
+    },
+    {
+      "toolchain": "zig",
+      "probe": "sat_add",
+      "assembly": "results/codegen/zig-sat_add-wasm-simd128.s",
+      "command": [
+        "zig",
+        "build-obj",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/zig/sat_add.zig",
+        "-O",
+        "ReleaseFast",
+        "-target",
+        "wasm32-freestanding",
+        "-mcpu=baseline+simd128",
+        "-femit-asm=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-sat_add-wasm-simd128.s",
+        "-femit-bin=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-sat_add-wasm-simd128.o"
+      ]
+    },
+    {
+      "toolchain": "zig",
+      "probe": "widen_mul",
+      "assembly": "results/codegen/zig-widen_mul-wasm-simd128.s",
+      "command": [
+        "zig",
+        "build-obj",
+        "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/probes/zig/widen_mul.zig",
+        "-O",
+        "ReleaseFast",
+        "-target",
+        "wasm32-freestanding",
+        "-mcpu=baseline+simd128",
+        "-femit-asm=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-widen_mul-wasm-simd128.s",
+        "-femit-bin=/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-widen_mul-wasm-simd128.o"
+      ]
+    }
+  ],
+  "metrics": {
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-dot-wasm-simd128.s": {
+      "instruction_count": 430,
+      "top_mnemonics": {
+        "block": 14,
+        "br": 2,
+        "br_if": 15,
+        "br_table": 2,
+        "end_block": 14,
+        "end_function": 4,
+        "end_loop": 7,
+        "f32": 6,
+        "f64": 38,
+        "i16x8": 4,
+        "i32": 105,
+        "i32x4": 4,
+        "i64": 10,
+        "i64x2": 10,
+        "i8x16": 2,
+        "local": 180,
+        "loop": 7,
+        "return": 2,
+        "v128": 4
+      },
+      "tracked": {
+        "i16x8": 4,
+        "i32x4": 4,
+        "i64x2": 10,
+        "i8x16": 2,
+        "v128": 4
+      },
+      "unique_mnemonics": 19,
+      "vector_instruction_count": 24
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-mixed-width-wasm-simd128.s": {
+      "instruction_count": 2754,
+      "top_mnemonics": {
+        "block": 70,
+        "br": 4,
+        "br_if": 158,
+        "end_block": 70,
+        "end_function": 17,
+        "end_loop": 41,
+        "f32": 63,
+        "f32x4": 15,
+        "i16x8": 12,
+        "i32": 1029,
+        "i32x4": 40,
+        "i8x16": 18,
+        "local": 1105,
+        "loop": 41,
+        "v128": 71
+      },
+      "tracked": {
+        "f32x4": 15,
+        "i16x8": 12,
+        "i32x4": 40,
+        "i8x16": 18,
+        "v128": 71
+      },
+      "unique_mnemonics": 15,
+      "vector_instruction_count": 156
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-sad-portable-wasm-simd128.s": {
+      "instruction_count": 129,
+      "top_mnemonics": {
+        "block": 3,
+        "br_if": 3,
+        "br_table": 1,
+        "end_block": 3,
+        "end_function": 1,
+        "end_loop": 2,
+        "i16x8": 5,
+        "i32": 24,
+        "i32x4": 3,
+        "i64": 7,
+        "i64x2": 8,
+        "i8x16": 2,
+        "local": 63,
+        "loop": 2,
+        "v128": 2
+      },
+      "tracked": {
+        "i16x8": 5,
+        "i32x4": 3,
+        "i64x2": 8,
+        "i8x16": 2,
+        "v128": 2
+      },
+      "unique_mnemonics": 15,
+      "vector_instruction_count": 20
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-sat-add-portable-wasm-simd128.s": {
+      "instruction_count": 216,
+      "top_mnemonics": {
+        "block": 3,
+        "br_if": 9,
+        "end_block": 3,
+        "end_function": 1,
+        "end_loop": 2,
+        "i16x8": 10,
+        "i32": 72,
+        "i32x4": 16,
+        "i8x16": 7,
+        "local": 87,
+        "loop": 2,
+        "v128": 4
+      },
+      "tracked": {
+        "i16x8": 10,
+        "i32x4": 16,
+        "i8x16": 7,
+        "v128": 4
+      },
+      "unique_mnemonics": 12,
+      "vector_instruction_count": 37
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/clang-widen-mul-wasm-simd128.s": {
+      "instruction_count": 732,
+      "top_mnemonics": {
+        "block": 16,
+        "br_if": 34,
+        "br_table": 2,
+        "end_block": 16,
+        "end_function": 6,
+        "end_loop": 12,
+        "i16x8": 6,
+        "i32": 264,
+        "i32x4": 6,
+        "i64": 8,
+        "i64x2": 6,
+        "local": 338,
+        "loop": 12,
+        "v128": 6
+      },
+      "tracked": {
+        "i16x8": 6,
+        "i32x4": 6,
+        "i64x2": 6,
+        "v128": 6
+      },
+      "unique_mnemonics": 14,
+      "vector_instruction_count": 24
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-clamp-wasm-simd128.s": {
+      "instruction_count": 558,
+      "top_mnemonics": {
+        "call": 128,
+        "clamp_f32x8": 1,
+        "clamp_u16x16": 1,
+        "clamp_u8x32": 1,
+        "end_function": 3,
+        "f32x4": 80,
+        "i16x8": 32,
+        "i8x16": 32,
+        "local": 274,
+        "v128": 6
+      },
+      "tracked": {
+        "f32x4": 80,
+        "i16x8": 32,
+        "i8x16": 32,
+        "v128": 6
+      },
+      "unique_mnemonics": 10,
+      "vector_instruction_count": 150
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-dot-wasm-simd128.s": {
+      "instruction_count": 1445,
+      "top_mnemonics": {
+        "block": 38,
+        "br": 12,
+        "br_if": 48,
+        "dot_u8_i8_vector": 1,
+        "end_block": 38,
+        "end_function": 8,
+        "end_loop": 18,
+        "f32": 16,
+        "f64": 91,
+        "f64x2": 37,
+        "i16x8": 8,
+        "i32": 363,
+        "i32x4": 16,
+        "i64": 92,
+        "i64x2": 26,
+        "i8x16": 14,
+        "local": 570,
+        "loop": 18,
+        "return": 4,
+        "v128": 20
+      },
+      "tracked": {
+        "f64x2": 37,
+        "i16x8": 8,
+        "i32x4": 16,
+        "i64x2": 26,
+        "i8x16": 14,
+        "v128": 20
+      },
+      "unique_mnemonics": 27,
+      "vector_instruction_count": 121
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-mixed_width-wasm-simd128.s": {
+      "instruction_count": 4032,
+      "top_mnemonics": {
+        "block": 86,
+        "br": 6,
+        "br_if": 164,
+        "end_block": 86,
+        "end_function": 24,
+        "end_loop": 49,
+        "f32": 187,
+        "f32x4": 16,
+        "i16x8": 22,
+        "i32": 1837,
+        "i32x4": 6,
+        "i8x16": 1,
+        "local": 1454,
+        "loop": 49,
+        "narrow_u16_to_u8_round_scalar": 1,
+        "narrow_u16_to_u8_sat_scalar": 1,
+        "narrow_u16_to_u8_trunc_scalar": 1,
+        "pack_u8x4_to_u32_scalar": 1,
+        "unpack_u32_to_u8x4_scalar": 1,
+        "v128": 21
+      },
+      "tracked": {
+        "f32x4": 16,
+        "i16x8": 22,
+        "i32x4": 6,
+        "i8x16": 1,
+        "v128": 21
+      },
+      "unique_mnemonics": 39,
+      "vector_instruction_count": 66
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-sad-wasm-simd128.s": {
+      "instruction_count": 81,
+      "top_mnemonics": {
+        "absdiff_u8x32": 1,
+        "end_function": 3,
+        "i16x8": 15,
+        "i8x16": 15,
+        "local": 39,
+        "sad_u8x32": 1,
+        "v128": 6,
+        "widen_u8_to_u16x32": 1
+      },
+      "tracked": {
+        "i16x8": 15,
+        "i8x16": 15,
+        "v128": 6
+      },
+      "unique_mnemonics": 8,
+      "vector_instruction_count": 36
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-sat_add-wasm-simd128.s": {
+      "instruction_count": 1267,
+      "top_mnemonics": {
+        "block": 22,
+        "br_if": 38,
+        "end_block": 22,
+        "end_function": 9,
+        "end_loop": 8,
+        "i32": 559,
+        "i64": 85,
+        "i8x16": 2,
+        "local": 503,
+        "loop": 8,
+        "sat_add_i16_scalar": 1,
+        "sat_add_i32_scalar": 1,
+        "sat_add_i64_scalar": 1,
+        "sat_add_i8_scalar": 1,
+        "sat_add_u16_scalar": 1,
+        "sat_add_u32_scalar": 1,
+        "sat_add_u64_scalar": 1,
+        "sat_add_u8_scalar": 1,
+        "sat_add_u8x32": 1,
+        "v128": 2
+      },
+      "tracked": {
+        "i8x16.add_sat_u": 2,
+        "v128": 2
+      },
+      "unique_mnemonics": 20,
+      "vector_instruction_count": 4
+    },
+    "/Users/george/PlaneSight/plugins/rust-zig-cpp-simd-lab/results/codegen/zig-widen_mul-wasm-simd128.s": {
+      "instruction_count": 1922,
+      "top_mnemonics": {
+        "block": 42,
+        "br_if": 72,
+        "end_block": 42,
+        "end_function": 12,
+        "end_loop": 18,
+        "i16x8": 4,
+        "i32": 830,
+        "i32x4": 4,
+        "i64": 80,
+        "i64x2": 4,
+        "local": 760,
+        "loop": 18,
+        "v128": 24,
+        "widen_mul_i16_i32_scalar": 1,
+        "widen_mul_i16_i32_vector": 1,
+        "widen_mul_i32_i64_scalar": 1,
+        "widen_mul_i32_i64_vector": 1,
+        "widen_mul_u16_u32_vector": 1,
+        "widen_mul_u32_u64_scalar": 1,
+        "widen_mul_u32_u64_vector": 1
+      },
+      "tracked": {
+        "i16x8.extmul_high_i8x16_s": 1,
+        "i16x8.extmul_high_i8x16_u": 1,
+        "i16x8.extmul_low_i8x16_s": 1,
+        "i16x8.extmul_low_i8x16_u": 1,
+        "i32x4.extmul_high_i16x8_s": 1,
+        "i32x4.extmul_high_i16x8_u": 1,
+        "i32x4.extmul_low_i16x8_s": 1,
+        "i32x4.extmul_low_i16x8_u": 1,
+        "i64x2": 4,
+        "v128": 24
+      },
+      "unique_mnemonics": 25,
+      "vector_instruction_count": 36
+    }
+  },
+  "notes": {
+    "cpp_fp16": "_Float16 probe is a Clang extension, not a C++23 portable facility",
+    "rust": "stable Rust cross-target portable-SIMD probe omitted until std::simd is stable or an explicit crate policy is chosen"
+  }
+}

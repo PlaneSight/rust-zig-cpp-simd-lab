@@ -273,6 +273,194 @@ void widen_mul_i32_i64_scalar(std::span<std::int64_t> dst,
     }
 }
 
+void widen_u8_to_u16_scalar(std::span<std::uint16_t> dst,
+                            std::span<const std::uint8_t> src) {
+    assert(dst.size() == src.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        dst[i] = static_cast<std::uint16_t>(src[i]);
+    }
+}
+
+void widen_u8_to_u32_scalar(std::span<std::uint32_t> dst,
+                            std::span<const std::uint8_t> src) {
+    assert(dst.size() == src.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        dst[i] = static_cast<std::uint32_t>(src[i]);
+    }
+}
+
+void widen_i8_to_i16_scalar(std::span<std::int16_t> dst,
+                            std::span<const std::int8_t> src) {
+    assert(dst.size() == src.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        dst[i] = static_cast<std::int16_t>(src[i]);
+    }
+}
+
+void widen_i16_to_i32_scalar(std::span<std::int32_t> dst,
+                             std::span<const std::int16_t> src) {
+    assert(dst.size() == src.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        dst[i] = static_cast<std::int32_t>(src[i]);
+    }
+}
+
+void widen_u16_to_u32_scalar(std::span<std::uint32_t> dst,
+                             std::span<const std::uint16_t> src) {
+    assert(dst.size() == src.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        dst[i] = static_cast<std::uint32_t>(src[i]);
+    }
+}
+
+void convert_u8_f32_affine_scalar(std::span<float> dst,
+                                  std::span<const std::uint8_t> src,
+                                  float scale, float bias) {
+    assert(dst.size() == src.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        dst[i] = static_cast<float>(src[i]) * scale + bias;
+    }
+}
+
+void convert_u16_to_f32_scalar(std::span<float> dst,
+                               std::span<const std::uint16_t> src) {
+    assert(dst.size() == src.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        dst[i] = static_cast<float>(src[i]);
+    }
+}
+
+void convert_i16_to_f32_scalar(std::span<float> dst,
+                               std::span<const std::int16_t> src) {
+    assert(dst.size() == src.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        dst[i] = static_cast<float>(src[i]);
+    }
+}
+
+void f32_to_u16_sat_scalar(std::span<std::uint16_t> dst,
+                           std::span<const float> src) {
+    assert(dst.size() == src.size());
+    constexpr float max_value =
+        static_cast<float>(std::numeric_limits<std::uint16_t>::max());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const float value = src[i];
+        if (!(value > 0.0F)) {
+            dst[i] = 0;
+        } else if (value >= max_value) {
+            dst[i] = std::numeric_limits<std::uint16_t>::max();
+        } else {
+            dst[i] = static_cast<std::uint16_t>(value);
+        }
+    }
+}
+
+void convert_f32_u8_trunc_scalar(std::span<std::uint8_t> dst,
+                                 std::span<const float> src) {
+    assert(dst.size() == src.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const float value = src[i];
+        assert(std::isfinite(value) && value >= 0.0F && value <= 255.0F);
+        if (!std::isfinite(value) || value <= 0.0F) {
+            dst[i] = 0;
+        } else if (value >= 255.0F) {
+            dst[i] = std::numeric_limits<std::uint8_t>::max();
+        } else {
+            dst[i] = static_cast<std::uint8_t>(value);
+        }
+    }
+}
+
+void convert_f32_u8_round_scalar(std::span<std::uint8_t> dst,
+                                 std::span<const float> src) {
+    assert(dst.size() == src.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const float value = src[i];
+        assert(std::isfinite(value) && value >= 0.0F && value <= 255.0F);
+        if (!std::isfinite(value) || value <= 0.0F) {
+            dst[i] = 0;
+        } else if (value >= 255.0F) {
+            dst[i] = std::numeric_limits<std::uint8_t>::max();
+        } else {
+            const float rounded = std::floor(value + 0.5F);
+            dst[i] = static_cast<std::uint8_t>(rounded);
+        }
+    }
+}
+
+void convert_f32_u8_sat_scalar(std::span<std::uint8_t> dst,
+                               std::span<const float> src) {
+    assert(dst.size() == src.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const float value = src[i];
+        if (!(value > 0.0F)) {
+            dst[i] = 0;
+        } else if (value >= 255.0F) {
+            dst[i] = std::numeric_limits<std::uint8_t>::max();
+        } else {
+            dst[i] = static_cast<std::uint8_t>(value);
+        }
+    }
+}
+
+void narrow_u16_to_u8_trunc_scalar(
+    std::span<std::uint8_t> dst, std::span<const std::uint16_t> src) {
+    assert(dst.size() == src.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        dst[i] = static_cast<std::uint8_t>(src[i] & 0xffU);
+    }
+}
+
+void narrow_u16_to_u8_round_scalar(
+    std::span<std::uint8_t> dst, std::span<const std::uint16_t> src) {
+    assert(dst.size() == src.size());
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto widened = static_cast<std::uint32_t>(src[i]) + 128U;
+        dst[i] = static_cast<std::uint8_t>(widened / 257U);
+    }
+}
+
+void narrow_u16_to_u8_sat_scalar(
+    std::span<std::uint8_t> dst, std::span<const std::uint16_t> src) {
+    assert(dst.size() == src.size());
+    constexpr auto max_value = std::numeric_limits<std::uint8_t>::max();
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        dst[i] = static_cast<std::uint8_t>(
+            std::min<std::uint16_t>(src[i], max_value));
+    }
+}
+
+void pack_u8x4_to_u32_scalar(std::span<std::uint32_t> dst,
+                             std::span<const std::uint8_t> src) {
+    assert(src.size() % 4U == 0U);
+    assert(dst.size() == src.size() / 4U);
+    std::size_t src_index = 0;
+    for (std::size_t i = 0; i < dst.size(); ++i) {
+        const auto b0 = static_cast<std::uint32_t>(src[src_index++]);
+        const auto b1 = static_cast<std::uint32_t>(src[src_index++]);
+        const auto b2 = static_cast<std::uint32_t>(src[src_index++]);
+        const auto b3 = static_cast<std::uint32_t>(src[src_index++]);
+        dst[i] = b0 | (b1 << 8U) | (b2 << 16U) | (b3 << 24U);
+    }
+}
+
+void unpack_u32_to_u8x4_scalar(
+    std::span<std::uint8_t> dst, std::span<const std::uint32_t> src) {
+    assert(dst.size() % 4U == 0U);
+    assert(src.size() == dst.size() / 4U);
+    std::size_t dst_index = 0;
+    for (const auto packed : src) {
+        dst[dst_index++] = static_cast<std::uint8_t>(packed & 0xffU);
+        dst[dst_index++] =
+            static_cast<std::uint8_t>((packed >> 8U) & 0xffU);
+        dst[dst_index++] =
+            static_cast<std::uint8_t>((packed >> 16U) & 0xffU);
+        dst[dst_index++] =
+            static_cast<std::uint8_t>((packed >> 24U) & 0xffU);
+    }
+}
+
+
 
 #if (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__)
 __attribute__((target("avx2,fma")))

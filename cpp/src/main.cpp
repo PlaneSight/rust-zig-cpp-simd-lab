@@ -480,6 +480,248 @@ bool run_exhaustive_saturating_add_test() {
     return true;
 }
 
+std::uint16_t f32_to_u16_sat_reference(float value) noexcept {
+    constexpr float max_value =
+        static_cast<float>(std::numeric_limits<std::uint16_t>::max());
+    if (!(value > 0.0F)) {
+        return 0;
+    }
+    if (value >= max_value) {
+        return std::numeric_limits<std::uint16_t>::max();
+    }
+    return static_cast<std::uint16_t>(value);
+}
+
+std::uint8_t f32_to_u8_sat_reference(float value) noexcept {
+    if (!(value > 0.0F)) {
+        return 0;
+    }
+    if (value >= 255.0F) {
+        return std::numeric_limits<std::uint8_t>::max();
+    }
+    return static_cast<std::uint8_t>(value);
+}
+
+bool run_mixed_width_case(std::size_t length, XorShift64& rng,
+                          bool pathological) {
+    constexpr std::array<std::uint8_t, 8> u8_values{
+        0, 1, 2, 127, 128, 254, 255, 0xa5};
+    constexpr std::array<std::int8_t, 8> i8_values{
+        std::numeric_limits<std::int8_t>::min(), -127, -1, 0,
+        1, 126, std::numeric_limits<std::int8_t>::max(), -42};
+    constexpr std::array<std::int16_t, 8> i16_values{
+        std::numeric_limits<std::int16_t>::min(),
+        std::numeric_limits<std::int16_t>::min() + 1, -1, 0,
+        1, std::numeric_limits<std::int16_t>::max() - 1,
+        std::numeric_limits<std::int16_t>::max(), -12345};
+    constexpr std::array<std::uint16_t, 8> u16_values{
+        0, 1, 255, 256, 0x7fff, 0x8000, 0xfffe, 0xffff};
+    const auto random_i8 = [&]() noexcept {
+        const auto raw = static_cast<int>(rng.next() & 0xffU);
+        return static_cast<std::int8_t>(raw < 128 ? raw : raw - 256);
+    };
+    const auto random_i16 = [&]() noexcept {
+        const auto raw = static_cast<std::int32_t>(rng.next() & 0xffffU);
+        return static_cast<std::int16_t>(raw < 32768 ? raw : raw - 65536);
+    };
+
+    std::vector<std::uint8_t> u8(length);
+    std::vector<std::int8_t> i8(length);
+    std::vector<std::int16_t> i16(length);
+    std::vector<std::uint16_t> u16(length);
+    for (std::size_t i = 0; i < length; ++i) {
+        if (pathological) {
+            u8[i] = u8_values[i & 7U];
+            i8[i] = i8_values[i & 7U];
+            i16[i] = i16_values[i & 7U];
+            u16[i] = u16_values[i & 7U];
+        } else {
+            u8[i] = static_cast<std::uint8_t>(rng.next());
+            i8[i] = random_i8();
+            i16[i] = random_i16();
+            u16[i] = static_cast<std::uint16_t>(rng.next());
+        }
+    }
+
+    std::vector<std::uint16_t> u8_to_u16(length);
+    std::vector<std::uint32_t> u8_to_u32(length), u16_to_u32(length);
+    std::vector<std::int16_t> i8_to_i16(length);
+    std::vector<std::int32_t> i16_to_i32(length);
+    simd_lab::widen_u8_to_u16_scalar(u8_to_u16, u8);
+    simd_lab::widen_u8_to_u32_scalar(u8_to_u32, u8);
+    simd_lab::widen_i8_to_i16_scalar(i8_to_i16, i8);
+    simd_lab::widen_i16_to_i32_scalar(i16_to_i32, i16);
+    simd_lab::widen_u16_to_u32_scalar(u16_to_u32, u16);
+    for (std::size_t i = 0; i < length; ++i) {
+        if (u8_to_u16[i] != static_cast<std::uint16_t>(u8[i]) ||
+            u8_to_u32[i] != static_cast<std::uint32_t>(u8[i]) ||
+            i8_to_i16[i] != static_cast<std::int16_t>(i8[i]) ||
+            i16_to_i32[i] != static_cast<std::int32_t>(i16[i]) ||
+            u16_to_u32[i] != static_cast<std::uint32_t>(u16[i])) {
+            std::cerr << "mixed widening mismatch at length " << length
+                      << '\n';
+            return false;
+        }
+    }
+
+    std::vector<float> affine(length), u16_as_f32(length), i16_as_f32(length);
+    const float scale = pathological ? -1.25F : 0.75F;
+    const float bias = pathological ? 3.5F : -2.25F;
+    simd_lab::convert_u8_f32_affine_scalar(affine, u8, scale, bias);
+    simd_lab::convert_u16_to_f32_scalar(u16_as_f32, u16);
+    simd_lab::convert_i16_to_f32_scalar(i16_as_f32, i16);
+    for (std::size_t i = 0; i < length; ++i) {
+        const float expected_affine =
+            static_cast<float>(u8[i]) * scale + bias;
+        if (affine[i] != expected_affine ||
+            u16_as_f32[i] != static_cast<float>(u16[i]) ||
+            i16_as_f32[i] != static_cast<float>(i16[i])) {
+            std::cerr << "mixed conversion mismatch at length " << length
+                      << '\n';
+            return false;
+        }
+    }
+
+    const std::array<float, 12> saturation_values{
+        -std::numeric_limits<float>::infinity(), -1.0F, -0.0F, 0.0F,
+        0.5F, 1.5F, 254.999F, 255.0F, 65534.9F, 65535.0F,
+        std::numeric_limits<float>::infinity(),
+        std::numeric_limits<float>::quiet_NaN()};
+    std::vector<float> f32_values(length);
+    for (std::size_t i = 0; i < length; ++i) {
+        f32_values[i] = pathological
+                            ? saturation_values[i % saturation_values.size()]
+                            : rng.next_float();
+    }
+    std::vector<std::uint16_t> u16_actual(length), u16_expected(length);
+    simd_lab::f32_to_u16_sat_scalar(u16_actual, f32_values);
+    for (std::size_t i = 0; i < length; ++i) {
+        u16_expected[i] = f32_to_u16_sat_reference(f32_values[i]);
+    }
+    if (u16_actual != u16_expected) {
+        std::cerr << "f32/u16 saturation mismatch at length " << length
+                  << '\n';
+        return false;
+    }
+
+    constexpr std::array<float, 10> valid_u8_values{
+        0.0F, 0.49F, 0.5F, 0.99F, 1.0F,
+        1.5F, 127.49F, 127.5F, 254.5F, 255.0F};
+    std::vector<float> valid_f32(length);
+    for (std::size_t i = 0; i < length; ++i) {
+        valid_f32[i] = pathological
+                           ? valid_u8_values[i % valid_u8_values.size()]
+                           : static_cast<float>(rng.next() % 25501U) / 100.0F;
+    }
+    std::vector<std::uint8_t> trunc_actual(length), round_actual(length);
+    std::vector<std::uint8_t> trunc_expected(length), round_expected(length);
+    simd_lab::convert_f32_u8_trunc_scalar(trunc_actual, valid_f32);
+    simd_lab::convert_f32_u8_round_scalar(round_actual, valid_f32);
+    for (std::size_t i = 0; i < length; ++i) {
+        trunc_expected[i] = static_cast<std::uint8_t>(valid_f32[i]);
+        round_expected[i] = static_cast<std::uint8_t>(
+            std::floor(valid_f32[i] + 0.5F));
+    }
+    if (trunc_actual != trunc_expected || round_actual != round_expected) {
+        std::cerr << "f32/u8 truncation or rounding mismatch at length "
+                  << length << '\n';
+        return false;
+    }
+
+    std::vector<float> sat_f32(length);
+    for (std::size_t i = 0; i < length; ++i) {
+        sat_f32[i] = pathological
+                         ? saturation_values[i % saturation_values.size()]
+                         : rng.next_float();
+    }
+    std::vector<std::uint8_t> sat_u8_actual(length), sat_u8_expected(length);
+    simd_lab::convert_f32_u8_sat_scalar(sat_u8_actual, sat_f32);
+    for (std::size_t i = 0; i < length; ++i) {
+        sat_u8_expected[i] = f32_to_u8_sat_reference(sat_f32[i]);
+    }
+    if (sat_u8_actual != sat_u8_expected) {
+        std::cerr << "f32/u8 saturation mismatch at length " << length
+                  << '\n';
+        return false;
+    }
+
+    std::vector<std::uint8_t> narrow_trunc(length), narrow_round(length),
+        narrow_sat(length);
+    std::vector<std::uint8_t> narrow_trunc_expected(length),
+        narrow_round_expected(length), narrow_sat_expected(length);
+    simd_lab::narrow_u16_to_u8_trunc_scalar(narrow_trunc, u16);
+    simd_lab::narrow_u16_to_u8_round_scalar(narrow_round, u16);
+    simd_lab::narrow_u16_to_u8_sat_scalar(narrow_sat, u16);
+    for (std::size_t i = 0; i < length; ++i) {
+        narrow_trunc_expected[i] =
+            static_cast<std::uint8_t>(u16[i] & 0xffU);
+        narrow_round_expected[i] = static_cast<std::uint8_t>(
+            (static_cast<std::uint32_t>(u16[i]) + 128U) / 257U);
+        narrow_sat_expected[i] = static_cast<std::uint8_t>(
+            std::min<std::uint16_t>(u16[i], 255U));
+    }
+    if (narrow_trunc != narrow_trunc_expected ||
+        narrow_round != narrow_round_expected ||
+        narrow_sat != narrow_sat_expected) {
+        std::cerr << "u16/u8 narrowing mismatch at length " << length
+                  << '\n';
+        return false;
+    }
+
+    const std::size_t groups = length;
+    std::vector<std::uint8_t> bytes(groups * 4U), unpacked(groups * 4U);
+    std::vector<std::uint32_t> packed(groups), packed_expected(groups);
+    for (std::size_t i = 0; i < groups; ++i) {
+        const std::size_t base = i * 4U;
+        bytes[base] = static_cast<std::uint8_t>(
+            pathological && i == 0 ? 0x01U : rng.next());
+        bytes[base + 1U] = static_cast<std::uint8_t>(
+            pathological && i == 0 ? 0x23U : rng.next());
+        bytes[base + 2U] = static_cast<std::uint8_t>(
+            pathological && i == 0 ? 0x45U : rng.next());
+        bytes[base + 3U] = static_cast<std::uint8_t>(
+            pathological && i == 0 ? 0x67U : rng.next());
+        packed_expected[i] =
+            static_cast<std::uint32_t>(bytes[base]) |
+            (static_cast<std::uint32_t>(bytes[base + 1U]) << 8U) |
+            (static_cast<std::uint32_t>(bytes[base + 2U]) << 16U) |
+            (static_cast<std::uint32_t>(bytes[base + 3U]) << 24U);
+    }
+    simd_lab::pack_u8x4_to_u32_scalar(packed, bytes);
+    if (packed != packed_expected ||
+        (pathological && groups != 0U && packed[0] != 0x67452301U)) {
+        std::cerr << "u8x4/u32 packing mismatch at group count " << groups
+                  << '\n';
+        return false;
+    }
+    simd_lab::unpack_u32_to_u8x4_scalar(unpacked, packed);
+    if (unpacked != bytes) {
+        std::cerr << "u32/u8x4 unpacking mismatch at group count " << groups
+                  << '\n';
+        return false;
+    }
+    return true;
+}
+
+bool run_mixed_width_tests() {
+    constexpr std::array<std::size_t, 19> pathological_lengths{
+        0, 1, 2, 3, 7, 8, 9, 15, 16, 17,
+        31, 32, 33, 63, 64, 65, 127, 128, 129};
+    XorShift64 rng{0x2c6f4a1b9d37e805ULL};
+    for (const auto length : pathological_lengths) {
+        if (!run_mixed_width_case(length, rng, true)) {
+            return false;
+        }
+    }
+    for (std::size_t trial = 0; trial < 96; ++trial) {
+        const auto length = trial < 32 ? trial : rng.next() % 2049U;
+        if (!run_mixed_width_case(length, rng, false)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 } // namespace
 
 int main() {
@@ -499,7 +741,7 @@ int main() {
                                 std::max(std::abs(scalar), 1.0);
 
     if (relative_error > 1e-12 || !run_randomized_differential_tests() ||
-        !run_exhaustive_saturating_add_test()) {
+        !run_exhaustive_saturating_add_test() || !run_mixed_width_tests()) {
         return 1;
     }
 

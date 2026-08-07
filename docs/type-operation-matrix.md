@@ -94,6 +94,36 @@ explicit native-vector forms. The current Stage 7 implementation intentionally
 does not claim dedicated VNNI, dot-product, or widening multiply-accumulate
 instructions.
 
+## Mixed-width conversion family
+
+The mixed-width APIs keep widening explicit and make every narrowing policy
+observable:
+
+| Operation | Output contract |
+|---|---|
+| `u8 -> u16`, `u8 -> u32` | zero-extend each lane |
+| `i8 -> i16`, `i16 -> i32` | sign-extend each lane |
+| `u16 -> u32` | zero-extend each lane |
+| `u16 -> f32`, `i16 -> f32` | exactly represent each integer in `f32` |
+| `u8 -> f32` affine | compute `f32(u8) * scale + bias` |
+| `f32 -> u16` saturation | NaN/non-positive -> `0`; values at or above `65535` -> `65535`; otherwise truncate |
+| `f32 -> u8` truncation/rounding | finite `[0, 255]` precondition; truncate or round `floor(x + 0.5)` |
+| `f32 -> u8` saturation | NaN/non-positive -> `0`; values at or above `255` -> `255`; otherwise truncate |
+| `u16 -> u8` truncation | retain the low eight bits |
+| `u16 -> u8` rounding | full-range integer round-to-nearest: `(u16 + 128) / 257` |
+| `u16 -> u8` saturation | clamp values above `255` to `255` |
+| `u8x4 <-> u32` | logical little-endian packing and unpacking |
+
+All operations require equal logical lengths, accept zero-length buffers, and
+process arbitrary tails without reading or writing outside the supplied
+buffers. Packing uses a group count: four source bytes map to one `u32`.
+Rust and C++ expose scalar-source autovectorization baselines. Zig additionally
+exposes native `@Vector` widening and integer-to-float forms with scalar tails.
+The standalone probes use raw pointers, explicit length-last entry points, and
+the same arithmetic contracts; they are code-generation evidence, not runtime
+benchmarks.
+
+
 ## Implementation layers
 
 Where the language/toolchain permits it, compare:

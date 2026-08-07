@@ -154,6 +154,260 @@ bool run_sat_add_case(std::string_view name, std::size_t n,
     return true;
 }
 
+bool run_mixed_width_benchmarks(std::size_t n) {
+    if (n == 0) return true;
+
+    std::vector<std::uint8_t> u8(n);
+    std::vector<std::int8_t> i8(n);
+    std::vector<std::int16_t> i16(n);
+    std::vector<std::uint16_t> u16(n);
+    for (std::size_t i = 0; i < n; ++i) {
+        u8[i] = static_cast<std::uint8_t>((i * 17U + 3U) & 255U);
+        i8[i] = static_cast<std::int8_t>(
+            static_cast<int>((i * 19U + 7U) & 255U) - 128);
+        const auto i16_raw = static_cast<std::int32_t>(
+            (i * 97U + 13U) & 0xffffU);
+        i16[i] = static_cast<std::int16_t>(
+            i16_raw < 32768 ? i16_raw : i16_raw - 65536);
+        u16[i] = static_cast<std::uint16_t>(
+            (i * 257U + 19U) & 0xffffU);
+    }
+
+    const auto run_unary =
+        [&](std::string_view name, const auto& src, auto& dst, auto function,
+            auto expected_value, std::size_t bytes_per_element) {
+            using output_type =
+                typename std::decay_t<decltype(dst)>::value_type;
+            std::vector<output_type> expected(n);
+            for (std::size_t i = 0; i < n; ++i) {
+                expected[i] = expected_value(src[i]);
+            }
+            function(dst, src);
+            if (dst != expected) {
+                std::cerr << name << " validation failed\n";
+                return false;
+            }
+            const auto result = measure(n, [&] {
+                function(dst, src);
+                if constexpr (std::is_floating_point_v<output_type>) {
+                    sink = static_cast<double>(dst[n - 1]);
+                } else if constexpr (std::is_signed_v<output_type>) {
+                    sink_i64 = static_cast<std::int64_t>(dst[n - 1]);
+                } else {
+                    sink_u64 = static_cast<std::uint64_t>(dst[n - 1]);
+                }
+            });
+            report(name, n,
+                   n * (sizeof(typename std::decay_t<decltype(src)>::value_type) +
+                        sizeof(output_type)),
+                   n * bytes_per_element, result);
+            return true;
+        };
+
+    std::vector<std::uint16_t> u8_to_u16(n);
+    if (!run_unary(
+            "widen-u8-u16/scalar-autovec", u8, u8_to_u16,
+            simd_lab::widen_u8_to_u16_scalar,
+            [](std::uint8_t value) {
+                return static_cast<std::uint16_t>(value);
+            },
+            sizeof(std::uint8_t) + sizeof(std::uint16_t))) {
+        return false;
+    }
+    std::vector<std::uint32_t> u8_to_u32(n);
+    if (!run_unary(
+            "widen-u8-u32/scalar-autovec", u8, u8_to_u32,
+            simd_lab::widen_u8_to_u32_scalar,
+            [](std::uint8_t value) {
+                return static_cast<std::uint32_t>(value);
+            },
+            sizeof(std::uint8_t) + sizeof(std::uint32_t))) {
+        return false;
+    }
+    std::vector<std::int16_t> i8_to_i16(n);
+    if (!run_unary(
+            "widen-i8-i16/scalar-autovec", i8, i8_to_i16,
+            simd_lab::widen_i8_to_i16_scalar,
+            [](std::int8_t value) {
+                return static_cast<std::int16_t>(value);
+            },
+            sizeof(std::int8_t) + sizeof(std::int16_t))) {
+        return false;
+    }
+    std::vector<std::int32_t> i16_to_i32(n);
+    if (!run_unary(
+            "widen-i16-i32/scalar-autovec", i16, i16_to_i32,
+            simd_lab::widen_i16_to_i32_scalar,
+            [](std::int16_t value) {
+                return static_cast<std::int32_t>(value);
+            },
+            sizeof(std::int16_t) + sizeof(std::int32_t))) {
+        return false;
+    }
+    std::vector<std::uint32_t> u16_to_u32(n);
+    if (!run_unary(
+            "widen-u16-u32/scalar-autovec", u16, u16_to_u32,
+            simd_lab::widen_u16_to_u32_scalar,
+            [](std::uint16_t value) {
+                return static_cast<std::uint32_t>(value);
+            },
+            sizeof(std::uint16_t) + sizeof(std::uint32_t))) {
+        return false;
+    }
+
+    std::vector<float> affine(n), u16_to_f32(n), i16_to_f32(n);
+    constexpr float scale = 0.75F;
+    constexpr float bias = -2.25F;
+    if (!run_unary(
+            "convert-u8-f32-affine/scalar-autovec", u8, affine,
+            [=](std::span<float> dst, std::span<const std::uint8_t> src) {
+                simd_lab::convert_u8_f32_affine_scalar(dst, src, scale, bias);
+            },
+            [=](std::uint8_t value) {
+                return static_cast<float>(value) * scale + bias;
+            },
+            sizeof(std::uint8_t) + sizeof(float))) {
+        return false;
+    }
+    if (!run_unary(
+            "convert-u16-f32/scalar-autovec", u16, u16_to_f32,
+            simd_lab::convert_u16_to_f32_scalar,
+            [](std::uint16_t value) { return static_cast<float>(value); },
+            sizeof(std::uint16_t) + sizeof(float)) ||
+        !run_unary(
+            "convert-i16-f32/scalar-autovec", i16, i16_to_f32,
+            simd_lab::convert_i16_to_f32_scalar,
+            [](std::int16_t value) { return static_cast<float>(value); },
+            sizeof(std::int16_t) + sizeof(float))) {
+        return false;
+    }
+
+    const std::array<float, 8> f32_u16_values{
+        -1.0F, 0.0F, 0.5F, 1.5F, 65534.9F, 65535.0F,
+        std::numeric_limits<float>::infinity(),
+        std::numeric_limits<float>::quiet_NaN()};
+    std::vector<float> f32_u16(n);
+    for (std::size_t i = 0; i < n; ++i) {
+        f32_u16[i] = f32_u16_values[i & 7U];
+    }
+    std::vector<std::uint16_t> f32_u16_dst(n);
+    if (!run_unary(
+            "convert-f32-u16-sat/scalar-autovec", f32_u16, f32_u16_dst,
+            simd_lab::f32_to_u16_sat_scalar,
+            [](float value) {
+                if (!(value > 0.0F)) return std::uint16_t{0};
+                if (value >= 65535.0F) {
+                    return std::numeric_limits<std::uint16_t>::max();
+                }
+                return static_cast<std::uint16_t>(value);
+            },
+            sizeof(float) + sizeof(std::uint16_t))) {
+        return false;
+    }
+
+    const std::array<float, 8> f32_u8_values{
+        0.0F, 0.49F, 0.5F, 1.5F, 127.5F, 254.5F, 254.99F, 255.0F};
+    std::vector<float> f32_u8(n);
+    for (std::size_t i = 0; i < n; ++i) {
+        f32_u8[i] = f32_u8_values[i & 7U];
+    }
+    std::vector<std::uint8_t> f32_u8_dst(n);
+    if (!run_unary(
+            "convert-f32-u8-trunc/scalar-autovec", f32_u8, f32_u8_dst,
+            simd_lab::convert_f32_u8_trunc_scalar,
+            [](float value) { return static_cast<std::uint8_t>(value); },
+            sizeof(float) + sizeof(std::uint8_t)) ||
+        !run_unary(
+            "convert-f32-u8-round/scalar-autovec", f32_u8, f32_u8_dst,
+            simd_lab::convert_f32_u8_round_scalar,
+            [](float value) {
+                return static_cast<std::uint8_t>(std::floor(value + 0.5F));
+            },
+            sizeof(float) + sizeof(std::uint8_t))) {
+        return false;
+    }
+    if (!run_unary(
+            "convert-f32-u8-sat/scalar-autovec", f32_u16, f32_u8_dst,
+            simd_lab::convert_f32_u8_sat_scalar,
+            [](float value) {
+                if (!(value > 0.0F)) return std::uint8_t{0};
+                if (value >= 255.0F) {
+                    return std::numeric_limits<std::uint8_t>::max();
+                }
+                return static_cast<std::uint8_t>(value);
+            },
+            sizeof(float) + sizeof(std::uint8_t))) {
+        return false;
+    }
+
+    std::vector<std::uint8_t> narrow_dst(n);
+    if (!run_unary(
+            "narrow-u16-u8-trunc/scalar-autovec", u16, narrow_dst,
+            simd_lab::narrow_u16_to_u8_trunc_scalar,
+            [](std::uint16_t value) {
+                return static_cast<std::uint8_t>(value & 0xffU);
+            },
+            sizeof(std::uint16_t) + sizeof(std::uint8_t)) ||
+        !run_unary(
+            "narrow-u16-u8-round/scalar-autovec", u16, narrow_dst,
+            simd_lab::narrow_u16_to_u8_round_scalar,
+            [](std::uint16_t value) {
+                return static_cast<std::uint8_t>(
+                    (static_cast<std::uint32_t>(value) + 128U) / 257U);
+            },
+            sizeof(std::uint16_t) + sizeof(std::uint8_t)) ||
+        !run_unary(
+            "narrow-u16-u8-sat/scalar-autovec", u16, narrow_dst,
+            simd_lab::narrow_u16_to_u8_sat_scalar,
+            [](std::uint16_t value) {
+                return static_cast<std::uint8_t>(
+                    std::min<std::uint16_t>(value, 255U));
+            },
+            sizeof(std::uint16_t) + sizeof(std::uint8_t))) {
+        return false;
+    }
+
+    std::vector<std::uint8_t> bytes(n * 4U), unpacked(n * 4U);
+    std::vector<std::uint32_t> packed(n), packed_expected(n);
+    for (std::size_t i = 0; i < n; ++i) {
+        const auto base = i * 4U;
+        bytes[base] = static_cast<std::uint8_t>((i * 13U + 1U) & 255U);
+        bytes[base + 1U] =
+            static_cast<std::uint8_t>((i * 17U + 2U) & 255U);
+        bytes[base + 2U] =
+            static_cast<std::uint8_t>((i * 19U + 3U) & 255U);
+        bytes[base + 3U] =
+            static_cast<std::uint8_t>((i * 23U + 4U) & 255U);
+        packed_expected[i] =
+            static_cast<std::uint32_t>(bytes[base]) |
+            (static_cast<std::uint32_t>(bytes[base + 1U]) << 8U) |
+            (static_cast<std::uint32_t>(bytes[base + 2U]) << 16U) |
+            (static_cast<std::uint32_t>(bytes[base + 3U]) << 24U);
+    }
+    simd_lab::pack_u8x4_to_u32_scalar(packed, bytes);
+    if (packed != packed_expected) {
+        std::cerr << "pack-u8x4-u32/scalar-autovec validation failed\n";
+        return false;
+    }
+    auto result = measure(n, [&] {
+        simd_lab::pack_u8x4_to_u32_scalar(packed, bytes);
+        sink_u64 = packed[n - 1];
+    });
+    report("pack-u8x4-u32/scalar-autovec", n, n * 8U, n * 8U, result);
+
+    simd_lab::unpack_u32_to_u8x4_scalar(unpacked, packed);
+    if (unpacked != bytes) {
+        std::cerr << "unpack-u32-u8x4/scalar-autovec validation failed\n";
+        return false;
+    }
+    result = measure(n, [&] {
+        simd_lab::unpack_u32_to_u8x4_scalar(unpacked, packed);
+        sink_u64 = unpacked[n * 4U - 1U];
+    });
+    report("unpack-u32-u8x4/scalar-autovec", n, n * 8U, n * 8U, result);
+    return true;
+}
+
 } // namespace
 
 int main() {
@@ -397,6 +651,9 @@ int main() {
             });
             report("widen-mul-i32-i64/scalar-autovec", n, n * 16, n * 16,
                    result);
+            if (!run_mixed_width_benchmarks(n)) {
+                return 1;
+            }
             if (!run_sat_add_case("sat-add-i8/scalar-autovec", n, i8_a, i8_b,
                                   simd_lab::sat_add_i8_scalar,
                                   sizeof(std::int8_t) * 3) ||

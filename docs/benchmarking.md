@@ -15,7 +15,7 @@ Each kernel runs at six element counts:
 | `1 << 20` | 4 MiB | shared cache / memory transition |
 | `1 << 22` | 16 MiB | shared cache or DRAM |
 
-The actual working set depends on the kernel and is emitted for every result. AXPY has three f32 arrays; squared error has two; SAD has two byte arrays; u8 saturating add has two byte inputs plus one byte output; FP16 clamp has four binary16 arrays; dot products have two input arrays; widening multiply has two input arrays plus one output array. For `u32/i32 -> u64/i64` widening, that is 16 effective bytes per element. Cache labels are therefore orientation points, not universal classifications.
+The actual working set depends on the kernel and is emitted for every result. AXPY has three f32 arrays; squared error has two; SAD has two byte arrays; u8 saturating add has two byte inputs plus one byte output; FP16 clamp has four binary16 arrays; dot products have two input arrays; widening multiply has two input arrays plus one output array. Mixed-width conversion rows use one source and one destination stream, while `u8x4 <-> u32` packing uses four bytes per group on each side. For `u32/i32 -> u64/i64` widening, that is 16 effective bytes per element. Cache labels are therefore orientation points, not universal classifications.
 
 For every kernel and size:
 
@@ -78,6 +78,13 @@ Stage 7 uses the same accounting for all three languages:
 - scalar and native-vector variants use identical working-set and effective
   traffic fields, so the implementation label does not change the bandwidth
   model.
+Mixed-width conversion rows use one input and one output stream. Their effective
+traffic is `3` bytes for `u8 -> u16` and `i8 -> i16`, `5` for `u8 -> u32`
+and `u8 -> f32`, and `6` for `u16 -> u32`, `i16 -> i32`, and integer-to-f32
+or f32-to-u16 rows. f32-to-u8 rows report `5` bytes per element and u16-to-u8
+rows report `3`. Pack/unpack rows use a group count and report `8` bytes per
+group: four input bytes plus one output `u32`, or the inverse.
+
 
 The new 32-bit widening rows use two 4-byte input streams and one 8-byte output
 stream, so their effective traffic is 16 bytes per element in every language.

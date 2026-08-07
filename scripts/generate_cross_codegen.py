@@ -72,6 +72,7 @@ def main() -> None:
             ("sad-portable", ROOT / "probes/cpp/sad_portable.cpp"),
             ("sat-add-portable", ROOT / "probes/cpp/sat_add_portable.cpp"),
             ("widen-mul", ROOT / "probes/cpp/widen_mul.cpp"),
+            ("mixed-width", ROOT / "probes/cpp/mixed_width.cpp"),
         ]
         if args.target == "aarch64-fp16":
             sources.append(("fp16-clang-ext", ROOT / "probes/cpp/fp16_clang.cpp"))
@@ -85,7 +86,7 @@ def main() -> None:
                          "assembly": str(out.relative_to(ROOT)), "command": cmd})
 
     if shutil.which("zig"):
-        for probe in ["clamp", "dot", "sad", "sat_add", "widen_mul"]:
+        for probe in ["clamp", "dot", "mixed_width", "sad", "sat_add", "widen_mul"]:
             source = ROOT / f"probes/zig/{probe}.zig"
             out = OUT / f"zig-{probe}-{args.target}.s"
             obj = OUT / f"zig-{probe}-{args.target}.o"

@@ -54,7 +54,7 @@ Snapshots are written under `results/codegen/`. Every manifest uses schema `simd
 - top mnemonics;
 - tracked SIMD idioms.
 
-Tracked x86 signals include FP16 conversions (`vcvtph2ps`, `vcvtps2ph`), SAD (`vpsadbw`/`psadbw`), widening moves (`vpmovzx*` / `vpmovsx*`), multiply-add idioms (`vpmaddwd`, `vpmaddubsw`, and VNNI `vpdp*` families), and vector multiply families. AArch64 signals include `uabd`, widening/reduction operations such as `uaddlp`/`uaddlv`/`uadalp`, integer widening multiply (`smull`/`umull`/`smlal`/`umlal`), dot-product (`sdot`/`udot`/`usdot`), FP min/max and conversion operations. WebAssembly tracking recognizes the `v128`, integer-lane, floating-lane, widening multiply, and dot-product opcode families.
+Tracked x86 signals include FP16 conversions (`vcvtph2ps`, `vcvtps2ph`), SAD (`vpsadbw`/`psadbw`), widening moves (`vpmovzx*` / `vpmovsx*`), multiply-add idioms (`vpmaddwd`, `vpmaddubsw`, and VNNI `vpdp*` families), and vector multiply families. AArch64 signals include `uabd`, widening/reduction operations such as `uaddlp`/`uaddlv`/`uadalp`, integer widening/narrowing (`ushll`/`sshll`/`smull`/`umull`/`xtn`/`uqxtn`), integer-to-float conversion (`scvtf`/`ucvtf`), dot-product (`sdot`/`udot`/`usdot`), FP min/max and conversion operations. WebAssembly tracking recognizes the `v128`, integer-lane, floating-lane, widening multiply, and dot-product opcode families.
 
 ## Questions the snapshots should answer
 
@@ -83,6 +83,17 @@ future dedicated instruction studies: `vpmaddwd`, VNNI `vpdp*`, AArch64
 `sdot`/`udot`, and wasm widening/dot opcodes are tracked as evidence, but are
 not promoted to an expected lowering until a generated target-profile
 snapshot demonstrates the idiom and its semantics match.
+
+### Mixed-width conversion
+
+The mixed-width probes are architecture-neutral semantic baselines. Review
+integer widening moves, integer-to-f32 conversion sequences, f32/u16 and
+f32/u8 narrowing, u16/u8 narrowing, and little-endian packing. Zig's native
+vector exports provide a portable-vector comparison; Rust and C++ scalar
+sources test ordinary autovectorization. Do not promote a specific conversion
+or pack instruction from one compiler snapshot without checking tails and
+the documented saturation/rounding policy.
+
 
 ## Comparing snapshots
 

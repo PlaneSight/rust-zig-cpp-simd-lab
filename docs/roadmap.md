@@ -41,17 +41,17 @@ The comparison should always separate language ergonomics, frontend lowering, op
 
 ## Mixed-width pipelines
 
-- [ ] `u8 -> u16`
-- [ ] `u8 -> u32`
-- [ ] `i8 -> i16`
-- [ ] `u16 -> u32`
-- [ ] `i16 -> i32`
+- [x] `u8 -> u16`
+- [x] `u8 -> u32`
+- [x] `i8 -> i16`
+- [x] `u16 -> u32`
+- [x] `i16 -> i32`
 - [x] `f16 -> f32 -> f16`
-- [ ] mixed integer/float conversion pipelines used in image processing
-- [ ] narrowing with truncation
-- [ ] narrowing with rounding
-- [ ] narrowing with saturation
-- [ ] packing and unpacking multiple lanes
+- [x] mixed integer/float conversion pipelines used in image processing
+- [x] narrowing with truncation
+- [x] narrowing with rounding
+- [x] narrowing with saturation
+- [x] packing and unpacking multiple lanes
 
 # 2. Core arithmetic kernels
 
@@ -588,11 +588,12 @@ The most useful next sequence is:
 
 Stage 7 evidence covers scalar/autovec Rust and C++ APIs, scalar plus
 `@Vector` Zig APIs, independent edge/pathological/random correctness checks,
-benchmark rows, and raw-pointer probes for the four dot products and six
-widening products. AArch64 NEON/FP16 cross-target manifests were generated and
-inspected for widening and floating reduction mnemonics. Dedicated VNNI,
-`sdot`/`udot`, `vpmadd*`, wasm dot, and widening multiply-accumulate variants
-remain intentionally unchecked.
+benchmark rows, and raw-pointer probes for the four dot products, six
+widening products, and the mixed-width conversion/packing family. AArch64
+NEON/FP16 cross-target manifests were generated and inspected for widening
+and floating reduction mnemonics. Dedicated VNNI, `sdot`/`udot`, `vpmadd*`,
+wasm dot, and widening multiply-accumulate variants remain intentionally
+unchecked.
 8. add blend and short-convolution kernels;
 9. integrate `perf` and `llvm-mca`;
 10. only then add inline-assembly reference implementations where the evidence says they are warranted.
