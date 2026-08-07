@@ -648,9 +648,11 @@ path. The local baseline benchmark was generated with complete host/toolchain
 metadata but remains uncommitted machine-specific evidence; reviewed x86 u16
 codegen and cross-target lowering are still future work.
 
-FP16 host handoff: the ARM64 MacBook run verified the 23-case Zig native versus
-promote-once matrix in ReleaseSafe and ReleaseFast, but Rust/C++ F16C remained
-unavailable. The real-host gate is intentionally deferred to the user's x86
-F16C desktop. There, record CPU feature metadata confirming `f16c` and run
-`python3 scripts/compare_fp16_semantics.py`; do not mark the F16C edge-case
-item complete from the ARM64 or compile-only x86 artifacts.
+FP16 host evidence: an isolated GitHub Actions run on `ubuntu-latest`
+executed the 23-case semantic comparison on an x86 runner whose
+`/proc/cpuinfo` reported `f16c` and `avx2` (run
+`31167176176`). Rust F16C, C++ F16C, Zig native-f16, and Zig promote-f32
+were all available with 23 outputs each and zero divergences. The local
+ARM64 ReleaseSafe/ReleaseFast agreement remains fast-mode evidence, while
+the reviewed conversion counts remain compile/codegen evidence rather than
+runtime throughput claims.

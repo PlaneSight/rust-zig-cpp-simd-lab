@@ -100,10 +100,34 @@ operations in its bounded symbol, while the promote-once path has 18 and 2.
 These are compile/codegen counts from a reviewed artifact, not runtime
 measurements and not proof that one numerical contract is preferable.
 
-An x86 host with F16C is still required to execute the Rust/C++ edge corpus and
-compare signed zero, subnormal, infinity, NaN payload/sign, and rounding
-behavior. The existing hosted x86 codegen job does not run the semantic
-executables, so that item remains open.
+The hosted x86 F16C run now executes the Rust/C++ edge corpus and compares
+signed zero, subnormal, infinity, NaN payload/sign, and rounding behavior.
+The existing hosted x86 codegen job by itself does not run the semantic
+executables; the runtime evidence is recorded in the dedicated run below.
+
+### Hosted x86 F16C run
+
+An isolated GitHub Actions run on `ubuntu-latest` executed the current semantic
+comparison on a real x86 runner. The runner's `/proc/cpuinfo` reported both
+`f16c` and `avx2`; the run is
+`https://github.com/PlaneSight/rust-zig-cpp-simd-lab/actions/runs/31167176176`.
+Rust F16C, C++ F16C, Zig native-f16, and Zig promote-f32 were all available,
+each emitted 23 results, and the comparison reported zero divergences.
+
+The four strategies preserved `+0` (`0000`) and `-0` (`8000`), retained the
+positive subnormal boundaries (`0001`, `03ff`, `0400`) and the negative
+subnormal (`8001`), and agreed at the values immediately around `0.5` and
+`1.0`. The clamp contract mapped positive and negative finite extrema,
+infinities, and quiet NaN payload/sign cases to the documented `-0.5`/`+2.0`
+bounds where applicable. The hosted output therefore directly confirms the
+documented signed-zero, subnormal, infinity, NaN, and boundary-rounding behavior
+for this 23-case clamp corpus; it does not generalize to arbitrary FP16
+arithmetic or floating-point exception flags.
+
+This run used the optimized Zig path (`ReleaseFast`). The ARM64
+`ReleaseSafe`/`ReleaseFast` comparison remains the direct fast-mode comparison:
+both modes produced the same 23 bits. The reviewed x86 conversion-hoisting
+counts remain compile/codegen evidence rather than runtime throughput claims.
 
 ### ARM64 edge-observation matrix
 
