@@ -542,7 +542,7 @@ Potential candidates should emerge from evidence—for example repeated FP16 con
 - [ ] per-kernel documentation describing mathematical operation and semantics
 - [ ] per-ISA implementation notes
 - [ ] compiler pathology case studies
-- [ ] "how to reproduce" pages for important findings
+- [x] "how to reproduce" pages for important findings ([`docs/reproducing-findings.md`](reproducing-findings.md))
 - [ ] glossary for autovec, portable SIMD, intrinsics, ISA, vector width, reduction, saturation, widening, FMA, F16C, etc.
 - [ ] contributor guide for adding a new kernel fairly
 
