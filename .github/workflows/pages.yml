@@ -1,15 +1,6 @@
 name: Results Pages
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'site/**'
-      - 'schema/**'
-      - 'results/**'
-      - 'scripts/build_results_catalog.py'
-      - 'scripts/validate_result_bundles.py'
-      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
