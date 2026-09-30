@@ -1,37 +1,8 @@
 name: Result Schema
 
 on:
-  pull_request:
-    paths:
-      - 'schema/**'
-      - 'results/**'
-      - 'site/**'
-      - 'scripts/build_results_catalog.py'
-      - 'scripts/result_bundle.py'
-      - 'scripts/collect_perf_stat.py'
-      - 'scripts/analyze_mca.py'
-      - 'scripts/validate_result_bundles.py'
-      - 'scripts/export_benchmarks.py'
-      - 'scripts/run_benchmarks.py'
-      - '.github/workflows/pages.yml'
-      - 'tests/**'
-      - '.github/workflows/results-schema.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'schema/**'
-      - 'results/**'
-      - 'site/**'
-      - 'scripts/build_results_catalog.py'
-      - 'scripts/result_bundle.py'
-      - 'scripts/collect_perf_stat.py'
-      - 'scripts/analyze_mca.py'
-      - 'scripts/validate_result_bundles.py'
-      - 'scripts/export_benchmarks.py'
-      - 'scripts/run_benchmarks.py'
-      - '.github/workflows/pages.yml'
-      - 'tests/**'
-      - '.github/workflows/results-schema.yml'
+  workflow_dispatch:
+
 jobs:
   validate:
     runs-on: ubuntu-latest
